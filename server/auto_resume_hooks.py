@@ -1,0 +1,471 @@
+"""Auto-Resume hooks — install Stop + SessionStart hooks in a project.
+
+Mechanism #3 (Stop hook progress snapshot) and #4 (SessionStart hook
+context injection) live here so `auto_resume.py` itself stays focused
+on the supervisor / state machine.
+
+What this module does for a given `<cwd>`
+-----------------------------------------
+1. Creates `<cwd>/.codex/auto-resume/snapshot.sh` (0755) —
+   a tiny bash script that finds the most recent jsonl under
+   `~/.codex/projects/<slug>/` and writes a markdown snapshot of the
+   last user prompt + tail of the last assistant message to
+   `<cwd>/.codex/auto-resume/snapshot.md`.
+
+2. Creates `<cwd>/.codex/auto-resume/inject.sh` (0755) —
+   a bash script that `cat`s `snapshot.md` to stdout. Codex CLI's
+   SessionStart hook contract feeds stdout straight into the new
+   session's context, so the next session naturally knows where it
+   left off.
+
+3. Patches `<cwd>/.codex/settings.json` to register both as
+   `hooks.Stop[]` and `hooks.SessionStart[]` entries (idempotent —
+   never doubles up).
+
+`uninstall(cwd)` removes both entries from settings.json and deletes
+the two scripts. `status(cwd)` reports current install state.
+
+Safety
+------
+- Only writes inside `<cwd>/.codex/`. Never touches the user's global
+  `~/.codex/settings.json`.
+- Atomic writes via `_safe_write`.
+- A pre-write backup of `settings.json` is kept at
+  `<cwd>/.codex/settings.json.auto-resume.bak` so the user can revert.
+"""
+from __future__ import annotations
+
+import json
+import stat
+from pathlib import Path
+
+from .logger import log
+from .utils import _safe_read, _safe_write
+
+
+SNAPSHOT_DIRNAME = "auto-resume"
+SNAPSHOT_SH = "snapshot.sh"
+INJECT_SH = "inject.sh"
+SNAPSHOT_MD = "snapshot.md"
+SETTINGS_NAME = "settings.json"
+BACKUP_NAME = "settings.json.auto-resume.bak"
+
+HOOK_SIGNATURE = "# lazycodex-auto-resume"
+
+SNAPSHOT_SH_BODY = r"""#!/usr/bin/env bash
+# {sig}
+# Stop hook — write a markdown snapshot of the last user prompt + tail
+# of the last assistant message so SessionStart can inject it on resume.
+set -e
+cwd="{cwd}"
+out_dir="$cwd/.codex/auto-resume"
+out_file="$out_dir/snapshot.md"
+mkdir -p "$out_dir"
+
+slug="-$(echo "$cwd" | sed 's,^/,,;s,/,-,g')"
+proj_dir="$HOME/.codex/projects/$slug"
+[ -d "$proj_dir" ] || exit 0
+
+jsonl=$(ls -t "$proj_dir"/*.jsonl 2>/dev/null | head -n1 || true)
+[ -n "$jsonl" ] || exit 0
+
+tail_blob=$(tail -c 204800 "$jsonl")
+
+{{
+  echo "# Auto-Resume snapshot"
+  echo
+  echo "_Source: \\\`$jsonl\\\`_  "
+  echo "_Captured: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
+  echo
+  echo "## Tail of session transcript (most recent ~200 KB)"
+  echo
+  echo '```'
+  printf '%s\\n' "$tail_blob" | tail -c 6000
+  echo '```'
+}} > "$out_file.tmp" && mv "$out_file.tmp" "$out_file"
+exit 0
+"""
+
+# Haiku-summarised variant — uses `codex --print --model haiku-4.5` to compress
+# the jsonl tail into a tight "where you left off" markdown brief. Falls back
+# to the raw tail if Haiku invocation fails (no API key, codex binary missing).
+SNAPSHOT_SH_BODY_HAIKU = r"""#!/usr/bin/env bash
+# {sig}
+# Stop hook — Haiku-summarised snapshot variant.
+set -e
+cwd="{cwd}"
+out_dir="$cwd/.codex/auto-resume"
+out_file="$out_dir/snapshot.md"
+mkdir -p "$out_dir"
+
+slug="-$(echo "$cwd" | sed 's,^/,,;s,/,-,g')"
+proj_dir="$HOME/.codex/projects/$slug"
+[ -d "$proj_dir" ] || exit 0
+
+jsonl=$(ls -t "$proj_dir"/*.jsonl 2>/dev/null | head -n1 || true)
+[ -n "$jsonl" ] || exit 0
+
+tail_blob=$(tail -c 204800 "$jsonl")
+brief=""
+if command -v codex >/dev/null 2>&1; then
+  brief=$(printf '%s\\n' "$tail_blob" \
+    | tail -c 60000 \
+    | codex --print --model haiku-4.5 --bare \
+        -p "Summarise where this Codex CLI session left off in <= 12 bullet points. Capture: (1) the user's overarching task, (2) what's been completed, (3) what's in flight, (4) any unresolved error or blocker, (5) the immediate next action. Be concrete; reference files / commands by name. Output markdown only." 2>/dev/null \
+    || true)
+fi
+
+{{
+  echo "# Auto-Resume snapshot (Haiku-summarised)"
+  echo
+  echo "_Source: \\\`$jsonl\\\`_  "
+  echo "_Captured: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
+  echo
+  if [ -n "$brief" ]; then
+    echo "## Summary (Haiku 4.5)"
+    echo
+    echo "$brief"
+    echo
+  else
+    echo "_Haiku summary unavailable — falling back to raw tail._"
+    echo
+  fi
+  echo "## Tail of session transcript (most recent ~6 KB)"
+  echo
+  echo '```'
+  printf '%s\\n' "$tail_blob" | tail -c 6000
+  echo '```'
+}} > "$out_file.tmp" && mv "$out_file.tmp" "$out_file"
+exit 0
+"""
+
+# Haiku-summarised variant — direct Anthropic Messages API. Calls the
+# stdlib helper at scripts/ar-haiku-summary.py instead of spawning the
+# `codex` CLI. Faster (no CLI startup) and avoids the tool-use surface.
+# Falls back to the raw tail if the helper exits non-zero (no key,
+# network failure, etc.).
+SNAPSHOT_SH_BODY_HAIKU_DIRECT = r"""#!/usr/bin/env bash
+# {sig}
+# Stop hook — Haiku-summarised snapshot variant (direct Messages API).
+set -e
+cwd="{cwd}"
+helper="{helper}"
+out_dir="$cwd/.codex/auto-resume"
+out_file="$out_dir/snapshot.md"
+mkdir -p "$out_dir"
+
+slug="-$(echo "$cwd" | sed 's,^/,,;s,/,-,g')"
+proj_dir="$HOME/.codex/projects/$slug"
+[ -d "$proj_dir" ] || exit 0
+
+jsonl=$(ls -t "$proj_dir"/*.jsonl 2>/dev/null | head -n1 || true)
+[ -n "$jsonl" ] || exit 0
+
+tail_blob=$(tail -c 204800 "$jsonl")
+brief=""
+if [ -f "$helper" ]; then
+  brief=$(python3 "$helper" --jsonl-path "$jsonl" --tail-bytes 16384 2>/dev/null || true)
+fi
+
+{{
+  echo "# Auto-Resume snapshot (Haiku-summarised, direct API)"
+  echo
+  echo "_Source: \\\`$jsonl\\\`_  "
+  echo "_Captured: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
+  echo
+  if [ -n "$brief" ]; then
+    echo "## Summary (Haiku 4.5)"
+    echo
+    echo "$brief"
+    echo
+  else
+    echo "_Haiku summary unavailable — falling back to raw tail._"
+    echo
+  fi
+  echo "## Tail of session transcript (most recent ~6 KB)"
+  echo
+  echo '```'
+  printf '%s\\n' "$tail_blob" | tail -c 6000
+  echo '```'
+}} > "$out_file.tmp" && mv "$out_file.tmp" "$out_file"
+exit 0
+"""
+
+INJECT_SH_BODY = r"""#!/usr/bin/env bash
+# {sig}
+# SessionStart hook — feed the most recent snapshot to Codex.
+# stdout is injected into the new session's context.
+snap="{cwd}/.codex/auto-resume/snapshot.md"
+if [ -f "$snap" ]; then
+  echo "[auto-resume] Restoring context from previous session:"
+  echo
+  cat "$snap"
+fi
+exit 0
+"""
+
+
+def _project_settings(cwd: str) -> Path:
+    return Path(cwd) / ".codex" / SETTINGS_NAME
+
+
+def _hook_dir(cwd: str) -> Path:
+    return Path(cwd) / ".codex" / SNAPSHOT_DIRNAME
+
+
+def _snapshot_sh_path(cwd: str) -> Path:
+    return _hook_dir(cwd) / SNAPSHOT_SH
+
+
+def _inject_sh_path(cwd: str) -> Path:
+    return _hook_dir(cwd) / INJECT_SH
+
+
+def _backup_path(cwd: str) -> Path:
+    return Path(cwd) / ".codex" / BACKUP_NAME
+
+
+def _make_executable(p: Path) -> None:
+    try:
+        cur = p.stat().st_mode
+        p.chmod(cur | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    except Exception:
+        pass
+
+
+def _load_settings(p: Path) -> dict:
+    raw = _safe_read(p)
+    if not raw.strip():
+        return {}
+    try:
+        d = json.loads(raw)
+        return d if isinstance(d, dict) else {}
+    except Exception:
+        return {}
+
+
+def _is_our_entry(entry: dict, expected_cmd: str) -> bool:
+    """An entry is ours if it carries our command. Tolerates either of the
+    two Codex CLI hook entry shapes:
+        {"type": "command", "command": "..."}
+        {"hooks": [{"type": "command", "command": "..."}]}
+    """
+    if not isinstance(entry, dict):
+        return False
+    if entry.get("command") == expected_cmd:
+        return True
+    inner = entry.get("hooks")
+    if isinstance(inner, list):
+        for h in inner:
+            if isinstance(h, dict) and h.get("command") == expected_cmd:
+                return True
+    return False
+
+
+def _add_hook(settings: dict, hook_name: str, command: str) -> bool:
+    hooks = settings.setdefault("hooks", {})
+    if not isinstance(hooks, dict):
+        return False
+    bucket = hooks.setdefault(hook_name, [])
+    if not isinstance(bucket, list):
+        return False
+    if any(_is_our_entry(e, command) for e in bucket):
+        return False
+    bucket.append({"hooks": [{"type": "command", "command": command}]})
+    return True
+
+
+def _remove_hook(settings: dict, hook_name: str, command: str) -> int:
+    hooks = settings.get("hooks") or {}
+    if not isinstance(hooks, dict):
+        return 0
+    bucket = hooks.get(hook_name) or []
+    if not isinstance(bucket, list):
+        return 0
+    before = len(bucket)
+    keep = []
+    for e in bucket:
+        if _is_our_entry(e, command):
+            continue
+        if isinstance(e, dict) and isinstance(e.get("hooks"), list):
+            inner = [h for h in e["hooks"] if not (isinstance(h, dict) and h.get("command") == command)]
+            if inner:
+                e = {**e, "hooks": inner}
+                keep.append(e)
+            continue
+        keep.append(e)
+    hooks[hook_name] = keep
+    return before - len(keep)
+
+
+# Prompt reinjection mechanism
+# ────────────────────────────
+# When a Codex CLI session ends (Stop hook), this module captures the
+# tail of the active jsonl transcript into `<cwd>/.codex/auto-resume/
+# snapshot.md`. When a new session starts (SessionStart hook), the inject
+# script `cat`s that snapshot to stdout — Codex CLI's hook contract
+# feeds SessionStart stdout straight into the new session's context, so
+# the resumed session naturally knows where it left off.
+#
+# Two reinjection paths
+# ─────────────────────
+#   1. Raw tail (default, use_haiku_summary=False)
+#      → snapshot.sh writes the last ~200 KB of the jsonl, then trims to
+#        ~6 KB markdown fence. Cheap, no network, always works.
+#
+#   2. Haiku-summarised (use_haiku_summary=True)
+#      → snapshot.sh additionally runs a Haiku 4.5 summarisation pass
+#        over the tail before writing snapshot.md, producing a tight
+#        "where you left off" brief plus the raw tail as fallback context.
+#
+# Haiku invocation backends (when use_haiku_summary=True)
+# ───────────────────────────────────────────────────────
+#   - Default (CLI, use_direct_api=False):
+#        `codex --print --model haiku-4.5` subprocess. Convenient —
+#        reuses the user's Codex CLI login — but pays full CLI startup
+#        cost (~1-2s) and exposes the tool-use surface unnecessarily.
+#
+#   - Direct API (use_direct_api=True):
+#        invokes scripts/ar-haiku-summary.py, which POSTs straight to the
+#        Anthropic Messages API (~300-500ms typical, no subprocess spawn
+#        beyond a single python3 process, no tool-use surface). Reads
+#        ANTHROPIC_API_KEY from env or falls back to the lazycodex
+#        ~/.codex-dashboard-ai-providers.json store.
+#
+# Both Haiku paths fall back to raw-tail-only if summarisation fails
+# (no key, network error, etc.) — the snapshot is always produced.
+def install(cwd: str, *, use_haiku_summary: bool = False, use_direct_api: bool = False) -> dict:
+    cwd_p = Path(cwd).expanduser().resolve()
+    if not cwd_p.is_dir():
+        return {"ok": False, "error": f"cwd is not a directory: {cwd_p}"}
+
+    hook_dir = _hook_dir(str(cwd_p))
+    hook_dir.mkdir(parents=True, exist_ok=True)
+
+    snapshot_sh = _snapshot_sh_path(str(cwd_p))
+    inject_sh = _inject_sh_path(str(cwd_p))
+
+    # Resolve the Anthropic Messages API helper path at install time so
+    # the generated shell script carries an absolute reference and does
+    # not depend on the runtime CWD. Layout: <repo_root>/server/this.py
+    # → <repo_root>/scripts/ar-haiku-summary.py.
+    repo_root = Path(__file__).resolve().parent.parent
+    helper_path = repo_root / "scripts" / "ar-haiku-summary.py"
+
+    if use_haiku_summary and use_direct_api:
+        snapshot_body = SNAPSHOT_SH_BODY_HAIKU_DIRECT.format(
+            sig=HOOK_SIGNATURE, cwd=str(cwd_p), helper=str(helper_path),
+        )
+    elif use_haiku_summary:
+        snapshot_body = SNAPSHOT_SH_BODY_HAIKU.format(sig=HOOK_SIGNATURE, cwd=str(cwd_p))
+    else:
+        snapshot_body = SNAPSHOT_SH_BODY.format(sig=HOOK_SIGNATURE, cwd=str(cwd_p))
+    inject_body = INJECT_SH_BODY.format(sig=HOOK_SIGNATURE, cwd=str(cwd_p))
+    if not _safe_write(snapshot_sh, snapshot_body):
+        return {"ok": False, "error": "failed to write snapshot.sh"}
+    if not _safe_write(inject_sh, inject_body):
+        return {"ok": False, "error": "failed to write inject.sh"}
+    _make_executable(snapshot_sh)
+    _make_executable(inject_sh)
+
+    settings_p = _project_settings(str(cwd_p))
+    settings_p.parent.mkdir(parents=True, exist_ok=True)
+    settings = _load_settings(settings_p)
+
+    bak = _backup_path(str(cwd_p))
+    if settings_p.exists() and not bak.exists():
+        try:
+            bak.write_text(settings_p.read_text(encoding="utf-8"), encoding="utf-8")
+        except Exception:
+            pass
+
+    added_stop = _add_hook(settings, "Stop", str(snapshot_sh))
+    added_start = _add_hook(settings, "SessionStart", str(inject_sh))
+
+    if not _safe_write(settings_p, json.dumps(settings, indent=2, ensure_ascii=False)):
+        return {"ok": False, "error": "failed to write settings.json"}
+
+    log.info(
+        "auto_resume_hooks: installed for %s (stop+%s start+%s haiku=%s direct_api=%s)",
+        cwd_p, int(added_stop), int(added_start), use_haiku_summary, use_direct_api,
+    )
+    return {
+        "ok": True,
+        "cwd": str(cwd_p),
+        "snapshotSh": str(snapshot_sh),
+        "injectSh": str(inject_sh),
+        "settingsPath": str(settings_p),
+        "addedStop": added_stop,
+        "addedSessionStart": added_start,
+        "backupPath": str(bak) if bak.exists() else "",
+        "useHaikuSummary": use_haiku_summary,
+        "useDirectApi": use_direct_api,
+    }
+
+
+def uninstall(cwd: str) -> dict:
+    cwd_p = Path(cwd).expanduser().resolve()
+    settings_p = _project_settings(str(cwd_p))
+    snapshot_sh = _snapshot_sh_path(str(cwd_p))
+    inject_sh = _inject_sh_path(str(cwd_p))
+
+    removed_stop = removed_start = 0
+    if settings_p.exists():
+        settings = _load_settings(settings_p)
+        removed_stop = _remove_hook(settings, "Stop", str(snapshot_sh))
+        removed_start = _remove_hook(settings, "SessionStart", str(inject_sh))
+        if not _safe_write(settings_p, json.dumps(settings, indent=2, ensure_ascii=False)):
+            return {"ok": False, "error": "failed to write settings.json"}
+
+    deleted = []
+    for p in (snapshot_sh, inject_sh):
+        try:
+            if p.exists():
+                p.unlink()
+                deleted.append(str(p))
+        except Exception as e:
+            log.warning("auto_resume_hooks: could not delete %s: %s", p, e)
+
+    return {
+        "ok": True,
+        "cwd": str(cwd_p),
+        "removedStop": removed_stop,
+        "removedSessionStart": removed_start,
+        "deletedFiles": deleted,
+    }
+
+
+def status(cwd: str) -> dict:
+    cwd_p = Path(cwd).expanduser().resolve()
+    settings_p = _project_settings(str(cwd_p))
+    snapshot_sh = _snapshot_sh_path(str(cwd_p))
+    inject_sh = _inject_sh_path(str(cwd_p))
+    settings = _load_settings(settings_p) if settings_p.exists() else {}
+
+    def _has_entry(hook_name: str, expected_cmd: str) -> bool:
+        bucket = (settings.get("hooks") or {}).get(hook_name) or []
+        return any(_is_our_entry(e, expected_cmd) for e in bucket if isinstance(e, dict))
+
+    snapshot_md = _hook_dir(str(cwd_p)) / SNAPSHOT_MD
+    last_snap_at = 0
+    last_snap_size = 0
+    if snapshot_md.exists():
+        try:
+            st = snapshot_md.stat()
+            last_snap_at = int(st.st_mtime * 1000)
+            last_snap_size = st.st_size
+        except Exception:
+            pass
+
+    return {
+        "ok": True,
+        "cwd": str(cwd_p),
+        "snapshotShExists": snapshot_sh.exists(),
+        "injectShExists": inject_sh.exists(),
+        "stopHookRegistered": _has_entry("Stop", str(snapshot_sh)),
+        "sessionStartHookRegistered": _has_entry("SessionStart", str(inject_sh)),
+        "settingsPath": str(settings_p),
+        "snapshotMdExists": snapshot_md.exists(),
+        "snapshotMdMtime": last_snap_at,
+        "snapshotMdSize": last_snap_size,
+    }

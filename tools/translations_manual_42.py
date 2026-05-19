@@ -1,0 +1,595 @@
+"""v2.67.0 — Y1 missing translations: permissions summary, email toggle, settings link.
+
+Fixes Korean residue in EN/ZH detected by i18n runtime scan.
+Loaded by ``tools/translations_manual.py``.
+"""
+from __future__ import annotations
+
+NEW_EN: dict[str, str] = {
+    # U1 (v2.66.7) — System tab permissions summary card
+    "권한 요약": "Permissions Summary",
+    # U1 — link to settings/permissions tab (override bad prev translation)
+    '편집은 "Settings 편집" 또는 "권한" 탭에서.': 'Edit via the "Settings" or "Permissions" tab.',
+    # O1 (v2.66.1) — auth panel email toggle tooltip
+    "클릭으로 이메일 표시 전환": "Click to toggle email display",
+    # Y3 + Y4 (v2.66.11)
+    "실행 이력 + 노드별 상세 보기": "Run history + per-node detail",
+    "워크플로우를 불러올 수 없습니다": "Could not load workflow",
+    "(이 세션의 대화 기록이 아직 비어있습니다)": "(this session has no recorded conversation yet)",
+    "최근 도구 호출": "Recent tool calls",
+    "세션 불러오는 중…": "Loading session…",
+    "실제 터미널에서 이어서 열기": "Open in a real terminal",
+    "실제 터미널": "Real terminal",
+    "터미널 활성화": "Terminal activated",
+    # Z2 (v2.66.12) — n8n-style palette
+    "일치하는 노드 없음": "No matching node",
+    "왼쪽 패널에서 노드 타입을 선택하세요": "Pick a node type from the left panel",
+    # CC (v2.66.14) — workflow run cancel + inline mac-term + sidebar
+    "실행 취소 요청됨": "Cancel requested",
+    "중단": "Stop",
+    "(아직 실행 결과 없음 — 워크플로우를 실행하면 여기에 표시됨)": "(no run output yet — execute the workflow to populate this)",
+    # DD (v2.66.15) — sessions panel + cancel button labels
+    "실행 중단": "Stop run",
+    "현재 워크플로우 실행을 안전하게 중단합니다 (진행 중인 노드는 마무리)": "Cancel the current workflow run safely (in-flight nodes finish their level)",
+    "워크플로우 실행 중단": "Stop workflow run",
+    "실행 중·완료된 노드 세션 목록 (sessionId, 이어쓰기, 보기)": "List of running and finished node sessions (session id, resume, view)",
+    "실행 세션": "Run sessions",
+    "세션 없음": "No session",
+    "Session ID 복사": "Copy session ID",
+    "인라인 터미널 보기": "View inline terminal",
+    "아직 실행된 노드가 없습니다": "No nodes have run yet",
+    "건너뜀": "Skipped",
+    # EE (v2.66.16) — switch-provider recovery in run-result modal
+    "프로바이더 변경": "Switch provider",
+    "선택…": "Select…",
+    "적용 + 재실행": "Apply + re-run",
+    "프로바이더를 선택하세요": "Pick a provider",
+    "적용됨, 재실행합니다": "applied — re-running",
+    # GG (v2.66.19) — per-node session terminate
+    "이 노드의 실행 세션 종료": "Terminate this node's run session",
+    "이 노드의 실행을 중단하시겠습니까? (워크플로우 전체 실행이 다음 레벨에서 멈춥니다)": "Stop this node's run? (the whole workflow run halts at the next level boundary)",
+    "세션 종료 요청됨": "Termination requested",
+    "진행 중인 실행이 없습니다": "No run in progress",
+    # LL5
+    "노드 복제됨": "Node duplicated",
+    # LL6
+    "노드 선택됨": "nodes selected",
+    # LL8
+    "자동 정렬 완료": "Layout aligned",
+    # LL9 — shortcut help additions
+    "선택 노드 복제": "Duplicate selected node",
+    "전체 노드 선택": "Select all nodes",
+    "인스펙터 패널 토글": "Toggle inspector panel",
+    "100% 줌으로 리셋": "Reset to 100% zoom",
+    "줌 인/아웃": "Zoom in / out",
+    "성능 HUD 토글": "Toggle perf HUD",
+    "선택 노드 10px 이동": "Move selected node 10px",
+    "선택 노드 1px 이동 (정밀)": "Move selected node 1px (fine)",
+    "자동 정렬": "Auto-layout",
+    "캔버스 패닝": "Pan canvas",
+    "커서 기준 줌": "Cursor-anchored zoom",
+    "grid snap 우회": "Bypass grid snap",
+    "더블클릭 (빈 영역)": "Double-click (empty area)",
+    "미니맵 토글": "Toggle minimap",
+    "다음 / 이전 노드 선택": "Select next / previous node",
+    "선택 노드 편집창 열기": "Open editor for selected node",
+    "줌 아웃": "Zoom out",
+    "줌 인": "Zoom in",
+    "연결 삭제": "Delete connection",
+    "우클릭": "Right-click",
+    "미니맵 클릭": "Click minimap",
+    "노드/엣지 컨텍스트 메뉴": "Node / edge context menu",
+    "해당 위치로 캔버스 이동": "Pan canvas to that location",
+    "드래그로 너비 조절": "Drag to resize",
+    "노드 검색 (예: fy / ses)": "Search nodes (e.g. fy / ses)",
+    "이름·타입·assignee·역할 fuzzy 검색": "Fuzzy search across name / type / assignee / role",
+    "검색 지우기": "Clear search",
+    "이전 / 다음 워크플로우로 전환": "Switch to previous / next workflow",
+    "자동 저장됨": "Autosaved",
+    # CC5
+    "최근 세션 목록에서 선택": "Pick from recent sessions",
+    "최근": "Recent",
+    "최근 Codex 세션": "Recent Codex sessions",
+    "세션 목록을 불러올 수 없습니다": "Could not load session list",
+    "이전 세션이 없습니다 (~/.codex 인덱싱 후 다시 시도)": "No prior sessions yet (let ~/.codex index first)",
+    "이어서 사용할 세션을 선택하세요": "Pick a session to resume",
+    "개": "items",
+    "session_id 적용됨": "session_id applied",
+    # OO1
+    "AI 채팅": "AI Chat",
+    "메시지를 입력하세요…": "Type a message…",
+    "전송": "Send",
+    "비우기": "Clear",
+    "대화 비우기": "Clear conversation",
+    "이 대화를 비우시겠습니까?": "Clear this conversation?",
+    "Enter = 전송 · Shift+Enter = 줄바꿈": "Enter to send · Shift+Enter for newline",
+    "새 대화를 시작하세요": "Start a new conversation",
+    "프로바이더를 선택하세요": "Pick a provider",
+    "응답 실패": "Reply failed",
+    "나": "You",
+    "AI": "AI",
+    "가용 프로바이더 없음": "No available provider",
+    "대화를 markdown 파일로 다운로드": "Download conversation as a markdown file",
+    "내보낼 대화가 없습니다": "Nothing to export",
+    "내보내기 완료": "Exported",
+    # OO4
+    "시스템": "System",
+    "시스템 프롬프트 설정": "Set system prompt",
+    "시스템 프롬프트 (예: 너는 친절한 한국어 도우미다)": "System prompt (e.g. 'You are a helpful Korean assistant')",
+    "사용자가 중단함": "Cancelled by user",
+    # OO5
+    "다른 모델로 재생성": "Regenerate with another model",
+    "이전 사용자 메시지를 찾을 수 없습니다": "Could not find the prior user message",
+    "같은 사용자 메시지를 선택한 모델로 재요청합니다": "Resend the same user message to the picked model",
+    # OO6
+    "대화 검색": "Search conversations",
+    "검색": "Search",
+    "검색어 (모든 대화에서 찾기)": "Search across all conversations",
+    "일치하는 메시지 없음": "No matching messages",
+    "검색어를 입력하세요": "Type a query",
+    "건": "hits",
+    "파일 첨부됨": "file(s) attached",
+    "파일은 텍스트가 아니라 첨부 안됨": "file(s) skipped — not text",
+    # PP2
+    "비활성화 토글": "Toggle disable",
+    "비활성화됨": "Disabled",
+    "활성화됨": "Enabled",
+    # PP3
+    "선택 노드 비활성화 / 활성화": "Toggle disable on selected node",
+    "비활성화 (D)": "Disable (D)",
+    "비활성": "Disable",
+    # QQ3
+    "메모": "Note",
+    "이 노드에 대한 짧은 메모 (캔버스 hover 시 표시)": "Short note about this node (shown on canvas hover)",
+    # QQ4
+    "헬스체크 시작": "Health check start",
+    "헬스체크 완료": "Health check done",
+    # QQ6
+    "명령 history 검색 (reverse-i-search)": "Search command history (reverse-i-search)",
+    "일치하는 명령 없음": "No matching command",
+    # QQ9
+    "대화 필터…": "Filter conversations…",
+    "일치하는 대화 없음": "No matching conversations",
+    "이름 변경": "Rename",
+    "고정": "Pin",
+    "고정 해제": "Unpin",
+    "새 이름 입력:": "New name:",
+    "이 대화를 삭제할까요?": "Delete this conversation?",
+    # QQ11
+    "격자 표시 토글": "Toggle grid",
+    # QQ13
+    "붙여넣기": "Paste",
+    "인스펙터 토글": "Toggle inspector",
+    # QQ14
+    "자": "chars",
+    "토큰": "tokens",
+    # QQ15
+    "즐겨찾기": "Favourite",
+    "별 표시만 보기": "Show starred only",
+    "별 표시한 메시지 없음": "No starred messages",
+    # QQ1
+    "시스템 프롬프트 설정됨": "System prompt set",
+    "시스템 프롬프트 초기화됨": "System prompt cleared",
+    "사용법: /model <provider:model>": "Usage: /model <provider:model>",
+    "모델 전환:": "Switched model:",
+    "슬래시 명령": "Slash commands",
+    "대화 기록 비우기": "Clear chat history",
+    "시스템 프롬프트 설정 (인자 없으면 초기화)": "Set system prompt (no arg = clear)",
+    "어시니 전환 (예: codex:opus)": "Switch assignee (e.g. codex:opus)",
+    "마크다운으로 내보내기": "Export as markdown",
+    "이 목록": "This help",
+    # QQ2
+    "터미널": "Terminal",
+    "화이트리스트 read-only 명령만 실행됩니다": "Whitelisted read-only commands only",
+    "출력 비우기": "Clear output",
+    "가능한 명령": "Available commands",
+    "예: codex --version, ollama list, lazycodex status": "e.g. codex --version, ollama list, lazycodex status",
+    "명령을 입력해 시작하세요. ❔ 버튼으로 사용 가능한 명령 확인.": "Type a command to start. Click ❔ for the whitelist.",
+    "write 명령 (config set, install 등) 은 보안상 차단. Settings 탭을 사용하세요.": "Write commands (config set, install, …) are blocked for safety — use the Settings tab.",
+    # PP4
+    "노드 타임아웃 (서버 기본값 사용 = 0)": "Node timeout (0 = use server default)",
+    "0 = 서버 기본 (180s) · 30~600초 사이로 조절. 짧으면 빨리 fail, 길면 hang 인내.": "0 = server default (180s). 30–600s; shorter fails fast, longer tolerates hangs.",
+    # NN1
+    "형제 노드 실패로 자동 취소됨": "Auto-cancelled because a sibling node failed",
+    "자동 취소됨": "auto-cancelled",
+    "노드가 형제 실패로 자동 취소됨": "node(s) auto-cancelled by sibling failure",
+    "실제 실패": "real failure(s)",
+    "자동 취소된 노드는 본인 잘못이 아닙니다 — 빨간 노드를 먼저 고치세요": "Auto-cancelled nodes aren't the cause — fix the red node(s) first",
+    "워크플로우 실행 / 중단": "Run / stop workflow",
+    # LL16 already covered: 새 노드 추가 — exists.
+    # QQ18 — single-node execution (n8n parity)
+    "단독 실행": "Run alone",
+    "이 노드만 실행": "Run this node only",
+    "이 노드만 실행 (n8n parity)": "Run this node only (n8n parity)",
+    "단독 실행 결과": "Single-node result",
+    "단독 실행은 session/subagent 노드만 지원": "Single-node run supports session/subagent only",
+    "저장되지 않은 변경 — 먼저 저장하세요": "Unsaved changes — save first",
+    "실행 중...": "Running...",
+    "실행 실패": "Execution failed",
+    # QQ19 — context-menu actions
+    "출력 복사": "Copy output",
+    "출력 복사됨": "Output copied",
+    # QQ20 — pin data (n8n parity)
+    "핀 해제": "Unpin",
+    "마지막 출력 핀 설정": "Pin last output",
+    "핀 설정됨": "Pinned",
+    "핀 해제됨": "Unpinned",
+    "핀할 마지막 출력이 없습니다 — 먼저 실행하세요": "No last output to pin — run first",
+    "핀: 마지막 출력 재사용 (프로바이더 호출 없음)": "Pinned: reuses last output (no provider call)",
+    # QQ22 — edit user message
+    "편집 후 재전송": "Edit & resubmit",
+    "편집 후 Enter 로 재전송": "Edit, then press Enter to resubmit",
+    # QQ23 — branch conversation
+    "이 메시지에서 분기": "Branch from this message",
+    "분기": "branch",
+    "새 분기 생성됨": "New branch created",
+    "메시지": "messages",
+    # QQ24 — branch lineage in sidebar
+    "부모 세션으로 이동": "Jump to parent session",
+    # QQ26 — token usage badge
+    "총 토큰 사용량": "Total tokens used",
+    "세션 누적 비용": "Session cumulative cost",
+    "총 누적": "Total",
+    "오늘": "Today",
+    "fallback": "fallback",
+    # QQ27 — rubber-band selection
+    "Shift+드래그 (빈 영역)": "Shift+drag (empty)",
+    "러버밴드 다중 선택": "Rubber-band multi-select",
+    # QQ29 — multi-node copy with edges
+    "엣지": "edges",
+    # QQ30 — multi-delete
+    "노드를 삭제하시겠습니까?": "Delete these nodes?",
+    "노드 삭제됨": "nodes deleted",
+    # QQ31 — code block copy
+    "코드 복사": "Copy code",
+    # QQ32 — collapse long messages
+    "더보기": "Show more",
+    "접기": "Show less",
+    # QQ34 — align/distribute
+    "왼쪽 정렬": "Align left",
+    "오른쪽 정렬": "Align right",
+    "가로 가운데": "Align horizontal center",
+    "위 정렬": "Align top",
+    "아래 정렬": "Align bottom",
+    "세로 가운데": "Align vertical center",
+    "가로 균등 분산": "Distribute horizontally",
+    "세로 균등 분산": "Distribute vertically",
+    "정렬됨": "Aligned",
+    # QQ35 — scroll to bottom
+    "최신 메시지로": "Jump to latest",
+    # QQ36 — sticky note
+    "주석": "Annotation",
+    "실행에 영향 없는 캔버스 메모": "Canvas memos that don't affect execution",
+    "캔버스 주석용 스티키 노트. 마크다운 텍스트 + 색상 5종(노랑/파랑/초록/분홍/회색). 실행에 영향 없음 (n8n parity).": "Sticky note for canvas annotations. Markdown text + 5 colors (yellow/blue/green/pink/gray). Doesn't affect execution (n8n parity).",
+    "메모 입력...": "Type a note...",
+    "메모 텍스트 (마크다운)": "Note text (markdown)",
+    "메모 제목": "Note title",
+    "내용...": "Content...",
+    "색상": "Color",
+    "너비": "Width",
+    "높이": "Height",
+    # QQ38 — workflow tags
+    "태그 (쉼표 구분, 최대 10개)": "Tags (comma-separated, max 10)",
+    "전체": "All",
+    # QQ39 — image attach
+    "이미지": "images",
+    "이미지 붙여넣음": "image(s) pasted",
+    # QQ44 — vision warning
+    "선택된 모델이 vision 미지원일 수 있습니다 — 이미지가 무시될 수 있어요": "Selected model may not support vision — images could be ignored",
+    # QQ46 — last-run mini Gantt
+    "마지막 실행 — 노드별 소요": "Last run — per-node duration",
+    "합계": "Total",
+    "상위": "Top",
+    # QQ52 — chat /help shortcuts
+    "단축키": "Shortcuts",
+    "이전/다음 세션": "Prev/next session",
+    "이전 사용자 메시지 recall": "Recall previous user message",
+    "전송": "Send",
+    "줄바꿈": "Newline",
+    "이미지 paste / drop 으로 첨부": "Paste / drop an image to attach",
+    # QQ61 — file picker
+    "이미지 첨부 (paste/drop 도 지원)": "Attach image (paste/drop also works)",
+    "이미지 파일이 없거나 8MB 초과": "No image files (or larger than 8MB)",
+    # QQ64 — Esc cancels stream
+    "스트리밍 중단됨": "Stream cancelled",
+    # QQ68 — send button tooltip
+    "전송 (Enter)": "Send (Enter)",
+    # QQ93 — clear images
+    "이미지 모두 제거": "Clear all images",
+    # QQ94 — auto-save before single-node run
+    "저장되지 않은 변경 — 지금 저장하고 단독 실행할까요?": "Unsaved changes — save and run this node?",
+    "저장 실패": "Save failed",
+}
+
+NEW_ZH: dict[str, str] = {
+    # U1 — System tab permissions summary card
+    "권한 요약": "权限摘要",
+    # O1 — auth panel email toggle tooltip
+    "클릭으로 이메일 표시 전환": "点击切换邮件显示",
+    # Y3 + Y4
+    "실행 이력 + 노드별 상세 보기": "执行历史 + 各节点详情",
+    "워크플로우를 불러올 수 없습니다": "无法加载工作流",
+    "(이 세션의 대화 기록이 아직 비어있습니다)": "(该会话尚无对话记录)",
+    "최근 도구 호출": "最近的工具调用",
+    "세션 불러오는 중…": "正在加载会话…",
+    "실제 터미널에서 이어서 열기": "在真实终端中继续",
+    "실제 터미널": "真实终端",
+    "터미널 활성화": "终端已激活",
+    # Z2
+    "일치하는 노드 없음": "没有匹配的节点",
+    "왼쪽 패널에서 노드 타입을 선택하세요": "请从左侧面板选择节点类型",
+    # CC (v2.66.14)
+    "실행 취소 요청됨": "已请求取消",
+    "중단": "停止",
+    "(아직 실행 결과 없음 — 워크플로우를 실행하면 여기에 표시됨)": "(尚无运行结果 — 执行工作流后将显示在此)",
+    # DD (v2.66.15)
+    "실행 중단": "停止运行",
+    "현재 워크플로우 실행을 안전하게 중단합니다 (진행 중인 노드는 마무리)": "安全停止当前工作流运行（进行中的节点将完成当前层级）",
+    "워크플로우 실행 중단": "停止工作流运行",
+    "실행 중·완료된 노드 세션 목록 (sessionId, 이어쓰기, 보기)": "运行中和已完成节点的会话列表（sessionId、续接、查看）",
+    "실행 세션": "运行会话",
+    "세션 없음": "无会话",
+    "Session ID 복사": "复制会话 ID",
+    "인라인 터미널 보기": "查看内嵌终端",
+    "아직 실행된 노드가 없습니다": "尚未执行任何节点",
+    "건너뜀": "已跳过",
+    # EE (v2.66.16)
+    "프로바이더 변경": "切换提供商",
+    "선택…": "选择…",
+    "적용 + 재실행": "应用 + 重新运行",
+    "프로바이더를 선택하세요": "请选择提供商",
+    "적용됨, 재실행합니다": "已应用 — 重新运行",
+    # GG (v2.66.19)
+    "이 노드의 실행 세션 종료": "终止此节点的运行会话",
+    "이 노드의 실행을 중단하시겠습니까? (워크플로우 전체 실행이 다음 레벨에서 멈춥니다)": "停止此节点的运行？（整个工作流运行将在下一层级边界处停止）",
+    "세션 종료 요청됨": "已请求终止",
+    "진행 중인 실행이 없습니다": "没有正在进行的运行",
+    # LL5
+    "노드 복제됨": "节点已复制",
+    # LL6
+    "노드 선택됨": "节点已选中",
+    # LL8
+    "자동 정렬 완료": "已自动排列",
+    # LL9
+    "선택 노드 복제": "复制所选节点",
+    "전체 노드 선택": "选择所有节点",
+    "인스펙터 패널 토글": "切换检查面板",
+    "100% 줌으로 리셋": "重置到 100% 缩放",
+    "줌 인/아웃": "放大 / 缩小",
+    "성능 HUD 토글": "切换性能 HUD",
+    "선택 노드 10px 이동": "移动所选节点 10px",
+    "선택 노드 1px 이동 (정밀)": "移动所选节点 1px（精细）",
+    "자동 정렬": "自动布局",
+    "캔버스 패닝": "平移画布",
+    "커서 기준 줌": "光标锚定缩放",
+    "grid snap 우회": "绕过网格对齐",
+    "더블클릭 (빈 영역)": "双击（空白区域）",
+    "미니맵 토글": "切换迷你地图",
+    "다음 / 이전 노드 선택": "选择下一个 / 上一个节点",
+    "선택 노드 편집창 열기": "打开所选节点的编辑器",
+    "줌 아웃": "缩小",
+    "줌 인": "放大",
+    "연결 삭제": "删除连接",
+    "우클릭": "右键单击",
+    "미니맵 클릭": "单击迷你地图",
+    "노드/엣지 컨텍스트 메뉴": "节点 / 连接的上下文菜单",
+    "해당 위치로 캔버스 이동": "将画布平移到该位置",
+    "드래그로 너비 조절": "拖动调整宽度",
+    "노드 검색 (예: fy / ses)": "搜索节点（例如 fy / ses）",
+    "이름·타입·assignee·역할 fuzzy 검색": "在名称 / 类型 / 执行者 / 角色中模糊搜索",
+    "검색 지우기": "清除搜索",
+    "이전 / 다음 워크플로우로 전환": "切换到上一个 / 下一个工作流",
+    "자동 저장됨": "已自动保存",
+    # CC5
+    "최근 세션 목록에서 선택": "从最近的会话中选择",
+    "최근": "最近",
+    "최근 Codex 세션": "最近的 Codex 会话",
+    "세션 목록을 불러올 수 없습니다": "无法加载会话列表",
+    "이전 세션이 없습니다 (~/.codex 인덱싱 후 다시 시도)": "暂无历史会话（请等待 ~/.codex 索引）",
+    "이어서 사용할 세션을 선택하세요": "选择要继续的会话",
+    "개": "项",
+    "session_id 적용됨": "已应用 session_id",
+    # OO1
+    "AI 채팅": "AI 聊天",
+    "메시지를 입력하세요…": "请输入消息…",
+    "전송": "发送",
+    "비우기": "清空",
+    "대화 비우기": "清空对话",
+    "이 대화를 비우시겠습니까?": "确定清空此对话？",
+    "Enter = 전송 · Shift+Enter = 줄바꿈": "Enter 发送 · Shift+Enter 换行",
+    "새 대화를 시작하세요": "开始新对话",
+    "프로바이더를 선택하세요": "请选择提供商",
+    "응답 실패": "响应失败",
+    "나": "我",
+    "AI": "AI",
+    "가용 프로바이더 없음": "无可用提供商",
+    "대화를 markdown 파일로 다운로드": "将对话下载为 markdown 文件",
+    "내보낼 대화가 없습니다": "无可导出的对话",
+    "내보내기 완료": "已导出",
+    # OO4
+    "시스템": "系统",
+    "시스템 프롬프트 설정": "设置系统提示",
+    "시스템 프롬프트 (예: 너는 친절한 한국어 도우미다)": "系统提示（例如：你是一个友好的中文助手）",
+    "사용자가 중단함": "用户已中断",
+    # OO5
+    "다른 모델로 재생성": "用其他模型重新生成",
+    "이전 사용자 메시지를 찾을 수 없습니다": "未找到上一条用户消息",
+    "같은 사용자 메시지를 선택한 모델로 재요청합니다": "用所选模型重新请求同一条用户消息",
+    # OO6
+    "대화 검색": "搜索对话",
+    "검색": "搜索",
+    "검색어 (모든 대화에서 찾기)": "在所有对话中搜索",
+    "일치하는 메시지 없음": "无匹配消息",
+    "검색어를 입력하세요": "请输入搜索词",
+    "건": "条",
+    "파일 첨부됨": "个文件已附加",
+    "파일은 텍스트가 아니라 첨부 안됨": "个文件已跳过（非文本）",
+    # PP2
+    "비활성화 토글": "切换禁用",
+    "비활성화됨": "已禁用",
+    "활성화됨": "已启用",
+    # PP3
+    "선택 노드 비활성화 / 활성화": "切换所选节点的禁用",
+    "비활성화 (D)": "禁用 (D)",
+    "비활성": "禁用",
+    # QQ3
+    "메모": "备注",
+    "이 노드에 대한 짧은 메모 (캔버스 hover 시 표시)": "关于该节点的短备注（在画布悬停时显示）",
+    # QQ4
+    "헬스체크 시작": "健康检查开始",
+    "헬스체크 완료": "健康检查完成",
+    # QQ6
+    "명령 history 검색 (reverse-i-search)": "搜索命令历史 (reverse-i-search)",
+    "일치하는 명령 없음": "无匹配命令",
+    # QQ9
+    "대화 필터…": "筛选对话…",
+    "일치하는 대화 없음": "无匹配的对话",
+    "이름 변경": "重命名",
+    "고정": "置顶",
+    "고정 해제": "取消置顶",
+    "새 이름 입력:": "输入新名称：",
+    "이 대화를 삭제할까요?": "删除此对话？",
+    # QQ11
+    "격자 표시 토글": "切换网格",
+    # QQ13
+    "붙여넣기": "粘贴",
+    "인스펙터 토글": "切换检查器",
+    # QQ14
+    "자": "字",
+    "토큰": "tokens",
+    # QQ15
+    "즐겨찾기": "收藏",
+    "별 표시만 보기": "仅显示已加星",
+    "별 표시한 메시지 없음": "无加星消息",
+    # QQ1
+    "시스템 프롬프트 설정됨": "已设置系统提示",
+    "시스템 프롬프트 초기화됨": "已清空系统提示",
+    "사용법: /model <provider:model>": "用法：/model <provider:model>",
+    "모델 전환:": "已切换模型：",
+    "슬래시 명령": "斜杠命令",
+    "대화 기록 비우기": "清空对话记录",
+    "시스템 프롬프트 설정 (인자 없으면 초기화)": "设置系统提示（无参数 = 清空）",
+    "어시니 전환 (예: codex:opus)": "切换执行者（例如 codex:opus）",
+    "마크다운으로 내보내기": "导出为 markdown",
+    "이 목록": "此帮助",
+    # QQ2
+    "터미널": "终端",
+    "화이트리스트 read-only 명령만 실행됩니다": "仅允许白名单只读命令",
+    "출력 비우기": "清空输出",
+    "가능한 명령": "可用命令",
+    "예: codex --version, ollama list, lazycodex status": "例如：codex --version, ollama list, lazycodex status",
+    "명령을 입력해 시작하세요. ❔ 버튼으로 사용 가능한 명령 확인.": "输入命令开始。点击 ❔ 查看白名单。",
+    "write 명령 (config set, install 등) 은 보안상 차단. Settings 탭을 사용하세요.": "出于安全考虑禁止写命令（config set、install 等），请使用「设置」标签页。",
+    # PP4
+    "노드 타임아웃 (서버 기본값 사용 = 0)": "节点超时（0 = 使用服务器默认）",
+    "0 = 서버 기본 (180s) · 30~600초 사이로 조절. 짧으면 빨리 fail, 길면 hang 인내.": "0 = 服务器默认 (180s)。30~600s 之间。较短快速失败，较长容忍挂起。",
+    # NN1
+    "형제 노드 실패로 자동 취소됨": "因同级节点失败而自动取消",
+    "자동 취소됨": "自动取消",
+    "노드가 형제 실패로 자동 취소됨": "个节点因同级失败而自动取消",
+    "실제 실패": "实际失败",
+    "자동 취소된 노드는 본인 잘못이 아닙니다 — 빨간 노드를 먼저 고치세요": "自动取消的节点并非根因 — 请先修复红色节点",
+    "워크플로우 실행 / 중단": "运行 / 停止工作流",
+    # QQ18 — single-node execution (n8n parity)
+    "단독 실행": "单独执行",
+    "이 노드만 실행": "仅运行此节点",
+    "이 노드만 실행 (n8n parity)": "仅运行此节点（n8n 等价）",
+    "단독 실행 결과": "单独执行结果",
+    "단독 실행은 session/subagent 노드만 지원": "单独执行仅支持 session/subagent 节点",
+    "저장되지 않은 변경 — 먼저 저장하세요": "存在未保存的更改 — 请先保存",
+    "실행 중...": "正在执行...",
+    "실행 실패": "执行失败",
+    # QQ19
+    "출력 복사": "复制输出",
+    "출력 복사됨": "已复制输出",
+    # QQ20
+    "핀 해제": "取消固定",
+    "마지막 출력 핀 설정": "固定上次输出",
+    "핀 설정됨": "已固定",
+    "핀 해제됨": "已取消固定",
+    "핀할 마지막 출력이 없습니다 — 먼저 실행하세요": "没有可固定的上次输出 — 请先运行",
+    "핀: 마지막 출력 재사용 (프로바이더 호출 없음)": "已固定：复用上次输出（不调用提供者）",
+    # QQ22
+    "편집 후 재전송": "编辑后重发",
+    "편집 후 Enter 로 재전송": "编辑后按 Enter 重发",
+    # QQ23
+    "이 메시지에서 분기": "从此消息分支",
+    "분기": "分支",
+    "새 분기 생성됨": "已创建新分支",
+    "메시지": "条消息",
+    # QQ24
+    "부모 세션으로 이동": "跳转到父会话",
+    # QQ26
+    "총 토큰 사용량": "总令牌使用量",
+    "세션 누적 비용": "会话累计费用",
+    "총 누적": "总计",
+    "오늘": "今日",
+    "fallback": "回退",
+    # QQ27
+    "Shift+드래그 (빈 영역)": "Shift+拖动（空白处）",
+    "러버밴드 다중 선택": "框选多个节点",
+    # QQ29
+    "엣지": "条边",
+    # QQ30
+    "노드를 삭제하시겠습니까?": "删除这些节点？",
+    "노드 삭제됨": "个节点已删除",
+    # QQ31
+    "코드 복사": "复制代码",
+    # QQ32
+    "더보기": "展开更多",
+    "접기": "收起",
+    # QQ34
+    "왼쪽 정렬": "左对齐",
+    "오른쪽 정렬": "右对齐",
+    "가로 가운데": "水平居中",
+    "위 정렬": "顶部对齐",
+    "아래 정렬": "底部对齐",
+    "세로 가운데": "垂直居中",
+    "가로 균등 분산": "水平等距分布",
+    "세로 균등 분산": "垂直等距分布",
+    "정렬됨": "已对齐",
+    # QQ35
+    "최신 메시지로": "跳到最新消息",
+    # QQ36
+    "주석": "注释",
+    "실행에 영향 없는 캔버스 메모": "不影响执行的画布备忘",
+    "캔버스 주석용 스티키 노트. 마크다운 텍스트 + 색상 5종(노랑/파랑/초록/분홍/회색). 실행에 영향 없음 (n8n parity).": "画布注释用便利贴。Markdown 文本 + 5 种颜色（黄/蓝/绿/粉/灰）。不影响执行（n8n 等价）。",
+    "메모 입력...": "输入备忘...",
+    "메모 텍스트 (마크다운)": "备忘文本（Markdown）",
+    "메모 제목": "备忘标题",
+    "내용...": "内容...",
+    "색상": "颜色",
+    "너비": "宽度",
+    "높이": "高度",
+    # QQ38
+    "태그 (쉼표 구분, 최대 10개)": "标签（逗号分隔，最多 10 个）",
+    "전체": "全部",
+    # QQ39
+    "이미지": "张图片",
+    "이미지 붙여넣음": "张图片已粘贴",
+    # QQ44
+    "선택된 모델이 vision 미지원일 수 있습니다 — 이미지가 무시될 수 있어요": "所选模型可能不支持视觉 — 图片可能被忽略",
+    # QQ46
+    "마지막 실행 — 노드별 소요": "上次运行 — 各节点耗时",
+    "합계": "合计",
+    "상위": "前",
+    # QQ52
+    "단축키": "快捷键",
+    "이전/다음 세션": "上一个/下一个会话",
+    "이전 사용자 메시지 recall": "调出上一条用户消息",
+    "전송": "发送",
+    "줄바꿈": "换行",
+    "이미지 paste / drop 으로 첨부": "粘贴 / 拖放图片以附加",
+    # QQ61
+    "이미지 첨부 (paste/drop 도 지원)": "附加图片（也支持粘贴/拖放）",
+    "이미지 파일이 없거나 8MB 초과": "没有图片文件或超过 8MB",
+    # QQ64
+    "스트리밍 중단됨": "已取消流式输出",
+    # QQ68
+    "전송 (Enter)": "发送 (Enter)",
+    # QQ93
+    "이미지 모두 제거": "清除所有图片",
+    # QQ94
+    "저장되지 않은 변경 — 지금 저장하고 단독 실행할까요?": "未保存的更改 — 现在保存并运行该节点？",
+    "저장 실패": "保存失败",
+}

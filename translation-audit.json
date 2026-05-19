@@ -1,0 +1,1358 @@
+{
+  "source": "dist/index.html",
+  "total": 212,
+  "items": [
+    {
+      "text": "'{name}' 가 {mcp_file} 에 없음",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "- 한국어 요약이 불가능하면 원문 기술 용어 나열.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": ".codex.json 파싱 실패: {e}",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": ".mcp.json 파싱 실패: {e}",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "5분 캐시 + stale-while-revalidate. 캐시 있으면 절대 블로킹 안 함.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "<cwd>/.codex 디렉토리에서 에이전트/커맨드/훅/스킬/settings 전부 스캔.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "AI 네이티브 웹 검색. EXA_API_KEY 필요.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "API base URL (self-hosted / proxy 시)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "API 레퍼런스, 온보딩 가이드, ADR, 릴리즈 노트.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "API 키 인증용 (OAuth 로그인 대신 사용)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "AWS Bedrock 백엔드 사용 (0/1)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Bash 도구 기본 타임아웃 (ms)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Bash 도구 최대 타임아웃 (ms)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Bedrock 용 AWS region",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Brave API 기반 웹 검색. BRAVE_API_KEY 필요.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "CI/CD, 인프라 자동화, 모니터링, 온콜 런북.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Codex CLI 를 새 세션에서 이 MCP 호출 시 활성화. 필요 시 재시작.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Codex CLI 상태라인 커스터마이징.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Codex CLI 실행 실패: {e}",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Codex CLI 오류: {(proc.stderr or '')[:400]}",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Codex 가 최근 발표한 신기능을 찾아서 신기능 탭에 추가",
+      "count": 1,
+      "sample_lines": [
+        98
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Codex 계정 연결 필요",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "DB에서 slug(project_dir) → 실제 cwd 매핑.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Drive 검색 / 파일 가져오기 (OAuth 설정 필요).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "EDA, 가설 검증, 비즈니스 지표 분석, 대시보드 작성.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Fast mode 기본",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Fast mode 기본 모델",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "GitHub (공식)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Google Vertex AI 백엔드 사용 (0/1)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "HTTP 프록시",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "HTTPS 프록시 (회사 망 등)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Haiku (가장 빠름/저렴)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Haiku 등 작은 보조 모델 지정",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "JSON 파싱 실패: {e}",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "LazyCodex — 최적화 대시보드",
+      "count": 1,
+      "sample_lines": [
+        6
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Linear 이슈/프로젝트 관리.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Notion 페이지 검색/편집.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "OWASP 관점 코드 리뷰, 비밀 누출, 인증·인가, 의존성 취약점.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Opus (최강/느림)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Playwright 대안. Chrome 자동화.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "QA 엔지니어",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "REST/GraphQL API, DB 스키마, 비즈니스 로직 구현을 주도.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "React/Next.js/Vue 컴포넌트와 상태 관리, 접근성·성능 고려.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Slack 메시지 조회/전송. SLACK_BOT_TOKEN 필요.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Sonnet (균형형)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "TODO: 이 에이전트의 용도",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "URL 가져오기 (HTML → 텍스트/마크다운 변환).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "UX/UI 디자이너",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "Vertex 용 region",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "bash-commands.log tail. q= 검색어, limit= 기본 200.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "codex CLI 설치 필요",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "codex-haiku-4-5 (핀)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "codex-opus-4-6 (핀)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "codex-opus-4-7 (핀)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "codex-sonnet-4-6 (핀)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "cost-tracker.log 의 도구 사용 + sessions DB 의 토큰 사용량 종합.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "cwd 문자열(절대경로 or 슬러그) → 실제 홈 하위 절대경로.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "cwd 와 name 필수",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "iOS(SwiftUI) / Android(Kotlin) / Flutter 공통 패턴.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "inherit (메인 Codex 따라감)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "kind 에 따라 [{id, desc}, ...] 수집. 순환 회피를 위해 late import.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "markdown frontmatter의 특정 키를 업서트 (---...--- 블록 없으면 생성).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "raw 통째 저장 (기존 편집).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "settings.json 의 model 관련 키 요약 + 빌트인 모델 목록.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "settings.json 의 statusLine 관련 설정 + keybindings 파일 표시.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "settings.json.env + 현재 프로세스의 실제 환경값 표시.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "settings.model 비워두기",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "telemetry 파일들 요약 (이벤트 타입 카운트).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "values = {placeholder_key: user_input} 로 spec 치환.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "{mcp_file} 없음",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "~/.codex 위치 override",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "~/.codex.json 없음",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "~/.codex.json 없음. `codex auth login` 먼저 실행.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "~/.codex/homunculus/projects.json — Codex CLI 내부 프로젝트 추적.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "~/.codex/projects/*/memory/*.md 전부 나열.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "~/.codex/scheduled-tasks/ 목록 + Auto-Resume 활성 워커.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "~/.codex/tasks/<sessionId>/*.json 태스크 전부 수집.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "✍️ 콘텐츠 / 마케팅",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "✨ 스킬 관리",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "가장 빠름/저렴",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "개발자형 (Developer)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "검색… ⌘K · /",
+      "count": 1,
+      "sample_lines": [
+        115
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "구현 전략 수립 — 단계별 플랜과 핵심 파일 식별.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "균형형",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "균형형 (Balanced)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "기본 (Codex CLI 선택)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "기본 모델 override (예: codex-opus-4-7)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "기본적인 안전과 자동화를 균형있게",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "기술 문서 작성자",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "내리기",
+      "count": 1,
+      "sample_lines": [
+        188
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "네비게이션 도우미 ↔ 멀티 에이전트 오케스트레이터 전환",
+      "count": 1,
+      "sample_lines": [
+        207
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "다크",
+      "count": 1,
+      "sample_lines": [
+        136
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "단계적 추론 프레임. 복잡한 설계 문제 정리용.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "닫기",
+      "count": 1,
+      "sample_lines": [
+        187
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "대시보드 도우미",
+      "count": 1,
+      "sample_lines": [
+        195
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "대시보드 모드 — 사이드바 탭 필터",
+      "count": 1,
+      "sample_lines": [
+        119
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "대시보드 모드 선택",
+      "count": 1,
+      "sample_lines": [
+        119
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "데이터 사이언티스트",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "데이터베이스 전문가",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "등록된 MCP 서버가 아닙니다: {name}",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "라이트",
+      "count": 1,
+      "sample_lines": [
+        139
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "로컬 SQLite DB 쿼리 실행.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "맥 스튜디오",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "맥 프로",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "맥미니",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "맥북",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "머신러닝 엔지니어",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "메타 디렉토리 하위 jsonl 첫 줄에서 cwd 복원 (DB 미인덱스 세션용 fallback).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "명령어 id + description 기반 카테고리 결정.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "모델 학습·평가·배포 파이프라인, 데이터셋 처리, 지표 추적.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "모델명·호스트명에서 한국어 라벨 추론 — UI 표시용.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "모드별 사용량",
+      "count": 1,
+      "sample_lines": [
+        160
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "모든 변경 작업에 수동 승인",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "모바일 개발자",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "미드나잇",
+      "count": 1,
+      "sample_lines": [
+        142
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "백엔드 개발자",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "버전 정보 / 변경 이력",
+      "count": 1,
+      "sample_lines": [
+        102
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "번역 JSON 없음",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "범용 에이전트 — 복잡한 질의 조사 / 코드 검색 / 멀티스텝 작업.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "변경된 코드의 정확성·가독성·유지보수성 점검.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "보안 리뷰어",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "부팅 시 호출 — 첫 요청의 6초 지연을 제거한다.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "빌트인 에이전트는 Codex CLI에 내장되어 있어 파일로 편집할 수 없습니다.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "빠른 설정 — 모든 파라미터",
+      "count": 1,
+      "sample_lines": [
+        156
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "사용자 home 안의 .mcp.json 파일들 → 프로젝트 범위 MCP 리스트.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "사용자 플로우, 정보구조, 마이크로인터랙션, 접근성.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "사이드바 열기/닫기",
+      "count": 1,
+      "sample_lines": [
+        110
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "사이드바 접기/펼치기",
+      "count": 2,
+      "sample_lines": [
+        88
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "사이드바 토글",
+      "count": 1,
+      "sample_lines": [
+        110
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "상위 설계, 모듈 경계, 트레이드오프 분석, ADR 작성.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "선셋",
+      "count": 1,
+      "sample_lines": [
+        148
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "설정",
+      "count": 1,
+      "sample_lines": [
+        127
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "설정 메뉴 열기",
+      "count": 1,
+      "sample_lines": [
+        127
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "설치 전 플레이스홀더 목록을 돌려줌 → 프런트가 값을 받아 install 호출.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "성능 엔지니어",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "세션 간 지식 그래프 저장 / 검색 (공식 MCP).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "세션 재인덱스",
+      "count": 2,
+      "sample_lines": [
+        95,
+        96
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "세션의 메인 모델과 동일 — 기본값",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "수동 Authorization Bearer 토큰 지정",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "스키마 설계, 인덱싱, 쿼리 튜닝, 마이그레이션.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "실제 `codex mcp list` 호출 (단일 in-flight 보장).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "실제 브라우저 자동화 (클릭/스냅샷/평가).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "아이맥",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "아키텍트",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "안녕하세요! 대시보드 기능에 대해 무엇이든 물어보세요.",
+      "count": 1,
+      "sample_lines": [
+        201
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "안전 우선 (Cautious)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "알려진 MCP 카탈로그 + 현재 설치 상태.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "언어",
+      "count": 1,
+      "sample_lines": [
+        150
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "업데이트 비활성 (legacy)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "연결됨",
+      "count": 1,
+      "sample_lines": [
+        125
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "예: MCP 어디서 설정해?",
+      "count": 1,
+      "sample_lines": [
+        219
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "오케스트레이터 프리셋",
+      "count": 1,
+      "sample_lines": [
+        212
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "요구사항 분석, 스프린트 플래닝, 이슈 관리, 보고.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "이미 '{as_name}' 이름으로 등록됨 — 다른 이름으로 시도하세요.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "이미 존재: {target.name} (overwrite=true 로 덮어쓰기)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "이슈/PR/커밋/워크플로 조작. GITHUB_TOKEN 필요.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "읽기 전용",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "읽기 전용 Postgres 쿼리.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "자동 (OS)",
+      "count": 1,
+      "sample_lines": [
+        133
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "자동 업데이트 끄기 (0/1)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "자주 쓰는 도구 자동 승인 — 빠른 반복 작업",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "전송",
+      "count": 1,
+      "sample_lines": [
+        220
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "전역 에이전트 삭제. 플러그인/빌트인 삭제 불가.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "지정한 디렉토리 파일 읽기/쓰기. 보안상 allow-list 필수.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "채팅 전송",
+      "count": 1,
+      "sample_lines": [
+        220
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "최강 성능, 느림/비쌈",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "최신 라이브러리 문서·예제를 실시간으로 가져오는 MCP (Upstash 제공)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "최신 정보 로딩",
+      "count": 2,
+      "sample_lines": [
+        98,
+        99
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "코드 리뷰어",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "코드베이스 탐색 전용 고속 에이전트.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "키보드 단축키",
+      "count": 1,
+      "sample_lines": [
+        103
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "키보드 단축키 (?)",
+      "count": 1,
+      "sample_lines": [
+        103
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "탐색 모드 (Read-only)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "테마",
+      "count": 1,
+      "sample_lines": [
+        131
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "테스트 설계, E2E 자동화, 회귀 방지, 품질 게이트.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "텔레메트리 비활성 (0/1)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "텔레메트리·업데이트 비활성화 (0/1)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "토큰은 세션 DB (~/.codex/projects/*/*.jsonl 에서 파싱) 기반. 비용은 2025 공식 요금표 기반 추정.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "특정 버전 고정",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "펼치기",
+      "count": 1,
+      "sample_lines": [
+        189
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "포레스트",
+      "count": 1,
+      "sample_lines": [
+        145
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "풀스택 개발자",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프로젝트 .mcp.json 에서 엔트리 삭제. body: { cwd, name }",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프로젝트 cwd 기준 스냅샷: 저장소-로컬 .codex + ~/.codex.json 프로젝트 엔트리 + 세션 목록.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프로젝트 cwd 의 도구 사용 내역 드릴다운.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프로젝트 매니저",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프로젝트 슬러그 '{cwd}' 의 실제 경로를 찾을 수 없습니다 (세션 재인덱스 필요할 수 있음)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프로파일링, 병목 분석, 알고리즘·메모리·IO 최적화.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프록시 제외 도메인",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프론트·백엔드 모두 다루는 얇은 수직 슬라이스 구현.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "프론트엔드 개발자",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "필수 값 누락: {', '.join(missing)}",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "하위 호환 shim — kind=cmd 로 강제.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "한국어",
+      "count": 1,
+      "sample_lines": [
+        151
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "해당 탭으로 바로 안내해 드릴게요.",
+      "count": 1,
+      "sample_lines": [
+        201
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "허용할 디렉토리 절대경로 (예: /Users/yoo/projects)",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "현재 호스트 정보 반환. 최초 1회만 실제 감지, 이후 캐시.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "홈 디렉토리 밖 경로 거부",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "활성 세션 JSONL 에서 terminal / IDE 정보 추출 (best-effort).",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🏗️ 계획 / 아키텍처",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🏥 헬스케어",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "💬 도우미 모드",
+      "count": 1,
+      "sample_lines": [
+        208
+      ],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "📚 문서 / 검색",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "📝 커밋 / PR / Git",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🔍 코드 리뷰",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🔒 보안",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🔧 빌드 / 컴파일",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🚀 배포 / DevOps",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🛠️ 기타 / 범용",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🛡️ 운영 / 모니터링",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🤖 에이전트 / 오케스트레이션",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "🧪 테스트 / TDD",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    }
+  ]
+}
