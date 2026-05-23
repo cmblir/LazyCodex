@@ -12646,22 +12646,17 @@ VIEWS.commands = async () => {
         <h3 class="text-xs uppercase tracking-widest text-[var(--text-dim)] mb-2">${catLabels[cid]||cid} · ${groups[cid].length}</h3>
         <div class="grid-list">
           ${groups[cid].map(c => {
-            // v2.36.0 — Heuristic: ECC commands have plugin scope or path under
-            // ~/.codex/plugins/cache/ecc/. Use this to route Run via Run Center.
-            const isEcc = (c.scope === 'plugin') || /\/plugins\/cache\/ecc\//.test(c.path||'') || /^ecc[:/]/i.test(c.id||'');
             const cmdName = c.name || c.id;
-            const itemId = isEcc ? `ecc:cmd:${cmdName.replace(/^\//, '')}` : '';
             const isProj = c.scope === 'project';
             const editFn = isProj ? `editProjectCommand('${escapeHtml(c.id)}')` : '';
             return `
             <div class="card p-4 hover-lift ${isProj?'cursor-pointer':''}" ${isProj?`onclick="${editFn}"`:''}>
               <div class="flex items-center gap-2 mb-2 flex-wrap">
                 <span class="chip ${c.scope==='user'?'chip-ok':'chip-accent'}">${c.scope}</span>
-                ${isEcc ? '<span class="chip" style="background:rgba(16,163,127,0.18);border-color:rgba(16,163,127,0.45);color:var(--text);">ECC</span>' : ''}
                 <span class="font-semibold text-sm mono">/${escapeHtml(cmdName)}</span>
                 ${isProj
                   ? `<button class="btn text-[10px] ml-auto" onclick="event.stopPropagation();deleteProjectCommand('${escapeHtml(c.id)}')" style="color:#fca5a5;">${t('삭제')}</button>`
-                  : `<button class="btn text-[10px] ml-auto" onclick="_cmdQuickRun('${escapeHtml(itemId || cmdName)}', ${isEcc ? 'true' : 'false'}, '${escapeHtml(cmdName)}')" title="${t('대시보드에서 바로 실행')}">▶ ${t('실행')}</button>`}
+                  : `<button class="btn text-[10px] ml-auto" onclick="_cmdCopySlash('${escapeHtml(cmdName)}')" title="${t('Codex CLI에 붙여넣기')}">📋 ${t('복사')}</button>`}
               </div>
               <div class="text-xs text-[var(--text-mute)] line-clamp-3">${escapeHtml(_localDesc(c) || c.description || '—')}</div>
             </div>`;
@@ -12688,82 +12683,10 @@ function setCmdCat(cat) {
   renderView();
 }
 
-// v2.36.0 — Run a slash command directly from the Commands tab. ECC commands
-// route through Run Center (have full execution context); non-ECC just open
-// the Run Center modal with a generic dispatch.
-async function _cmdQuickRun(itemIdOrName, isEcc, cmdName) {
-  if (!isEcc) {
-    // Non-ECC: invoke as a freeform prompt — show the Run Center generic modal.
-    const item = {
-      id: 'cmd:' + cmdName,
-      source: 'local',
-      kind: 'command',
-      name: '/' + cmdName,
-      description: t('로컬 슬래시 명령 — 대시보드에서 1회성 실행'),
-      category: 'general',
-      invocation: t('You are dispatching the local slash command') + ' /' + cmdName + '. ' +
-                  t('Treat the user goal as the argument to the command.'),
-      favorite: false,
-    };
-    __rc.selectedItem = item;
-    __rc.lastResult = null;
-    // Inject into catalog cache so /api/run/execute can find it — but our
-    // catalog is server-side. For non-ECC we open a workflow scaffold instead.
-    toast(t('이 명령은 ECC가 아니라 즉시 실행 대신 워크플로우로 변환됩니다'), 'info');
-    // Simulate the run-center "to-workflow" path with a 1-node session draft.
-    // QQ237 — pick the first available provider:model rather than pinning
-    // codex:gpt-5-codex so the generated workflow runs out-of-the-box on
-    // machines without the codex CLI installed.
-    const _firstReal = (() => {
-      const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
-      if (!provs.length) return 'codex:gpt-5-codex';
-      const p0 = provs[0];
-      const m0 = (p0.models || [])[0];
-      return `${p0.id.replace('-cli', '').replace('-api', '')}:${m0.id || m0.name}`;
-    })();
-    const draft = {
-      name:        `Cmd · /${cmdName}`,
-      description: `Quick run of /${cmdName} via Commands tab`,
-      nodes: [
-        {id: 'n-rcs', type: 'start',   x: 80,  y: 200, title: 'Start',   data: {}},
-        {id: 'n-rcr', type: 'session', x: 320, y: 200, title: '/' + cmdName,
-         data: {subject: '/' + cmdName, description: t('Run the slash command') + ' /' + cmdName,
-                assignee: _firstReal, inputsMode: 'concat'}},
-        {id: 'n-rco', type: 'output',  x: 560, y: 200, title: 'Output',  data: {exportTo:''}},
-      ],
-      edges: [
-        {id: 'e1', from: 'n-rcs', to: 'n-rcr', fromPort: 'out', toPort: 'in'},
-        {id: 'e2', from: 'n-rcr', to: 'n-rco', fromPort: 'out', toPort: 'in'},
-      ],
-      viewport: {panX:0,panY:0,zoom:1},
-      repeat: {enabled:false, maxIterations:1, intervalSeconds:0},
-      notify: {slack:'', discord:''},
-      policy: {tokenBudgetTotal:0, onBudgetExceeded:'stop', fallbackProvider:''},
-    };
-    const r = await api('/api/workflows/save', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(draft),
-    });
-    if (r.ok) {
-      try { localStorage.setItem('__wf_open_id', r.id); } catch(_){}
-      go('workflows');
-    }
-    return;
-  }
-  // ECC: open the Run Center modal pre-filled with this command.
-  go('runCenter');
-  // Wait for the catalog to populate, then open the item.
-  let tries = 0;
-  const tryOpen = () => {
-    if (__rc.catalog.length) {
-      _rcOpenItem(itemIdOrName);
-    } else if (++tries < 20) {
-      setTimeout(tryOpen, 150);
-    } else {
-      toast(t('카탈로그 로드 실패'), 'err');
-    }
-  };
-  setTimeout(tryOpen, 200);
+function _cmdCopySlash(cmdName) {
+  const text = '/' + String(cmdName || '').replace(/^\//, '');
+  _copyText(text);
+  toast(t('Codex CLI에서 실행할 명령을 복사했습니다') + ': ' + text, 'ok');
 }
 
 // ── description 다국어 헬퍼 ──
