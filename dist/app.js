@@ -1336,7 +1336,8 @@ VIEWS.features = async () => {
       </div>
       <div class="flex gap-2">
         <button class="btn text-xs" onclick="refreshFeatures()">📡 최신 정보 로딩</button>
-        <a class="btn text-xs" href="https://developers.openai.com/codex/changelog" target="_blank" rel="noopener noreferrer">📖 전체 릴리즈 노트</a>
+        <a class="btn text-xs" href="https://openai.com/index/codex-for-almost-everything/" target="_blank" rel="noopener noreferrer">📖 OpenAI Codex 업데이트</a>
+        <a class="btn text-xs" href="https://developers.openai.com/codex/" target="_blank" rel="noopener noreferrer">Docs</a>
       </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1367,7 +1368,7 @@ async function refreshFeatures() {
     closeModal();
     if (r.error) { toast(errMsg(r), 'err'); return; }
     const n = (r.features||[]).length;
-    toast(n ? `✨ 신기능 ${n}개 발견` : '새로운 기능 없음 (이미 최신)', n?'ok':'info');
+    toast(n ? `✨ OpenAI Codex 공식 항목 ${n}개 동기화` : '새로운 기능 없음 (이미 최신)', n?'ok':'info');
     renderView();
   } catch (e) { closeModal(); toast(e.message, 'err'); }
 }
@@ -25266,14 +25267,14 @@ document.getElementById('btn-latest-features').onclick = async () => {
   const btn = document.getElementById('btn-latest-features');
   const orig = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '<span>⏳</span><span>Codex 에게 조사 중… (~1분)</span>';
+  btn.innerHTML = '<span>⏳</span><span>OpenAI Codex 공식 출처 확인 중…</span>';
   try {
     const r = await api('/api/features/refresh', {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({}),
     });
     if (r.error) { toast(errMsg(r), 'err'); return; }
     const n = (r.features||[]).length;
-    toast(n ? `✨ 신기능 ${n}개 발견! 좌측 '🆕 신기능' 탭 확인` : '새로운 기능 없음 (이미 최신)', n?'ok':'info');
+    toast(n ? `✨ OpenAI Codex 공식 항목 ${n}개 동기화! 좌측 '🆕 신기능' 탭 확인` : '새로운 기능 없음 (이미 최신)', n?'ok':'info');
     if (state.view === 'features') renderView();
     else go('features');
   } catch (e) { toast(e.message, 'err'); }

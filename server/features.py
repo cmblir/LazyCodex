@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import time
+import urllib.request
 from collections import Counter, defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -915,64 +916,75 @@ _LATEST_FEATURES_CACHE = _env_path(
     Path.home() / ".codex-dashboard-latest-features.json",
 )
 
-# 빌트인 신기능 카탈로그 — 수동으로 큐레이션 (최신 공식 발표 기반)
+# 빌트인 신기능 카탈로그 — OpenAI Codex 공식 발표/문서 기반.
 BUILTIN_NEW_FEATURES = [
     {
-        "id": "design", "icon": "🎨", "label": "Codex Design",
-        "released": "2026-04-17",
-        "launchUrl": "https://codex.ai/design",
-        "docUrl": "https://www.anthropic.com/news/codex-design-anthropic-labs",
-        "summary": "프롬프트 → 비주얼 디자인/슬라이드/원페이저. Opus 4.7 기반.",
-    },
-    {
-        "id": "opus47", "icon": "🧠", "label": "Opus 4.7",
+        "id": "codex-everything", "icon": "🧭", "label": "Codex for almost everything",
         "released": "2026-04-16",
-        "launchUrl": "https://platform.codex.com/docs/en/about-codex/models/whats-new-codex-4-7",
-        "docUrl": "https://www.anthropic.com/news/codex-opus-4-7",
-        "summary": "복잡 추론 + 에이전틱 코딩 + 고해상도 비전. Opus 4.6 와 동가격 ($5/$25 per MTok).",
+        "launchUrl": "https://openai.com/index/codex-for-almost-everything/",
+        "docUrl": "https://openai.com/index/codex-for-almost-everything/",
+        "summary": "컴퓨터 사용, 앱/커넥터, 이미지 생성, 메모리, 반복 작업, PR/SSH/브라우저 워크플로우까지 확장된 Codex 업데이트.",
     },
     {
-        "id": "managedAgents", "icon": "🤖", "label": "Managed Agents",
-        "released": "2026-04-08",
-        "launchUrl": "https://platform.codex.com/docs/en/managed-agents/overview",
-        "docUrl": "https://platform.codex.com/docs/en/managed-agents/overview",
-        "summary": "Codex 를 완전 관리형 에이전트 하네스로 실행. 샌드박스 + 내장 도구 + SSE 스트리밍.",
+        "id": "gpt-55", "icon": "🧠", "label": "GPT-5.5 for coding agents",
+        "released": "2026-05-23",
+        "launchUrl": "https://developers.openai.com/api/docs/guides/latest-model",
+        "docUrl": "https://developers.openai.com/api/docs/guides/latest-model",
+        "summary": "복잡한 코딩, 도구 사용, 장기 에이전트 작업에 맞춘 최신 OpenAI 모델 가이드. reasoning effort 기본값은 medium.",
     },
     {
-        "id": "antCli", "icon": "⌨️", "label": "ant CLI",
-        "released": "2026-04-08",
-        "launchUrl": "https://platform.codex.com/docs/en/api/sdks/cli",
-        "docUrl": "https://platform.codex.com/docs/en/api/sdks/cli",
-        "summary": "Codex API 커맨드라인 클라이언트. Codex CLI 네이티브 통합 + YAML 리소스 버전 관리.",
+        "id": "codex-app", "icon": "🖥️", "label": "Codex desktop app",
+        "released": "2026-02-02",
+        "launchUrl": "https://openai.com/index/introducing-the-codex-app/",
+        "docUrl": "https://openai.com/index/introducing-the-codex-app/",
+        "summary": "macOS/Windows 앱에서 여러 에이전트를 병렬로 관리하고, worktree와 diff 검토를 포함한 장기 작업을 감독합니다.",
     },
     {
-        "id": "advisorTool", "icon": "🧭", "label": "Advisor Tool",
-        "released": "2026-04-09",
-        "launchUrl": "https://platform.codex.com/docs/en/agents-and-tools/tool-use/advisor-tool",
-        "docUrl": "https://platform.codex.com/docs/en/agents-and-tools/tool-use/advisor-tool",
-        "summary": "빠른 executor 모델 + 고지능 advisor 모델 페어링으로 장기 에이전트 품질↑ 비용↓.",
+        "id": "codex-cli-commands", "icon": "/", "label": "Codex CLI slash commands",
+        "released": "2026-05-23",
+        "launchUrl": "https://developers.openai.com/codex/cli/slash-commands#built-in-slash-commands",
+        "docUrl": "https://developers.openai.com/codex/cli/slash-commands#built-in-slash-commands",
+        "summary": "/goal, /skills, /plugins, /hooks, /memories, /review, /statusline 등 Codex CLI의 공식 명령 표면입니다.",
     },
     {
-        "id": "codeRoutines", "icon": "🔁", "label": "Codex CLI Routines",
-        "released": "2026-04-14",
-        "launchUrl": "https://www.anthropic.com/engineering/codex-code-routines",
-        "docUrl": "https://docs.codex.com/en/docs/codex-code/routines",
-        "summary": "반복 작업을 routine 으로 저장. Mac offline 이어도 웹 인프라에서 실행.",
+        "id": "codex-config-harness", "icon": "🧷", "label": "config.toml harness",
+        "released": "2026-05-23",
+        "launchUrl": "https://developers.openai.com/codex/config-reference",
+        "docUrl": "https://developers.openai.com/codex/config-reference",
+        "summary": "모델, 승인, 샌드박스, MCP, 앱, 스킬, 하위 에이전트, web_search를 ~/.codex/config.toml로 제어합니다.",
     },
     {
-        "id": "agentSkills", "icon": "🎯", "label": "Agent Skills",
-        "released": "2025-10-16",
-        "launchUrl": "https://platform.codex.com/docs/en/agents-and-tools/agent-skills/overview",
-        "docUrl": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills",
-        "summary": "스킬(지시+스크립트+리소스 묶음) 을 Codex 가 동적으로 로드. PowerPoint/Excel/Word/PDF 기본 제공.",
+        "id": "codex-cloud-cli", "icon": "☁️", "label": "Codex Cloud from CLI",
+        "released": "2026-05-23",
+        "launchUrl": "https://developers.openai.com/codex/cli/reference#command-overview",
+        "docUrl": "https://developers.openai.com/codex/cli/reference#command-overview",
+        "summary": "codex cloud/app/app-server/apply/exec/features 같은 CLI 명령으로 로컬과 클라우드 작업을 연결합니다.",
     },
     {
-        "id": "mythos", "icon": "🛡", "label": "Codex Mythos (보안)",
-        "released": "2026-04-07",
-        "launchUrl": "https://anthropic.com/glasswing",
-        "docUrl": "https://red.anthropic.com/2026/mythos-preview/",
-        "summary": "방어 보안 특화 언어모델. 초대제 research preview (Project Glasswing).",
+        "id": "codex-plugins-skills", "icon": "✨", "label": "Plugins and Skills",
+        "released": "2026-05-23",
+        "launchUrl": "https://developers.openai.com/codex/plugins",
+        "docUrl": "https://developers.openai.com/codex/skills",
+        "summary": "플러그인과 SKILL.md로 반복 워크플로우, 문서/스프레드시트/프레젠테이션/브라우저 작업 능력을 확장합니다.",
     },
+    {
+        "id": "codex-upgrades", "icon": "🚀", "label": "GPT-5-Codex and Codex upgrades",
+        "released": "2025-09-15",
+        "launchUrl": "https://openai.com/index/introducing-upgrades-to-codex/",
+        "docUrl": "https://openai.com/index/introducing-upgrades-to-codex/",
+        "summary": "GPT-5-Codex, 개선된 CLI/IDE/cloud/code review, 이미지 입력, todo 추적, web search와 MCP 지원이 포함된 Codex 업그레이드.",
+    },
+]
+
+_OFFICIAL_CODEX_FEATURE_SOURCES = [
+    "https://openai.com/index/codex-for-almost-everything/",
+    "https://openai.com/index/introducing-the-codex-app/",
+    "https://openai.com/index/introducing-upgrades-to-codex/",
+    "https://developers.openai.com/api/docs/guides/latest-model",
+    "https://developers.openai.com/codex/cli/slash-commands#built-in-slash-commands",
+    "https://developers.openai.com/codex/config-reference",
+    "https://developers.openai.com/codex/plugins",
+    "https://developers.openai.com/codex/skills",
 ]
 
 
@@ -985,95 +997,41 @@ def api_features_list() -> dict:
             dynamic = cache.get("features") or []
         except Exception:
             dynamic = []
+    builtin_ids = {f.get("id") for f in BUILTIN_NEW_FEATURES}
+    dynamic = [f for f in dynamic if isinstance(f, dict) and f.get("id") not in builtin_ids]
     return {"builtin": BUILTIN_NEW_FEATURES, "dynamic": dynamic,
             "lastFetched": _LATEST_FEATURES_CACHE.stat().st_mtime if _LATEST_FEATURES_CACHE.exists() else 0}
 
+def _check_official_codex_sources() -> list[dict]:
+    checked: list[dict] = []
+    for url in _OFFICIAL_CODEX_FEATURE_SOURCES:
+        ok = False
+        status = 0
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "LazyCodex/1.0"})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                status = getattr(resp, "status", 0) or 200
+                ok = 200 <= status < 400
+        except Exception as e:
+            checked.append({"url": url, "ok": False, "status": status, "error": str(e)[:160]})
+            continue
+        checked.append({"url": url, "ok": ok, "status": status})
+    return checked
+
+
 def api_features_refresh(body: dict) -> dict:
-    """Codex CLI 로 최신 Anthropic 발표 조회 → 기존 카탈로그에 없는 항목만 dynamic 에 저장."""
-    codex_bin = shutil.which("codex")
-    if not codex_bin:
-        return {"error": "codex CLI 설치 필요"}
-    if not api_auth_status().get("connected"):
-        return {"error": "Codex 계정 연결 필요"}
-
-    existing_ids = {f["id"] for f in BUILTIN_NEW_FEATURES}
-    existing_summary = "\n".join(f"- {f['label']} ({f['released']}): {f['summary']}" for f in BUILTIN_NEW_FEATURES)
-    today = datetime.now().strftime("%Y-%m-%d")
-
-    prompt = f"""오늘은 {today} 입니다. 최근 60일 안에 Anthropic/Codex 가 공식 발표한 **신기능** 을 조사해 JSON 으로만 답하세요.
-
-## 이미 알고 있는 항목 (중복 제외)
-{existing_summary}
-
-## 출력 형식 — JSON 만:
-{{
-  "features": [
-    {{
-      "id": "<kebab-case>",
-      "icon": "<single emoji>",
-      "label": "<한국어 짧은 이름>",
-      "released": "<YYYY-MM-DD>",
-      "launchUrl": "<사용/시작 URL>",
-      "docUrl": "<공식 문서 또는 발표 URL>",
-      "summary": "<한 문장 한국어 설명>"
-    }},
-    ...최대 10개
-  ]
-}}
-
-조건:
-- 위 '이미 알고 있는 항목' 과 같은 기능은 제외.
-- Codex API 파라미터 미세 조정 같은 것 말고, **사용자가 직접 체험 가능한** 제품/도구/모델 신기능만.
-- 공식 URL (anthropic.com / codex.ai / platform.codex.com / docs.codex.com) 우선.
-"""
+    """OpenAI 공식 Codex 출처를 확인하고 신기능 캐시를 Codex 기준으로 재작성."""
     try:
-        proc = subprocess.run(
-            [codex_bin, "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=180,
-        )
-    except Exception as e:
-        return {"error": f"Codex CLI 실행 실패: {e}"}
-    if proc.returncode != 0:
-        return {"error": f"Codex CLI 오류: {(proc.stderr or '')[:400]}"}
-
-    stdout = (proc.stdout or "").strip()
-    response_text = stdout
-    cost_info = {}
-    try:
-        meta = json.loads(stdout)
-        if isinstance(meta, dict):
-            response_text = meta.get("result") or stdout
-            cost_info = {"costUsd": meta.get("total_cost_usd"), "durationMs": meta.get("duration_ms")}
+        checked = _check_official_codex_sources()
     except Exception:
-        pass
-
-    parsed = {}
-    m = re.search(r"\{[\s\S]*\}", response_text)
-    if m:
-        try: parsed = json.loads(m.group(0))
-        except Exception: parsed = {}
-
-    found = parsed.get("features") or []
-    # 중복 제거 (빌트인 id 충돌 방지)
-    filtered = []
-    for f in found:
-        if not isinstance(f, dict):
-            continue
-        fid = (f.get("id") or "").strip()
-        if not fid or fid in existing_ids:
-            continue
-        filtered.append({
-            "id": fid,
-            "icon": f.get("icon", "✨"),
-            "label": f.get("label", fid),
-            "released": f.get("released", ""),
-            "launchUrl": f.get("launchUrl", ""),
-            "docUrl": f.get("docUrl", ""),
-            "summary": f.get("summary", ""),
-            "isDynamic": True,
-        })
-
-    out = {"features": filtered, "fetchedAt": int(time.time() * 1000), "costInfo": cost_info}
+        checked = []
+    refreshed = [{**f, "isDynamic": True, "source": "official-openai"} for f in BUILTIN_NEW_FEATURES]
+    out = {
+        "features": refreshed,
+        "fetchedAt": int(time.time() * 1000),
+        "sources": checked,
+        "source": "OpenAI official Codex docs/news",
+    }
     try:
         _LATEST_FEATURES_CACHE.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:
