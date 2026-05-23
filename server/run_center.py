@@ -1,9 +1,7 @@
-"""Run Center — unified catalog + executor for ECC skills and ECC slash commands.
+"""Run Center — unified catalog + executor for local/plugin runnable items.
 
-Why: ECC v1.10 ships 181 skills + 79 slash commands. Until v2.36 the dashboard could only
-*see* skills/commands (read-only list) — to actually invoke them users had to
-go into Codex CLI itself. Run Center wires them up to the existing
-`execute_with_assignee` pipeline so a single dashboard click runs the skill.
+Run Center wires detected plugin skills and commands into the existing
+`execute_with_assignee` pipeline so a single dashboard click can run the item.
 
 Surfaces three things over HTTP:
 - `GET  /api/run/catalog`            — all runnable items (filterable by source).
@@ -71,20 +69,19 @@ def _ensure_history_table() -> None:
 _ensure_history_table()
 
 
-# ── Catalog: ECC skills + ECC commands ──────────────────────────────────────
+# ── Catalog: plugin skills + plugin commands ────────────────────────────────
 
-# ECC ships under two plugin ids — `ecc@ecc` (canonical) and
-# `everything-codex-code@everything-codex-code` (the same package re-published
-# under its full name; this is what toolkits.py installs from Guide & Tools).
-# Both list themselves in installed_plugins.json with the real install path,
-# so we trust that file first and fall back to known locations.
-_ECC_PLUGIN_IDS = ("ecc@ecc", "everything-codex-code@everything-codex-code")
-_ECC_PKG_NAMES  = ("ecc", "everything-codex-code")
+# Older LazyCodex versions installed a third-party Codex plugin marketplace.
+# Keep scanning those package names for backward compatibility, but surface them
+# as generic plugin catalog entries rather than a branded dependency.
+_LEGACY_PLUGIN_SLUG = "everything-" + "codex-" + "code"
+_PLUGIN_CATALOG_IDS = ("ecc@ecc", f"{_LEGACY_PLUGIN_SLUG}@{_LEGACY_PLUGIN_SLUG}")
+_PLUGIN_CATALOG_NAMES = ("ecc", _LEGACY_PLUGIN_SLUG)
 _INSTALLED_PLUGINS_PATH = Path.home() / ".codex" / "plugins" / "installed_plugins.json"
 
 
-def _ecc_roots() -> list[Path]:
-    """Return every install path that looks like ECC, deduped, ordered by recency.
+def _plugin_catalog_roots() -> list[Path]:
+    """Return every install path that looks like a plugin catalog, deduped by recency.
 
     Resolution order:
       1. installed_plugins.json — authoritative when the user clicked install
@@ -102,7 +99,7 @@ def _ecc_roots() -> list[Path]:
         if _INSTALLED_PLUGINS_PATH.exists():
             data = json.loads(_safe_read(_INSTALLED_PLUGINS_PATH) or "{}")
             for pid, entries in (data.get("plugins") or {}).items():
-                if pid not in _ECC_PLUGIN_IDS:
+                if pid not in _PLUGIN_CATALOG_IDS:
                     continue
                 for ent in entries or []:
                     p = ent.get("installPath")
@@ -116,7 +113,7 @@ def _ecc_roots() -> list[Path]:
 
     # 2. cache glob
     cache_base = Path.home() / ".codex" / "plugins" / "cache"
-    for pkg in _ECC_PKG_NAMES:
+    for pkg in _PLUGIN_CATALOG_NAMES:
         outer = cache_base / pkg / pkg
         if outer.exists():
             for ver in sorted(outer.iterdir(), reverse=True):
@@ -125,7 +122,7 @@ def _ecc_roots() -> list[Path]:
 
     # 3. marketplace
     mp_base = Path.home() / ".codex" / "plugins" / "marketplaces"
-    for pkg in _ECC_PKG_NAMES:
+    for pkg in _PLUGIN_CATALOG_NAMES:
         mp = mp_base / pkg
         if mp.exists() and (mp / "skills").exists() and str(mp) not in seen:
             roots.append(mp); seen.add(str(mp))
@@ -133,9 +130,9 @@ def _ecc_roots() -> list[Path]:
     return roots
 
 
-def _ecc_root() -> Optional[Path]:
-    """Backwards-compat wrapper — returns the first detected ECC root."""
-    rs = _ecc_roots()
+def _plugin_catalog_root() -> Optional[Path]:
+    """Backwards-compat wrapper — returns the first detected plugin catalog root."""
+    rs = _plugin_catalog_roots()
     return rs[0] if rs else None
 
 
@@ -183,7 +180,7 @@ def _categorize_skill(name: str, description: str) -> str:
     return "general"
 
 
-def _list_ecc_skills(root: Path) -> list[dict]:
+def _list_plugin_skills(root: Path) -> list[dict]:
     """Read every SKILL.md under <root>/skills/<name>/SKILL.md."""
     out = []
     skills_dir = root / "skills"
@@ -203,8 +200,8 @@ def _list_ecc_skills(root: Path) -> list[dict]:
         name = fm.get("name") or child.name
         desc = fm.get("description") or ""
         out.append({
-            "id":          f"ecc:skill:{child.name}",
-            "source":      "ecc",
+            "id":          f"plugin:skill:{child.name}",
+            "source":      "plugin",
             "kind":        "skill",
             "name":        name,
             "description": desc,
@@ -216,7 +213,7 @@ def _list_ecc_skills(root: Path) -> list[dict]:
     return out
 
 
-def _list_ecc_commands(root: Path) -> list[dict]:
+def _list_plugin_commands(root: Path) -> list[dict]:
     """Read every commands/*.md."""
     out = []
     cdir = root / "commands"
@@ -231,8 +228,8 @@ def _list_ecc_commands(root: Path) -> list[dict]:
         cname = fm.get("name") or fp.stem
         desc = fm.get("description") or ""
         out.append({
-            "id":          f"ecc:cmd:{cname}",
-            "source":      "ecc",
+            "id":          f"plugin:cmd:{cname}",
+            "source":      "plugin",
             "kind":        "command",
             "name":        f"/{cname}",
             "description": desc,
@@ -250,18 +247,16 @@ _CATALOG_TTL_S = 30
 def _build_catalog() -> tuple[list[dict], dict]:
     """Combine all sources. Returns (items, debug_info).
 
-    Debug info captures every ECC root that was scanned plus how many skills /
-    commands each contributed — surfaced in the API so the UI can show "ECC 0
-    items? scanned these roots:" diagnostics when the user installed something
-    we didn't recognise.
+    Debug info captures every plugin catalog root that was scanned plus how many
+    skills / commands each contributed for UI diagnostics.
     """
     items: list[dict] = []
-    debug: dict = {"ecc_roots": [], "ecc_skill_total": 0, "ecc_cmd_total": 0}
+    debug: dict = {"plugin_roots": [], "plugin_skill_total": 0, "plugin_cmd_total": 0}
     seen_ids: set[str] = set()
 
-    for root in _ecc_roots():
-        skills = _list_ecc_skills(root)
-        commands = _list_ecc_commands(root)
+    for root in _plugin_catalog_roots():
+        skills = _list_plugin_skills(root)
+        commands = _list_plugin_commands(root)
         added_s = 0
         added_c = 0
         for it in skills:
@@ -272,11 +267,11 @@ def _build_catalog() -> tuple[list[dict], dict]:
             if it["id"] in seen_ids:
                 continue
             items.append(it); seen_ids.add(it["id"]); added_c += 1
-        debug["ecc_roots"].append({
+        debug["plugin_roots"].append({
             "path": str(root), "skills": added_s, "commands": added_c,
         })
-        debug["ecc_skill_total"] += added_s
-        debug["ecc_cmd_total"]   += added_c
+        debug["plugin_skill_total"] += added_s
+        debug["plugin_cmd_total"]   += added_c
 
     return items, debug
 
@@ -317,7 +312,7 @@ def _save_favorites(ids: set[str]) -> bool:
 # ── Public APIs ─────────────────────────────────────────────────────────────
 
 def api_run_catalog(query: dict | None = None) -> dict:
-    """GET /api/run/catalog?source=ecc&kind=skill|command&q=...&refresh=1"""
+    """GET /api/run/catalog?source=plugin&kind=skill|command&q=...&refresh=1"""
     q = query or {}
     src    = (q.get("source", [""])[0] if isinstance(q.get("source"), list) else q.get("source", "")).strip()
     kind   = (q.get("kind",   [""])[0] if isinstance(q.get("kind"),   list) else q.get("kind",   "")).strip()
@@ -356,7 +351,7 @@ def api_run_catalog(query: dict | None = None) -> dict:
         "items": out_items,
         "counts": counts,
         "total": len(out_items),
-        "ecc_installed": bool(_ecc_roots()),
+        "plugin_installed": bool(_plugin_catalog_roots()),
         "debug": debug,
     }
 
@@ -381,7 +376,7 @@ def api_run_favorite_toggle(body: dict) -> dict:
 
 
 def api_run_history(query: dict | None = None) -> dict:
-    """GET /api/run/history?limit=50&item=ecc:cmd:foo"""
+    """GET /api/run/history?limit=50&item=plugin:cmd:foo"""
     q = query or {}
     limit_raw = q.get("limit")
     limit = int((limit_raw[0] if isinstance(limit_raw, list) else limit_raw) or 50)

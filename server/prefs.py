@@ -103,7 +103,7 @@ DEFAULT_PREFS: dict[str, dict[str, Any]] = {
         "recentTabsLimit":  5,
     },
     "ai": {
-        "defaultProvider":  "codex:sonnet",
+        "defaultProvider":  "codex:gpt-5.5",
         "effort":           "medium",
         "temperature":      0.7,
         "topP":             1.0,

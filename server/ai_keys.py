@@ -91,7 +91,7 @@ def _default_config() -> dict:
         "version": 1,
         "apiKeys": {},
         "customProviders": [],
-        "fallbackChain": ["codex-cli", "anthropic-api", "openai-api", "gemini-api"],
+        "fallbackChain": ["codex-cli", "openai-api", "gemini-api", "ollama"],
         "defaultModels": {},
         "providerSettings": {},
     }
@@ -119,7 +119,6 @@ def load_api_keys() -> dict:
     ENV_MAP = {
         "openai-api": "OPENAI_API_KEY",
         "gemini-api": "GEMINI_API_KEY",
-        "anthropic-api": "ANTHROPIC_API_KEY",
     }
     for pid, env_key in ENV_MAP.items():
         env_val = os.environ.get(env_key, "")
@@ -235,7 +234,7 @@ def save_custom_provider(body: dict) -> dict:
 
     # 빌트인 프로바이더 id 와 충돌 방지
     RESERVED = {"codex-cli", "ollama", "gemini-cli", "codex", "openai-api",
-                "gemini-api", "anthropic-api", "ollama-api"}
+                "gemini-api", "ollama-api"}
     if pid in RESERVED:
         return {"ok": False, "error": f"'{pid}' 는 빌트인 프로바이더 — 다른 id 사용"}
 

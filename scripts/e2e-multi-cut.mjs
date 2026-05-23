@@ -34,9 +34,9 @@ await page.evaluate(() => {
     id: 'wf-cut-' + Date.now(),
     name: 'cut',
     nodes: [
-      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:opus' } },
-      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:opus' } },
-      { id: 'n-c', type: 'session', x: 500, y: 200, data: { subject: 'C', assignee: 'codex:opus' } },
+      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-c', type: 'session', x: 500, y: 200, data: { subject: 'C', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [
       { id: 'e-ab', from: 'n-a', to: 'n-b' },
@@ -104,9 +104,9 @@ await page.evaluate(() => {
     id: 'wf-cut-undo-' + Date.now(),
     name: 'cut-undo',
     nodes: [
-      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:opus' } },
-      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:opus' } },
-      { id: 'n-c', type: 'session', x: 500, y: 200, data: { subject: 'C', assignee: 'codex:opus' } },
+      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-c', type: 'session', x: 500, y: 200, data: { subject: 'C', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [
       { id: 'e-ab', from: 'n-a', to: 'n-b' },

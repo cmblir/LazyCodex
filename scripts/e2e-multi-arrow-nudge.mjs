@@ -29,8 +29,8 @@ await page.evaluate(() => {
     id: 'wf-arrow-' + Date.now(),
     name: 'arrow',
     nodes: [
-      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:opus' } },
-      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:opus' } },
+      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [],
   };
@@ -83,8 +83,8 @@ await page.evaluate(() => {
     id: 'wf-arrow-undo-' + Date.now(),
     name: 'arrow-undo',
     nodes: [
-      { id: 'n-x', type: 'session', x: 100, y: 100, data: { subject: 'X', assignee: 'codex:opus' } },
-      { id: 'n-y', type: 'session', x: 300, y: 100, data: { subject: 'Y', assignee: 'codex:opus' } },
+      { id: 'n-x', type: 'session', x: 100, y: 100, data: { subject: 'X', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-y', type: 'session', x: 300, y: 100, data: { subject: 'Y', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [],
   };

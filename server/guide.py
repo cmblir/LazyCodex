@@ -1,6 +1,6 @@
-"""가이드 & 온보딩 — 외부 리소스 카탈로그 + 대시보드 온보딩 체크리스트.
+"""가이드 & 온보딩 — 공식 Codex 리소스 카탈로그 + 대시보드 체크리스트.
 
-- /api/guide/toolkit     : everything-codex-code / best-practice / wikidocs 등 툴 카탈로그 (정적)
+- /api/guide/toolkit     : OpenAI Codex 공식 문서/설정 리소스 카탈로그 (정적)
 - /api/guide/onboarding  : 사용자 ~/.codex 상태를 자동 감지해 체크리스트 진행률 계산
 
 모든 데이터는 stdlib 만으로 생성되며 외부 호출/파일 쓰기 없음 (읽기 전용).
@@ -18,266 +18,275 @@ from .config import (
 from .utils import _safe_read
 
 
-# ───────── 유용한 툴 카탈로그 (정적) ─────────
+# ───────── 공식 Codex 리소스 카탈로그 (정적) ─────────
 #
-# 외부 리포/책의 URL·설치 명령·주요 카테고리를 한 화면에 모아
-# 대시보드에서 그대로 복사·설치하도록 돕는다.
+# 공식 문서 URL·권장 설정·관련 명령을 한 화면에 모아 대시보드에서
+# 그대로 복사·적용하도록 돕는다. 서드파티 번들은 플러그인 탭에서만 다룬다.
 
 _TOOLKIT_SOURCES: list[dict[str, Any]] = [
     {
-        "id": "everything-codex-code",
-        "title": "Everything Codex CLI",
-        "subtitle": "멀티 플랫폼 클로드 코드 최적화 팩 (48 agents · 183 skills · 79 commands)",
-        "author": "affaan-m",
-        "repo": "https://github.com/affaan-m/everything-codex-code",
-        "stars": "163k",
-        "license": "MIT",
+        "id": "openai-codex-config",
+        "title": "OpenAI Codex config.toml",
+        "subtitle": "~/.codex/config.toml 로 모델, 승인, 샌드박스, MCP, 앱, 메모리, TUI를 제어",
+        "author": "OpenAI",
+        "repo": "https://developers.openai.com/codex/config-reference",
+        "stars": "Official",
+        "license": "Docs",
         "highlights": [
-            "Codex CLI / Cursor / Codex / OpenCode 크로스 플랫폼",
-            "AgentShield 보안 감사 (1282 tests, 102 정적 룰)",
-            "Continuous Learning v2 — 세션에서 인스팅크트 자동 추출",
-            "토큰 최적화 (Sonnet 전환, thinking 10k cap, compact 50%)",
+            "user-level ~/.codex/config.toml 과 project-local .codex/config.toml 레이어",
+            "approval_policy, sandbox_mode, permissions, projects.<path>.trust_level",
+            "mcp_servers, apps, tools.web_search, memories, agents, skills.config",
+            "VS Code/Cursor TOML 진단용 #:schema https://developers.openai.com/codex/config-schema.json",
         ],
         "install": [
             {
-                "label": "플러그인 마켓플레이스 추가 (권장)",
-                "code": "/plugin marketplace add https://github.com/affaan-m/everything-codex-code",
+                "label": "설정 진단",
+                "code": "/debug-config",
             },
             {
-                "label": "전체 프로파일 설치",
-                "code": "/plugin install everything-codex-code@everything-codex-code",
+                "label": "현재 세션 상태 확인",
+                "code": "/status",
             },
             {
-                "label": "수동 설치 (macOS/Linux)",
-                "code": "git clone https://github.com/affaan-m/everything-codex-code.git && cd everything-codex-code && ./install.sh --profile full",
+                "label": "schema 주석",
+                "code": "#:schema https://developers.openai.com/codex/config-schema.json",
             },
         ],
         "categories": [
             {
-                "name": "Agents",
+                "name": "핵심 키",
                 "items": [
-                    "planner", "architect", "code-reviewer", "security-reviewer",
-                    "typescript-reviewer", "python-reviewer", "go-reviewer",
-                    "build-error-resolver", "tdd-guide", "e2e-runner",
-                    "doc-updater", "chief-of-staff", "loop-operator",
+                    "model", "review_model", "model_reasoning_effort",
+                    "approval_policy", "sandbox_mode", "default_permissions",
+                    "projects.<path>.trust_level", "web_search",
                 ],
             },
             {
-                "name": "Skills",
+                "name": "도구/컨텍스트",
                 "items": [
-                    "frontend-patterns", "backend-patterns", "api-design",
-                    "postgres-patterns", "tdd-workflow", "e2e-testing",
-                    "security-review", "continuous-learning-v2",
-                    "documentation-lookup", "deployment-patterns",
+                    "mcp_servers.<id>.url", "apps._default.enabled",
+                    "tools.web_search.allowed_domains", "tools.view_image",
+                    "developer_instructions", "compact_prompt",
                 ],
             },
             {
-                "name": "Commands",
+                "name": "운영",
                 "items": [
-                    "/plan", "/tdd", "/code-review", "/build-fix", "/e2e",
-                    "/security-scan", "/multi-plan", "/multi-execute",
-                    "/instinct-import", "/instinct-export", "/sessions",
-                ],
-            },
-            {
-                "name": "Hooks",
-                "items": [
-                    "SessionStart — 컨텍스트 자동 로드",
-                    "SessionEnd — 상태/요약 자동 저장",
-                    "Edit — 포맷 검사 + console.log 경고",
-                    "PreCommit — 시크릿 패턴 (sk-, ghp_, AKIA) 감지",
+                    "history.persistence", "tool_output_token_limit",
+                    "tui.raw_output_mode", "tui.status_line",
+                    "analytics.enabled", "feedback.enabled",
                 ],
             },
         ],
     },
     {
-        "id": "codex-code-best-practice",
-        "title": "Codex CLI Best Practice",
-        "subtitle": "47k ⭐ · 82 가지 팁 모음 + 창시자(Boris Cherny) 워크플로",
-        "author": "shanraisshan",
-        "repo": "https://github.com/shanraisshan/codex-code-best-practice",
-        "stars": "47k",
-        "license": "MIT",
+        "id": "openai-codex-goal-mode",
+        "title": "Goal mode",
+        "subtitle": "/goal 로 긴 작업의 완료 기준과 진행 목표를 Codex가 계속 추적",
+        "author": "OpenAI",
+        "repo": "https://developers.openai.com/codex/prompting#goal-mode",
+        "stars": "Official",
+        "license": "Docs",
         "highlights": [
-            "Agents · Commands · Skills 3축 정리",
-            "핫 기능: Routines · Ultrareview · Agent Teams · Auto Mode · Computer Use",
-            "Research → Plan → Execute → Review → Ship 표준 흐름",
-            "prototype > PRD · PR 은 작게(median 118 lines)",
+            "/goal 이 보이지 않으면 [features] goals = true 또는 codex features enable goals",
+            "Goal text가 시작 프롬프트이자 완료 기준으로 동작",
+            "어려운 목표는 /plan 으로 다듬은 뒤 /goal 로 고정",
+            "pause/resume/clear 로 장시간 작업을 제어",
         ],
         "install": [
             {
-                "label": "레포 클론 (참고용 문서)",
-                "code": "git clone https://github.com/shanraisshan/codex-code-best-practice.git",
+                "label": "config.toml feature gate",
+                "code": "[features]\ngoals = true",
+            },
+            {
+                "label": "CLI helper",
+                "code": "codex features enable goals",
+            },
+            {
+                "label": "Goal 시작",
+                "code": "/goal Migrate the codebase and keep all smoke tests passing.",
             },
         ],
         "categories": [
             {
-                "name": "창시자의 핵심 팁",
+                "name": "좋은 goal 조건",
                 "items": [
-                    "항상 Plan Mode 로 시작하라 (Boris Cherny)",
-                    "컨텍스트 40% 이상은 품질 저하 — 30% 이하 유지",
-                    "실패한 시도는 /rewind 로 되돌리기",
-                    "/compact 는 자동보다 힌트를 직접 주고 호출",
-                    "새 태스크 = 새 세션, 관련 태스크만 컨텍스트 재사용",
+                    "구체적 산출물", "검증 방법", "허용된 부작용",
+                    "중단 조건", "테스트/스크린샷/문서 기준",
                 ],
             },
             {
-                "name": "워크플로 패턴",
+                "name": "같이 쓰기 좋은 명령",
                 "items": [
-                    "Superpowers · gstack · BMAD-METHOD · Spec Kit 참조 구현",
-                    "Cross-Model: Codex CLI + Codex 조합",
-                    "Agent Teams — 공유 코드베이스에 병렬 에이전트",
+                    "/plan", "/status", "/compact", "/review", "/debug-config",
                 ],
             },
         ],
     },
     {
-        "id": "oh-my-codexcode",
-        "title": "OMC · oh-my-codexcode",
-        "subtitle": "Codex CLI 세션 안에서 슬래시 명령으로 호출하는 팀 오케스트레이션 (autopilot · ralph · ultrawork · deep-interview)",
-        "author": "Yeachan-Heo",
-        "repo": "https://github.com/Yeachan-Heo/oh-my-codexcode",
-        "stars": "30.8k",
-        "license": "MIT",
+        "id": "openai-codex-slash-commands",
+        "title": "Built-in slash commands",
+        "subtitle": "Codex CLI 공식 내장 명령: /skills, /plugins, /agent, /mcp, /status 등",
+        "author": "OpenAI",
+        "repo": "https://developers.openai.com/codex/cli/slash-commands#built-in-slash-commands",
+        "stars": "Official",
+        "license": "Docs",
         "highlights": [
-            "🎯 LazyCodex는 OMC의 4 모드를 이미 흡수 — 별도 설치 없이 워크플로우 탭의 빌트인 템플릿(bt-autopilot/ralph/ultrawork/deep-interview) 또는 런 센터에서 즉시 사용 가능",
-            "외부 OMC CLI를 추가로 설치하면 Codex CLI 세션 안에서도 슬래시 명령으로 호출 가능 (보완 관계, 충돌 없음)",
-            "Smart routing — Haiku/Opus 자동 선택 (LazyCodex는 modelHint 'auto/fast/deep' 으로 흡수)",
-            "Stop-callback — Slack/Discord/Telegram 알림 (LazyCodex는 워크플로우 notify 필드로 흡수)",
+            "/skills 는 스킬 탐색/선택, /plugins 는 플러그인 탐색/관리",
+            "/agent 는 spawned subagent thread 전환",
+            "/mcp 는 연결된 Model Context Protocol 도구 상태 확인",
+            "/debug-config 는 config layer와 requirements 진단",
         ],
         "install": [
             {
-                "label": "외부 OMC CLI 설치 (선택)",
-                "code": "npm i -g oh-my-codexcode",
+                "label": "명령 목록",
+                "code": "/help",
             },
             {
-                "label": "Codex CLI 세션 안에서 사용",
-                "code": "/autopilot 다음 작업 자동 실행해줘",
+                "label": "스킬 사용",
+                "code": "/skills",
             },
             {
-                "label": "LazyCodex 흡수 기능만 쓰려면 (설치 불필요)",
-                "code": "→ 워크플로우 탭 헤더의 Quick Actions 또는 런 센터의 OMC 카드",
+                "label": "플러그인 관리",
+                "code": "/plugins",
             },
         ],
         "categories": [
             {
-                "name": "LazyCodex에 흡수된 4 모드 (별도 설치 불필요)",
+                "name": "세션 제어",
                 "items": [
-                    "/autopilot — 요구사항 → 계획 → 실행 → 검증 단일 흐름 (bt-autopilot)",
-                    "/ralph — verify → fix 루프 (bt-ralph, max 5 cycles)",
-                    "/ultrawork — 5 병렬 에이전트 → merge (bt-ultrawork)",
-                    "/deep-interview — 소크라테스식 명확화 → 설계 (bt-deep-interview)",
+                    "/clear", "/compact", "/resume", "/new", "/fork", "/side",
                 ],
             },
             {
-                "name": "외부 CLI 전용 기능 (LazyCodex 흡수 안 됨)",
+                "name": "검증/설정",
                 "items": [
-                    "터미널 status bar HUD (LazyCodex는 브라우저 대시보드 자체가 HUD)",
-                    "Codex CLI 세션 내부에서 직접 슬래시 명령 호출",
-                    "OpenClaw Gateway 외부 연동 (LazyCodex는 Event Forwarder 탭으로 부분 대체)",
+                    "/status", "/diff", "/review", "/debug-config", "/permissions", "/model",
                 ],
             },
         ],
     },
     {
-        "id": "oh-my-codex",
-        "title": "OMX · oh-my-codex",
-        "subtitle": "OMC 의 Codex 버전 — Codex 세션 안에서 $ 키워드로 호출하는 워크플로우 도구",
-        "author": "Yeachan-Heo",
-        "repo": "https://github.com/Yeachan-Heo/oh-my-codex",
-        "stars": "25.2k",
-        "license": "MIT",
+        "id": "openai-codex-skills",
+        "title": "Skills",
+        "subtitle": "반복 작업을 SKILL.md 로 표준화하고 /skills 에서 선택",
+        "author": "OpenAI",
+        "repo": "https://developers.openai.com/codex/skills",
+        "stars": "Official",
+        "license": "Docs",
         "highlights": [
-            "🎯 LazyCodex는 OMX의 4 명령을 정적 매핑으로 노출 — 런 센터에서 임의 프로바이더(Codex/GPT/Gemini/Ollama)로 dispatch",
-            "외부 OMX CLI를 추가로 설치하면 Codex 세션 안에서 $ 키워드로 호출 가능",
-            "Wiki 시스템 — 세션 내 지식 베이스 (LazyCodex는 Codex Docs Hub + Prompt Library 로 대체)",
-            "Doctor 진단 — 설치 무결성 (LazyCodex는 Security Scan + AI 평가 탭으로 대체)",
+            "SKILL.md 는 작업별 절차, 제약, 검증 루틴을 담는 재사용 단위",
+            "skills.config 로 특정 스킬 경로 enable/disable 가능",
+            "MCP dependency install prompt는 features.skill_mcp_dependency_install 로 관리",
+            "스킬은 명령 자동 실행이 아니라 Codex 행동 지침을 보강하는 표면",
         ],
         "install": [
             {
-                "label": "외부 OMX CLI 설치 (선택)",
-                "code": "npm i -g oh-my-codex",
+                "label": "스킬 탐색",
+                "code": "/skills",
             },
             {
-                "label": "Codex 세션 안에서 사용",
-                "code": "$doctor",
-            },
-            {
-                "label": "LazyCodex 흡수 기능만 쓰려면 (설치 불필요)",
-                "code": "→ 런 센터에서 OMX 카드 클릭",
+                "label": "config.toml 예시",
+                "code": "[features]\nskill_mcp_dependency_install = true",
             },
         ],
         "categories": [
             {
-                "name": "LazyCodex에 흡수된 4 명령 (런 센터)",
+                "name": "좋은 스킬 구성",
                 "items": [
-                    "$doctor — 설치/헬스 진단 (의존성 · lockfile · env mismatch 체크리스트)",
-                    "$wiki — 작업 컨텍스트를 1페이지 레퍼런스로 요약",
-                    "$hud — 현재 상태 1-2줄 요약 (phase · last action · next blocker)",
-                    "$tasks — 입력에서 actionable TODO/FIXME/BUG 추출",
+                    "언제 사용할지", "입력/출력 형식", "검증 명령", "금지 동작", "관련 파일/스크립트",
                 ],
             },
             {
-                "name": "외부 CLI 전용 기능",
+                "name": "연결 키",
                 "items": [
-                    "Codex 세션 내부에서 $ 키워드 직접 호출",
-                    ".omx/wiki 영구 저장소 (LazyCodex는 Prompt Library 로 대체)",
-                    "omx hud --watch 터미널 라이브 갱신",
+                    "skills.config", "features.skill_mcp_dependency_install", "/skills", "plugins.<plugin>.*",
                 ],
             },
         ],
     },
     {
-        "id": "wikidocs-codex-code-guide",
-        "title": "Codex CLI 가이드 (한국어 · 위키독스)",
-        "subtitle": "클래스 101 + 레퍼런스 21개 · 한국어 전체 가이드북",
-        "author": "위키독스",
-        "repo": "https://wikidocs.net/book/19104",
-        "stars": "237 추천",
-        "license": "웹/eBook",
+        "id": "openai-docs-mcp",
+        "title": "OpenAI Docs MCP",
+        "subtitle": "Codex에서 developers.openai.com/platform.openai.com 공식 문서를 바로 검색",
+        "author": "OpenAI",
+        "repo": "https://developers.openai.com/learn/docs-mcp",
+        "stars": "Official",
+        "license": "Docs",
         "highlights": [
-            "설치부터 실전까지 단계별 실습 (기초 7 · 개발 17 · 비즈니스 15)",
-            "크리에이터 · 연구 · 금융 · 법무/HR · 의료 특화 트랙",
-            "공식 문서 변경 사항 실시간 반영 (최종 2026-04-20)",
-            "창시자 워크플로, 스피너 동사 187개, 소스 분석서 별첨",
+            "공식 Docs MCP streamable HTTP URL: https://developers.openai.com/mcp",
+            "Codex CLI와 IDE extension 설정을 공유",
+            "AGENTS.md에 공식 문서 우선 검색 지시를 함께 두면 안정적",
+            "OpenAI API, Codex, Apps SDK, Agents SDK 질문에 적합",
         ],
         "install": [
             {
-                "label": "웹에서 바로 읽기",
-                "code": "open https://wikidocs.net/book/19104",
+                "label": "Codex CLI",
+                "code": "codex mcp add openaiDeveloperDocs --url https://developers.openai.com/mcp",
+            },
+            {
+                "label": "config.toml",
+                "code": "[mcp_servers.openaiDeveloperDocs]\nurl = \"https://developers.openai.com/mcp\"\nrequired = false\ndefault_tools_approval_mode = \"prompt\"",
+            },
+            {
+                "label": "확인",
+                "code": "/mcp",
             },
         ],
         "categories": [
             {
-                "name": "클래스 101 — 기초",
+                "name": "권장 사용",
                 "items": [
-                    "설치 · 대화와 세션 · 모델과 Effort",
-                    "자율권과 안전 · 컨텍스트 관리",
-                    "AGENTS.md 작업 기억 · 첫 실전 프로젝트",
+                    "OpenAI 관련 질문 전 공식 문서 확인", "config key 검증",
+                    "API request/response schema 확인", "최신 모델/도구 변화 확인",
                 ],
             },
             {
-                "name": "클래스 101 — 개발",
+                "name": "관련 config",
                 "items": [
-                    "코드베이스 탐색 · TDD · 리팩토링 · Hooks",
-                    "Git PR 코드리뷰 · GitHub Actions · Worktree 병렬",
-                    "Skills 활용/개발 · MCP · 서브에이전트 팀 · 팀 온보딩",
+                    "mcp_servers.<id>.url", "mcp_servers.<id>.required",
+                    "mcp_servers.<id>.default_tools_approval_mode",
+                    "mcp_oauth_credentials_store",
+                ],
+            },
+        ],
+    },
+    {
+        "id": "openai-gpt55-coding",
+        "title": "GPT-5.5 for coding agents",
+        "subtitle": "복잡한 코드 작업, 도구 사용, 장시간 agent workflow에 맞춘 최신 OpenAI 모델 가이드",
+        "author": "OpenAI",
+        "repo": "https://developers.openai.com/api/docs/guides/latest-model",
+        "stars": "Official",
+        "license": "Docs",
+        "highlights": [
+            "GPT-5.5는 coding agents, tool-heavy workflows, long-context retrieval에 적합",
+            "reasoning effort 기본값은 medium, high/xhigh는 품질 이득이 검증될 때만 사용",
+            "outcome-first prompt: 결과, 성공 기준, 허용 부작용, 증거 규칙을 명확히",
+            "tool search, hosted tools, compaction, prompt caching을 함께 고려",
+        ],
+        "install": [
+            {
+                "label": "Codex 모델 설정",
+                "code": "model = \"gpt-5.5\"\nmodel_reasoning_effort = \"medium\"\nmodel_verbosity = \"medium\"",
+            },
+            {
+                "label": "깊은 리뷰 profile",
+                "code": "[profiles.deep-review]\nmodel = \"gpt-5.5\"\nmodel_reasoning_effort = \"high\"\nweb_search = \"cached\"",
+            },
+        ],
+        "categories": [
+            {
+                "name": "튜닝 축",
+                "items": [
+                    "model", "model_reasoning_effort", "model_verbosity",
+                    "developer_instructions", "compact_prompt", "tools.web_search",
                 ],
             },
             {
-                "name": "클래스 101 — 비즈니스",
+                "name": "검증 기준",
                 "items": [
-                    "이메일 자동관리 · 회의록 · Excel · 보고서",
-                    "일일 브리핑 · PPT 자동 · Chrome 자동화",
-                    "SOP · 경쟁사 병렬분석 · Vibe Coding 앱",
-                ],
-            },
-            {
-                "name": "레퍼런스 21권",
-                "items": [
-                    "퀵 레퍼런스 · 설정 · 권한 · 슬래시 · 단축키",
-                    "MCP · 훅 · 서브에이전트 · 스킬 · IDE · CI/CD",
-                    "고급 기능 · 베스트 프랙티스 · 플러그인 · 보안/프라이버시",
+                    "테스트 통과", "작업 범위 준수", "도구 선택 정확도", "토큰/지연 비용", "최종 답변 명료도",
                 ],
             },
         ],
@@ -293,11 +302,11 @@ _BEST_PRACTICES: list[dict[str, Any]] = [
         "title": "Research → Plan → Execute → Review → Ship",
         "desc": "모든 주요 작업은 이 5단계로. 각 단계마다 슬래시 명령어를 붙이면 품질이 올라간다.",
         "steps": [
-            {"label": "Research", "tip": "/ask, /docs, 레포 탐색으로 맥락 먼저. 코드 쓰기 전 WHY 정리."},
+            {"label": "Research", "tip": "레포 탐색, /mcp, OpenAI Docs MCP로 맥락 먼저. 코드 쓰기 전 WHY 정리."},
             {"label": "Plan",     "tip": "/plan 또는 Plan Mode. 파일별 변경안 · 리스크 · 롤백 플랜까지."},
-            {"label": "Execute",  "tip": "/tdd 로 테스트 먼저. 한 묶음씩 작게 구현 · 작은 PR 유지."},
-            {"label": "Review",   "tip": "/code-review + /security-scan. 자동 리뷰 통과 후 사람 리뷰."},
-            {"label": "Ship",     "tip": "/e2e 로 골든 패스 검증. 배포 후 /canary-watch 로 회귀 감시."},
+            {"label": "Execute",  "tip": "작은 변경 단위로 구현하고 필요한 경우 /goal 로 완료 기준을 고정."},
+            {"label": "Review",   "tip": "/diff + /review. 테스트/타입체크/스모크 결과를 함께 남깁니다."},
+            {"label": "Ship",     "tip": "/status 로 권한/모델/컨텍스트 확인 후 커밋 또는 handoff."},
         ],
     },
     {
@@ -305,11 +314,11 @@ _BEST_PRACTICES: list[dict[str, Any]] = [
         "title": "토큰 · 컨텍스트 최적화",
         "desc": "Codex CLI 에서 비용·지연·품질 모두 개선하는 핵심 스위치 5개.",
         "steps": [
-            {"label": "모델 라우팅",  "tip": "일상은 Sonnet 4.6, 무거운 분석만 Opus 4.7 — 평균 60% 비용 절감."},
-            {"label": "Thinking 캡",  "tip": "extended thinking 10,000 토큰 이하로 제한. 무제한은 가성비 나쁨."},
-            {"label": "Compact 시점",  "tip": "자동 95% 대신 50% 에서 직접 /compact. 품질 유지 + 캐시 친화."},
+            {"label": "모델 기준",  "tip": "기본은 gpt-5.5 + reasoning medium. 빠른 작업은 low, 깊은 리뷰만 high/xhigh로 올립니다."},
+            {"label": "Verbosity",  "tip": "긴 설명이 필요 없으면 model_verbosity=low 또는 medium. 답변 길이와 reasoning effort는 분리합니다."},
+            {"label": "Compact 기준",  "tip": "/compact 힌트에는 완료한 일, 남은 리스크, 다음 목표, 변경 파일, 검증 결과를 남깁니다."},
             {"label": "MCP 10개 이하", "tip": "활성 MCP 서버는 10개 이하 — 매 턴마다 도구 디스크립션 비용."},
-            {"label": "Session 분리",  "tip": "새 태스크는 새 세션. 관련 태스크만 /continue 유지."},
+            {"label": "Session 분리",  "tip": "새 태스크는 /new 또는 새 세션. 이어갈 때만 /resume 사용."},
         ],
     },
     {
@@ -318,7 +327,7 @@ _BEST_PRACTICES: list[dict[str, Any]] = [
         "desc": "Boris Cherny(Codex CLI 창시자)가 반복 강조하는 운용 팁.",
         "steps": [
             {"label": "Plan 먼저",        "tip": "모든 비자명한 작업은 Plan Mode 로. 코드 생성 전 사용자 승인을 받는다."},
-            {"label": "컨텍스트 감시",    "tip": "40% 넘어가면 품질 저하. /clear · /compact · /rewind 세 가지 스위치."},
+            {"label": "컨텍스트 감시",    "tip": "/status 로 토큰/권한/모델을 확인하고, 길어지면 /compact 또는 /clear."},
             {"label": "Prototype > PRD",  "tip": "길게 쓴 스펙보다 20~30개의 작은 프로토타입이 빠른 수렴을 준다."},
             {"label": "작은 PR",           "tip": "PR 사이즈 median 118 lines. 커지면 쪼개라 — 리뷰 품질 & 롤백 용이."},
             {"label": "Squash Merge",     "tip": "히스토리 선형 유지. rebase 보다 squash 가 충돌 복구에 유리."},
@@ -329,10 +338,10 @@ _BEST_PRACTICES: list[dict[str, Any]] = [
         "title": "보안 · 안전 기본값",
         "desc": "로컬/개인 사용에서도 꼭 켜두면 좋은 안전 스위치.",
         "steps": [
-            {"label": "Secret 훅",    "tip": "PreCommit 훅에서 sk-, ghp_, AKIA 패턴 검사 — 실수 커밋 방지."},
-            {"label": "Deny 권한",    "tip": "permissions.deny 에 rm -rf /, curl | sh, ssh 등 위험 명령 차단."},
-            {"label": "Auto Mode",     "tip": "개별 승인 프롬프트 대신 분류기 기반 Auto Mode 로 일관성 확보."},
-            {"label": "MCP 범위",     "tip": "로컬 전용 MCP 는 OK, 인터넷 쓰는 MCP 는 allow-list / readOnly 권장."},
+            {"label": "권한 프로파일",    "tip": "default_permissions 와 permissions.<name> 으로 filesystem/network 경계를 고정."},
+            {"label": "Sandbox",    "tip": "낯선 repo는 read-only, 프로젝트 작업은 workspace-write + on-request."},
+            {"label": "MCP 승인",     "tip": "mcp_servers.<id>.default_tools_approval_mode=prompt 로 tool 실행을 확인."},
+            {"label": "프로젝트 trust",     "tip": "projects.<path>.trust_level 로 project-local .codex/ 레이어 로드를 명시."},
         ],
     },
 ]
@@ -344,26 +353,27 @@ _CHEATSHEET_COMMANDS: list[dict[str, Any]] = [
     {"cmd": "/help",     "desc": "Codex CLI 사용법과 명령어 전체 목록"},
     {"cmd": "/clear",    "desc": "현재 세션 컨텍스트 초기화 — 새 주제 시작 시"},
     {"cmd": "/compact",  "desc": "대화를 요약해 컨텍스트 압축 (힌트 프롬프트 동반 권장)"},
-    {"cmd": "/rewind",   "desc": "마지막 턴(또는 범위)을 되돌리고 실패 시도 제거"},
-    {"cmd": "/continue", "desc": "같은 태스크를 새 세션에서 이어서"},
+    {"cmd": "/copy",     "desc": "마지막 완료 응답 복사"},
+    {"cmd": "/diff",     "desc": "현재 working tree diff 확인"},
+    {"cmd": "/resume",   "desc": "저장된 이전 세션 재개"},
     {"cmd": "/plan",     "desc": "Plan Mode 진입 — 코드 변경 전 승인 단계"},
-    {"cmd": "/fast",     "desc": "Opus 4.6 Fast 모드 토글 (빠른 출력, 같은 모델)"},
-    {"cmd": "/bug",      "desc": "버그 재현 스펙 → 실패 테스트 → 수정 자동 흐름"},
+    {"cmd": "/goal",     "desc": "긴 작업의 persistent objective 설정/조회/일시정지/재개"},
+    {"cmd": "/fast",     "desc": "모델 카탈로그가 제공할 때 Fast service tier 토글"},
     {"cmd": "/init",     "desc": "현재 레포용 AGENTS.md 를 자동 초기화"},
-    {"cmd": "/review",   "desc": "PR 코드리뷰 — 체크리스트 기반"},
-    {"cmd": "/security-review", "desc": "현재 브랜치 변경분 보안 리뷰"},
-    {"cmd": "/config",   "desc": "테마·모델 등 단순 설정 빠르게 전환"},
-    {"cmd": "/doctor",   "desc": "Codex CLI 환경 진단 (auth/MCP/hook 상태)"},
+    {"cmd": "/review",   "desc": "현재 변경분 코드리뷰"},
+    {"cmd": "/debug-config", "desc": "config layer와 requirements 진단"},
+    {"cmd": "/status",   "desc": "모델, 권한, writable roots, 토큰/컨텍스트 상태 확인"},
     {"cmd": "/logout",   "desc": "현재 계정 로그아웃"},
-    {"cmd": "/login",    "desc": "Codex 계정 로그인"},
-    {"cmd": "/model",    "desc": "모델 변경 (Opus/Sonnet/Haiku)"},
-    {"cmd": "/memory",   "desc": "프로젝트 메모리 보기/편집"},
-    {"cmd": "/agents",   "desc": "사용 가능한 서브에이전트 목록"},
-    {"cmd": "/hooks",    "desc": "설정된 훅 목록"},
+    {"cmd": "/model",    "desc": "활성 모델과 reasoning effort 변경"},
+    {"cmd": "/memories", "desc": "메모리 주입/생성 설정"},
+    {"cmd": "/agent",    "desc": "spawned subagent thread 전환"},
+    {"cmd": "/skills",   "desc": "스킬 탐색과 선택"},
+    {"cmd": "/hooks",    "desc": "lifecycle hook 보기/관리"},
     {"cmd": "/mcp",      "desc": "MCP 서버 목록 + 연결 상태"},
-    {"cmd": "/plugin",   "desc": "플러그인 마켓플레이스 · 설치/제거"},
+    {"cmd": "/plugins",  "desc": "설치/탐색 가능한 플러그인 관리"},
+    {"cmd": "/apps",     "desc": "ChatGPT Apps/connectors 탐색"},
     {"cmd": "/statusline", "desc": "상태라인 커스터마이즈"},
-    {"cmd": "/sessions", "desc": "이전 세션 리스트 · 재개"},
+    {"cmd": "/theme",    "desc": "터미널 syntax theme 설정"},
 ]
 
 _CHEATSHEET_KEYS: list[dict[str, str]] = [
@@ -561,10 +571,10 @@ def api_guide_onboarding() -> dict[str, Any]:
         {
             "id": "plugins",
             "title": "플러그인 또는 마켓플레이스 추가",
-            "desc": "Everything Codex CLI 같은 번들로 한 번에 셋업.",
+            "desc": "Codex 플러그인/마켓플레이스로 skills, agents, commands 묶음을 관리.",
             "done": plugins_n >= 1,
             "detail": f"{plugins_n} 개 설치",
-            "hint": "플러그인 탭 → 마켓 추가 → everything-codex-code 설치.",
+            "hint": "플러그인 탭에서 설치 상태를 확인하고 /plugins 로 Codex CLI에서도 검증하세요.",
             "navigate": "plugins",
             "doc": "https://developers.openai.com/codex/plugins",
         },

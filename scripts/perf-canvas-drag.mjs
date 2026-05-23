@@ -23,7 +23,7 @@ async function buildWorkflow() {
       title: 'Node ' + i,
       x: 80 + (i % 6) * 220,
       y: 80 + Math.floor(i / 6) * 140,
-      data: { assignee: 'codex:opus' },
+      data: { assignee: 'codex:gpt-5.5' },
     });
     if (i > 0) edges.push({ id: 'e-perf' + i, from: 'n-perf' + (i - 1), to: 'n-perf' + i });
   }

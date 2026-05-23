@@ -28,7 +28,7 @@ let saveKeyHit = 0;
 await page.route('**/api/ai-providers/default-model', async (route) => { defaultModelHit++; await route.continue(); });
 await page.route('**/api/ai-providers/save-key', async (route) => { saveKeyHit++; await route.continue(); });
 await page.evaluate(async () => {
-  await window.saveDefaultModel('codex-cli', 'codex-sonnet-4-6');
+  await window.saveDefaultModel('codex-cli', 'gpt-5.5');
 });
 await page.waitForTimeout(500);
 check('saveDefaultModel routes to default-model endpoint', defaultModelHit === 1 && saveKeyHit === 0,
@@ -40,9 +40,9 @@ const persisted = await page.evaluate(async () => {
   const r = await fetch('/api/ai-providers/list?_=' + Date.now());
   const j = await r.json();
   const p = (j.providers || []).find(x => x.id === 'codex-cli');
-  return { defaultModel: p && p.defaultModel, isDefault: (p.models || []).some(m => m.isDefault && m.id === 'codex-sonnet-4-6') };
+  return { defaultModel: p && p.defaultModel, isDefault: (p.models || []).some(m => m.isDefault && m.id === 'gpt-5.5') };
 });
-check('default model persists + flagged', persisted.defaultModel === 'codex-sonnet-4-6' && persisted.isDefault,
+check('default model persists + flagged', persisted.defaultModel === 'gpt-5.5' && persisted.isDefault,
   `defaultModel=${persisted.defaultModel} flag=${persisted.isDefault}`);
 
 if (consoleErrs.length) {

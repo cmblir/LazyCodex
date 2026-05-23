@@ -552,11 +552,14 @@ def api_metrics_summary() -> dict:
     by_model: dict = defaultdict(lambda: {"in": 0, "out": 0, "cacheRead": 0, "cacheCreate": 0, "total": 0, "cost": 0.0, "n": 0})
     total = {"in": 0, "out": 0, "cacheRead": 0, "cacheCreate": 0, "total": 0, "cost": 0.0, "n": 0}
 
-    # Codex 모델 대략 요금 (USD per 1M tokens) — 2025 기준, 자주 바뀌니 참고값
+    # OpenAI 모델 대략 요금 (USD per 1M tokens) — 단가는 자주 바뀌므로 참고값.
+    # 알 수 없는 모델은 비용을 0으로 두고 토큰 집계만 표시한다.
     PRICING = {
-        "codex-opus-4": {"in": 15.0, "out": 75.0, "cacheRead": 1.5, "cacheCreate": 18.75},
-        "codex-sonnet-4": {"in": 3.0, "out": 15.0, "cacheRead": 0.3, "cacheCreate": 3.75},
-        "codex-haiku-4": {"in": 0.8, "out": 4.0, "cacheRead": 0.08, "cacheCreate": 1.0},
+        "gpt-5.5": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
+        "gpt-5.4": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
+        "gpt-5.2": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
+        "o3": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
+        "o4-mini": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
     }
     def _estimate_cost(model: str, ti: int, to: int, cr: int, cc: int) -> float:
         m = (model or "").lower()
@@ -565,8 +568,7 @@ def api_metrics_summary() -> dict:
             if prefix in m:
                 p = v; break
         if not p:
-            # 모델 모르면 Sonnet 로 추정
-            p = PRICING["codex-sonnet-4"]
+            p = {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0}
         return (ti * p["in"] + to * p["out"] + cr * p["cacheRead"] + cc * p["cacheCreate"]) / 1_000_000
 
     for r in rows:
@@ -602,7 +604,7 @@ def api_metrics_summary() -> dict:
         "total": total,
         "timeline": timeline,
         "models": models,
-        "note": "토큰은 세션 DB (~/.codex/projects/*/*.jsonl 에서 파싱) 기반. 비용은 2025 공식 요금표 기반 추정.",
+        "note": "토큰은 세션 DB (~/.codex/projects/*/*.jsonl 에서 파싱) 기반. 모델 단가가 확인된 항목만 비용을 추정합니다.",
     }
 
 def api_backup_diff(query: dict) -> dict:
@@ -692,24 +694,14 @@ IMAGE_CACHE_DIR = CODEX_HOME / "image-cache"
 
 
 CODEX_ENV_VARS = [
-    {"key": "ANTHROPIC_API_KEY",           "doc": "API 키 인증용 (OAuth 로그인 대신 사용)"},
-    {"key": "ANTHROPIC_AUTH_TOKEN",        "doc": "수동 Authorization Bearer 토큰 지정"},
-    {"key": "ANTHROPIC_BASE_URL",          "doc": "API base URL (self-hosted / proxy 시)"},
-    {"key": "ANTHROPIC_MODEL",             "doc": "기본 모델 override (예: codex-opus-4-7)"},
-    {"key": "ANTHROPIC_SMALL_FAST_MODEL",  "doc": "Haiku 등 작은 보조 모델 지정"},
-    {"key": "CLAUDE_CONFIG_DIR",           "doc": "~/.codex 위치 override"},
-    {"key": "CLAUDE_CODE_USE_BEDROCK",     "doc": "AWS Bedrock 백엔드 사용 (0/1)"},
-    {"key": "AWS_REGION",                  "doc": "Bedrock 용 AWS region"},
-    {"key": "CLAUDE_CODE_USE_VERTEX",      "doc": "Google Vertex AI 백엔드 사용 (0/1)"},
-    {"key": "CLOUD_ML_REGION",             "doc": "Vertex 용 region"},
-    {"key": "ANTHROPIC_VERTEX_PROJECT_ID", "doc": "Vertex GCP project id"},
+    {"key": "OPENAI_API_KEY",              "doc": "OpenAI API 키 인증용 (ChatGPT 로그인 대신 API auth 사용 시)"},
+    {"key": "OPENAI_BASE_URL",             "doc": "OpenAI 호환 API base URL override"},
+    {"key": "AZURE_OPENAI_API_KEY",        "doc": "Azure OpenAI provider 사용 시 API 키"},
+    {"key": "CODEX_HOME",                  "doc": "~/.codex 위치 override"},
+    {"key": "CODEX_CONFIG_TOML",           "doc": "config.toml 경로 override"},
     {"key": "HTTP_PROXY",                  "doc": "HTTP 프록시"},
     {"key": "HTTPS_PROXY",                 "doc": "HTTPS 프록시 (회사 망 등)"},
     {"key": "NO_PROXY",                    "doc": "프록시 제외 도메인"},
-    {"key": "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "doc": "텔레메트리·업데이트 비활성화 (0/1)"},
-    {"key": "CLAUDE_CODE_AUTO_UPDATE",     "doc": "자동 업데이트 끄기 (0/1)"},
-    {"key": "BASH_DEFAULT_TIMEOUT_MS",     "doc": "Bash 도구 기본 타임아웃 (ms)"},
-    {"key": "BASH_MAX_TIMEOUT_MS",         "doc": "Bash 도구 최대 타임아웃 (ms)"},
     {"key": "DISABLE_AUTOUPDATER",         "doc": "업데이트 비활성 (legacy)"},
     {"key": "DISABLE_TELEMETRY",           "doc": "텔레메트리 비활성 (0/1)"},
 ]
@@ -751,10 +743,12 @@ def api_model_config() -> dict:
         if isinstance(s, dict) and key in s:
             entries[key] = s[key]
     known_models = [
-        {"id": "codex-opus-4-7", "label": "Opus 4.7 (1M context)", "note": "최강 성능, 느림/비쌈"},
-        {"id": "codex-opus-4-6", "label": "Opus 4.6", "note": "Fast mode 기본 모델"},
-        {"id": "codex-sonnet-4-6", "label": "Sonnet 4.6", "note": "균형형"},
-        {"id": "codex-haiku-4-5", "label": "Haiku 4.5 (20251001)", "note": "가장 빠름/저렴"},
+        {"id": "gpt-5.5", "label": "GPT-5.5", "note": "최신 OpenAI coding-agent 권장 기본값"},
+        {"id": "gpt-5.4", "label": "GPT-5.4", "note": "강한 범용/코딩 모델"},
+        {"id": "gpt-5.4-mini", "label": "GPT-5.4 Mini", "note": "빠르고 비용 효율적인 작업용"},
+        {"id": "gpt-5.2", "label": "GPT-5.2", "note": "전문 작업/긴 에이전트 작업용"},
+        {"id": "o3", "label": "o3", "note": "고난도 추론 작업"},
+        {"id": "o4-mini", "label": "o4-mini", "note": "빠른 추론/분류/검증"},
         {"id": "default", "label": "기본 (Codex CLI 선택)", "note": "settings.model 비워두기"},
     ]
     return {"settings": entries, "models": known_models}
@@ -917,4 +911,3 @@ def api_homunculus_projects() -> dict:
             })
     rows.sort(key=lambda x: x.get("lastSeen", ""), reverse=True)
     return {"exists": True, "projects": rows, "count": len(rows)}
-

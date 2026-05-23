@@ -760,7 +760,7 @@ def api_project_ai_recommend(body: dict) -> dict:
 
     codex_bin = shutil.which("codex")
     if not codex_bin:
-        return {"error": "codex CLI가 설치되어 있지 않습니다. `brew install codex` 또는 https://docs.codex.com/en/docs/codex-code 참고"}
+        return {"error": "codex CLI가 설치되어 있지 않습니다. `brew install codex` 또는 https://developers.openai.com/codex/cli 참고"}
 
     auth = api_auth_status()
     if not auth.get("connected"):

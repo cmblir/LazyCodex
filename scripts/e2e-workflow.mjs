@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * 워크플로우 E2E — 빌트인 템플릿 생성 → 실행 → 상태 배너 등장 검증.
- * (Anthropic API 키 없이도 돌 수 있게 "시작 → 실패 허용" 까지만 검증)
+ * (OpenAI API 키 없이도 돌 수 있게 "시작 → 실패 허용" 까지만 검증)
  *
  * 사용:
  *   node scripts/e2e-workflow.mjs

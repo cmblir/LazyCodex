@@ -85,62 +85,6 @@ TAB_CATALOG: list[tuple[str, str, str, list[str]]] = [
         ["스킬", "skill"]),
     ("commands",      "work",     "슬래시 명령어 목록",
         ["슬래시", "슬래시 명령어", "slash"]),
-    ("promptCache",   "work",
-        "프롬프트 캐시 실험실 — OpenAI Codex Messages API 의 cache_control 을 "
-        "시스템/도구/메시지 블록에 적용해 cache_creation / cache_read 토큰과 "
-        "비용 절감을 실측. 예시 3종(시스템/문서/도구) 원클릭 실행, 히스토리 20건.",
-        ["프롬프트 캐시", "prompt cache", "cache_control", "ephemeral",
-         "캐시 절감", "cache_read", "cache_creation"]),
-    ("thinkingLab",   "work",
-        "Extended Thinking 실험실 — GPT-5 Codex/o3 의 thinking block 을 분리 시각화. "
-        "budget_tokens 슬라이더, 예시 3종(수학/디버깅/플래닝), 히스토리 20건.",
-        ["extended thinking", "thinking", "reasoning", "추론", "budget_tokens",
-         "thinking block"]),
-    ("toolUseLab",    "work",
-        "Tool Use 플레이그라운드 — tool schema 정의 → Messages API 호출 → "
-        "tool_use 블록 수신 시 tool_result 를 수동 입력해 멀티 턴 체인 실행. "
-        "기본 도구 3종 (get_weather / calculator / web_search mock).",
-        ["tool use", "function calling", "tool_result", "tool_use", "도구 호출",
-         "function call"]),
-    ("batchJobs",     "work",
-        "Batch API 관리 — 대용량 프롬프트 배치 제출·상태 폴링·결과 JSONL 다운로드. "
-        "예시 2종 (Q&A 10건 / 요약 5건), 최대 1000건/batch.",
-        ["batch", "메시지 배치", "message batches", "대량 요청", "jsonl",
-         "일괄 처리"]),
-    ("apiFiles",      "work",
-        "Files API — OpenAI Codex 파일 업로드 · 목록 · 삭제 + 업로드한 파일을 "
-        "메시지에 document 로 reference 해서 질문 테스트.",
-        ["files api", "파일 업로드", "document reference", "files",
-         "file_id"]),
-    ("visionLab",     "work",
-        "Vision / PDF 실험실 — 이미지(PNG/JPG/WebP/GIF) 또는 PDF 를 업로드해 "
-        "o3 / GPT-5 Codex / o4-mini 3 모델에 병렬 질문 → 응답 나란히 비교.",
-        ["vision", "이미지 인식", "PDF", "멀티모달", "multimodal",
-         "image_url", "비교"]),
-    ("modelBench",    "work",
-        "Model Benchmark — 사전 정의 프롬프트 셋(기본 Q&A / 코드 / 추론) × "
-        "선택한 모델들을 교차 실행 → 모델별 평균 지연·토큰·비용 집계 + "
-        "개별 응답 매트릭스. 결과 JSON 다운로드.",
-        ["benchmark", "벤치마크", "모델 비교", "model compare",
-         "지연 비교", "cost compare"]),
-    ("serverTools",   "work",
-        "Codex 공식 hosted tool 플레이그라운드 — 🌐 web_search + "
-        "🧪 code_execution. OpenAI Codex 서버가 직접 실행하는 도구를 체크박스로 "
-        "활성화하고 응답 블록(server_tool_use / *_tool_result / text)을 분류 시각화.",
-        ["web_search", "웹 검색", "code_execution", "코드 실행",
-         "hosted tool", "server tool", "공식 도구"]),
-    ("citationsLab",  "work",
-        "Citations 플레이그라운드 — 문서를 제공하고 citations.enabled 로 "
-        "정확한 인용 span 이 포함된 답변을 받아 원문 하이라이트로 시각화. "
-        "예시 2종 (회사 소개문 / 기술 아티클).",
-        ["citations", "인용", "citation", "document reference",
-         "cited_text", "span highlight"]),
-    ("agentSdkScaffold", "work",
-        "Agent SDK 스캐폴드 — codex-agent-sdk Python(uv) / TypeScript(bun) "
-        "프로젝트 뼈대를 UI 로 생성. 템플릿 3종(basic/tool-use/memory) + "
-        "Terminal 새 창에서 초기화 명령 자동 붙여넣기.",
-        ["scaffold", "sdk", "agent sdk", "프로젝트 생성", "codex-agent-sdk",
-         "uv", "bun"]),
     ("embeddingLab",  "work",
         "Embedding 비교 실험실 — 같은 쿼리/문서 집합을 Voyage / OpenAI / "
         "Ollama 세 프로바이더에 돌려 cosine similarity + rank 매트릭스 비교. "
@@ -302,26 +246,6 @@ TAB_DESC_I18N: dict[str, dict[str, str]] = {
     "projectAgents": {"en": "Per-project sub-agents / 16 role presets", "zh": "项目子代理 / 16 角色预设"},
     "skills": {"en": "User-defined skills", "zh": "用户自定义技能"},
     "commands": {"en": "Slash commands", "zh": "斜杠命令"},
-    "promptCache": {"en": "Prompt Cache Lab — cache_control + cache_read/creation tokens + cost savings",
-                   "zh": "提示缓存实验室 — cache_control + cache_read/creation 令牌 + 成本节约"},
-    "thinkingLab": {"en": "Extended Thinking Lab — visualize GPT-5 Codex/o3 thinking blocks with budget slider",
-                   "zh": "扩展思维实验室 — 可视化 GPT-5 Codex/o3 思维块,带 budget 滑块"},
-    "toolUseLab": {"en": "Tool Use Playground — define tools, trigger tool_use, feed tool_result across multi-turn chains",
-                  "zh": "工具使用实验室 — 定义工具,触发 tool_use,多轮传递 tool_result"},
-    "batchJobs": {"en": "Batch Jobs — submit large Message Batches, poll status, download JSONL results",
-                 "zh": "批量任务 — 提交大批量 Message Batches,轮询状态,下载 JSONL 结果"},
-    "apiFiles": {"en": "Files API — upload/list/delete files, reference them in messages as documents",
-                "zh": "Files API — 上传/列出/删除文件,并在消息中以 document 形式引用"},
-    "visionLab": {"en": "Vision/PDF Lab — drop an image or PDF, compare GPT-5 Codex/o3/o4-mini responses side-by-side",
-                 "zh": "视觉/PDF 实验室 — 拖入图片或 PDF,并排比较 GPT-5 Codex/o3/o4-mini 响应"},
-    "modelBench": {"en": "Model Benchmark — cross run prompt sets × models, aggregate latency/tokens/cost",
-                  "zh": "模型基准测试 — 提示集 × 模型交叉运行,汇总延迟/令牌/费用"},
-    "serverTools": {"en": "Server-side Tools — web_search + code_execution hosted by OpenAI Codex",
-                   "zh": "服务端工具 — OpenAI Codex 托管的 web_search + code_execution"},
-    "citationsLab": {"en": "Citations Lab — document + citations.enabled → span-highlighted answers",
-                    "zh": "引用实验室 — 文档 + citations.enabled → 片段高亮的答案"},
-    "agentSdkScaffold": {"en": "Agent SDK Scaffold — generate codex-agent-sdk Python/TS project skeletons",
-                        "zh": "Agent SDK 脚手架 — 生成 codex-agent-sdk Python/TS 项目骨架"},
     "embeddingLab": {"en": "Embedding Lab — compare Voyage / OpenAI / Ollama embeddings via cosine-sim rank matrix",
                     "zh": "嵌入实验室 — 通过余弦相似度 rank 矩阵比较 Voyage / OpenAI / Ollama 嵌入"},
     "rtk": {"en": "RTK Optimizer — install & activate the rtk-ai/rtk proxy to cut Codex tokens by 60-90%",
@@ -390,7 +314,7 @@ def get_tab_desc(tab_id: str, lang: str = "ko") -> str:
 
 # v2.26.0 — 레거시 TAB_CATALOG 엔트리 group 을 신규 6 카테고리로 매핑
 _WORK_TO_BUILD = {"workflows", "promptLibrary", "rtk", "projectAgents",
-                  "agents", "skills", "commands", "agentSdkScaffold"}
+                  "agents", "skills", "commands"}
 _ADVANCED_TO_MAIN = {"plans"}
 
 

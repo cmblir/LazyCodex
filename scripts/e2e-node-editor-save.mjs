@@ -32,7 +32,7 @@ await page.evaluate(() => {
     nodes: [
       { id: 'n-s', type: 'session', x: 200, y: 200,
         title: 'orig-title',
-        data: { subject: 'orig-subject', assignee: 'codex:opus', inputsMode: 'concat' } },
+        data: { subject: 'orig-subject', assignee: 'codex:gpt-5.5', inputsMode: 'concat' } },
     ],
     edges: [],
     viewport: { panX: 0, panY: 0, zoom: 1 },
@@ -48,13 +48,13 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(120);
 
-// Initial canvas: assignee label shows "@codex:opus".
+// Initial canvas: assignee label shows "@codex:gpt-5.5".
 const initialAssigneeText = await page.evaluate(() => {
   const sub = document.querySelector('.wf-node[data-node="n-s"] .wf-node-sub');
   return sub && sub.textContent;
 });
-check('canvas shows initial @codex:opus assignee',
-  /codex:opus/.test(initialAssigneeText || ''));
+check('canvas shows initial @codex:gpt-5.5 assignee',
+  /codex:gpt-5.5/.test(initialAssigneeText || ''));
 
 // Open editor.
 await page.evaluate(() => _wfOpenNodeEditor('n-s'));

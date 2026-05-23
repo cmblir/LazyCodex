@@ -47,7 +47,7 @@ const rebuildResult = await page.evaluate(async () => {
       x: 60 + (i % 10) * 200,
       y: 60 + Math.floor(i / 10) * 120,
       title: 'N' + i,
-      data: i === 0 ? {} : { subject: 's' + i, assignee: 'codex:opus' },
+      data: i === 0 ? {} : { subject: 's' + i, assignee: 'codex:gpt-5.5' },
     });
   }
   const wf = {

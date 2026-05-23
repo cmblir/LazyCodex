@@ -25,9 +25,12 @@ from .logger import log
 
 # 가격표 — 추정 소스용 (source 엔트리에 usd 없으면 usage.tokens 로 계산)
 _PRICING = {
-    "codex-opus-4-7":    {"in": 15.0, "out": 75.0},
-    "codex-sonnet-4-6":  {"in": 3.0,  "out": 15.0},
-    "codex-haiku-4-5":   {"in": 0.8,  "out": 4.0},
+    "gpt-5.5":     {"in": 0.0, "out": 0.0},
+    "gpt-5.4":     {"in": 0.0, "out": 0.0},
+    "gpt-5.4-mini": {"in": 0.0, "out": 0.0},
+    "gpt-5.2":     {"in": 0.0, "out": 0.0},
+    "o3":          {"in": 0.0, "out": 0.0},
+    "o4-mini":     {"in": 0.0, "out": 0.0},
 }
 
 
@@ -173,15 +176,13 @@ def _group_by_model(entries: list[dict]) -> list[dict]:
 # Map of stale model id substrings to their successor.
 # Quality-only (not cost-based). Match is substring on the recorded model string.
 _MODEL_SUCCESSORS = {
-    "codex-3-sonnet": "codex-sonnet-4-6",
-    "codex-3-haiku": "codex-haiku-4-5",
-    "codex-3-opus": "codex-opus-4-7",
-    "codex-3-5-sonnet": "codex-sonnet-4-6",
-    "codex-3.5-sonnet": "codex-sonnet-4-6",
-    "codex-sonnet-3-5": "codex-sonnet-4-6",
-    "gpt-4-turbo": "gpt-4.1",
-    "gpt-4-0": "gpt-4.1",
-    "gpt-4 ": "gpt-4.1",
+    "gpt-5.1": "gpt-5.5",
+    "gpt-5.2": "gpt-5.5",
+    "gpt-5.4": "gpt-5.5",
+    "gpt-4.1": "gpt-5.5",
+    "gpt-4-turbo": "gpt-5.5",
+    "gpt-4-0": "gpt-5.5",
+    "gpt-4 ": "gpt-5.5",
 }
 
 
@@ -236,7 +237,7 @@ def _recommendations(window_days: int = 30) -> dict:
     """Analyze last `window_days` of usage and return concrete swap recommendations.
 
     Rules:
-      1. Sonnet/Opus + avg_tokens_in < 500 + call_count >= 10 → swap to Haiku (~85% saving)
+      1. GPT-5.x/o3 + avg_tokens_in < 500 + call_count >= 10 → try o4-mini/gpt-5.4-mini
       2. avg_tokens_in > 5000 + call_count >= 5 → enable prompt caching (~50% saving)
       3. call_count >= 100 + total_cost > $1 → try ollama local (~100% saving)
       4. Stale model in _MODEL_SUCCESSORS → upgrade for quality (no $ saving)
@@ -254,23 +255,23 @@ def _recommendations(window_days: int = 30) -> dict:
         tcost = b["total_cost"]
         ati = b["avg_tokens_in"]
 
-        # Rule 1 — Haiku for short prompts
-        is_premium = ("sonnet" in mlow) or ("opus" in mlow)
-        is_haiku_already = "haiku" in mlow
-        if is_premium and not is_haiku_already and ati < 500 and cc >= 10:
-            saving = round(tcost * 0.85, 6)
+        # Rule 1 — smaller OpenAI model for short prompts
+        is_premium = ("gpt-5.5" in mlow) or ("gpt-5.4" in mlow) or ("o3" in mlow)
+        is_mini_already = ("mini" in mlow) or ("o4-mini" in mlow)
+        if is_premium and not is_mini_already and ati < 500 and cc >= 10:
+            saving = round(tcost * 0.60, 6)
             recs.append({
-                "ruleId": "haiku_for_short_prompts",
+                "ruleId": "mini_for_short_prompts",
                 "priority": 3,
                 "currentModel": model,
                 "currentProvider": provider,
                 "currentCost": tcost,
-                "suggestedModel": "codex-haiku-4-5",
+                "suggestedModel": "o4-mini",
                 "estimatedSavings": saving,
                 "callCount": cc,
                 "rationale": (
-                    f"평균 입력 토큰 {ati} (<500). 짧은 프롬프트에는 Haiku가 "
-                    f"~15% 비용으로 충분합니다."
+                    f"평균 입력 토큰 {ati} (<500). 짧은 분류/요약/검증은 "
+                    f"o4-mini 또는 gpt-5.4-mini 후보를 평가해볼 만합니다."
                 ),
             })
 

@@ -40,7 +40,7 @@ const TABS = [
   { id: 'projectAgents', waitFor: '.card',          extraWait: 900 },
   { id: 'mcp',           waitFor: '.card',          extraWait: 900 },
   // v2.36 — new tabs introduced in v2.34 (Crew Wizard) and v2.36 (Run Center).
-  // guideHub also screenshotted because v2.36.1 added OMC + OMX cards there.
+  // guideHub also screenshotted because v2.36.1 added official Codex cards there.
   { id: 'crewWizard',    waitFor: '.card, #cwSteps', extraWait: 1200 },
   { id: 'runCenter',     waitFor: '.rc-card, .card', extraWait: 1500 },
   { id: 'guideHub',      waitFor: '.card',          extraWait: 1000 },
@@ -78,9 +78,9 @@ const MOCK_COST_SUMMARY = {
     { source: 'serverTools',count: 4,  usd: 0.219, tokensIn: 21000,  tokensOut: 5000  },
   ],
   byModel: [
-    { model: 'codex-opus-4-7',   count: 31, usd: 5.821 },
-    { model: 'codex-sonnet-4-6', count: 74, usd: 4.519 },
-    { model: 'codex-haiku-4-5',  count: 42, usd: 2.044 },
+    { model: 'gpt-5.5',   count: 31, usd: 5.821 },
+    { model: 'gpt-5.5', count: 74, usd: 4.519 },
+    { model: 'gpt-5.4-mini',  count: 42, usd: 2.044 },
   ],
 };
 

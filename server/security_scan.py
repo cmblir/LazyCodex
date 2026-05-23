@@ -1,4 +1,4 @@
-"""Security Scan (v2.31.0) — ECC AgentShield 스타일 정적 검사.
+"""Security Scan — Codex 로컬 설정 정적 검사.
 
 ~/.codex/ 하위 설정 · AGENTS.md · hooks · agents · MCP 서버를 스캔해
 시크릿 노출 · 위험 훅 · SSRF 가능 URL · 과도한 권한 · 신뢰 불가 MCP 등
@@ -31,8 +31,8 @@ MCP_JSON = CODEX_HOME / "mcp.json"
 
 # 위험 패턴
 _SECRET_PATTERNS = [
-    # Anthropic 먼저 매칭 — `sk-ant-` 는 `sk-` 접두사 포함이므로 순서 중요.
-    (re.compile(r"sk-ant-[A-Za-z0-9_\-]{50,}"), "anthropic api key"),
+    # Vendor-specific key prefixes first — some include generic `sk-`.
+    (re.compile(r"sk-ant-[A-Za-z0-9_\-]{50,}"), "legacy vendor api key"),
     # OpenAI — classic sk-…, project-scoped sk-proj-…, admin sk-admin-…
     (re.compile(r"sk-(?:proj|admin)-[A-Za-z0-9_\-]{20,}"), "openai scoped api key"),
     (re.compile(r"(?<![A-Za-z0-9])sk-[A-Za-z0-9]{20,}"), "openai api key"),
@@ -139,18 +139,14 @@ def _scan_settings(issues: list):
                  f"'{rule}' 는 모든 shell 명령을 무제한 허용합니다. 구체적 패턴으로 제한하세요.",
                  "settings.permissions.allow")
 
-    # 토큰 설정 추천
-    env = data.get("env") or {}
-    if isinstance(env, dict):
-        try:
-            autocompact = env.get("CLAUDE_CODE_AUTOCOMPACT_THRESHOLD")
-            if autocompact is None:
-                _add(issues, "info", "tokens",
-                     "autocompact threshold not set",
-                     "ECC 권장: 50% (CLAUDE_CODE_AUTOCOMPACT_THRESHOLD=0.5) — 기본값 80% 보다 토큰 절약.",
-                     "settings.env")
-        except Exception:
-            pass
+    # 토큰 설정 추천: 최신 Codex 런타임은 config.toml 중심으로 관리한다.
+    try:
+        _add(issues, "info", "tokens",
+             "context compaction policy",
+             "긴 작업은 config.toml의 model_auto_compact_token_limit 또는 /compact 힌트로 완료 작업, 남은 리스크, 다음 목표를 보존하세요.",
+             "config.toml")
+    except Exception:
+        pass
 
 
 def _scan_codex_md(issues: list):

@@ -11,20 +11,20 @@ import re
 import tomllib
 from typing import Any
 
-from .config import CODEX_HOME
+from .config import CODEX_HOME, ROOT
 from .utils import _safe_read, _safe_write
 
 
 CONFIG_TOML = CODEX_HOME / "config.toml"
-SCHEMA_URL = "https://github.com/openai/codex/blob/main/codex-rs/core/config.schema.json"
+SCHEMA_URL = "https://developers.openai.com/codex/config-schema.json"
 DOCS_URL = "https://developers.openai.com/codex/config-reference"
 _BARE_TOML_KEY = re.compile(r"^[A-Za-z0-9_-]+$")
 
 OFFICIAL_SURFACES: list[dict[str, Any]] = [
     {"area": "Build", "name": "Subagents", "tab": "agents", "status": "official", "doc": "https://developers.openai.com/codex/subagents", "basis": "Configured agent roles and parallel delegation."},
     {"area": "Build", "name": "Skills", "tab": "skills", "status": "official", "doc": "https://developers.openai.com/codex/skills", "basis": "Reusable SKILL.md instructions for repeated work."},
-    {"area": "Build", "name": "Slash commands", "tab": "commands", "status": "official", "doc": "https://developers.openai.com/codex/slash-commands", "basis": "CLI/IDE slash command surface."},
-    {"area": "Build", "name": "Codex SDK / non-interactive", "tab": "agentSdkScaffold", "status": "official", "doc": "https://developers.openai.com/codex/sdk", "basis": "Programmatic and scripted Codex automation."},
+    {"area": "Build", "name": "Slash commands", "tab": "commands", "status": "official", "doc": "https://developers.openai.com/codex/cli/slash-commands", "basis": "CLI/IDE slash command surface."},
+    {"area": "Build", "name": "Codex CLI exec / non-interactive", "tab": "commands", "status": "official", "doc": "https://developers.openai.com/codex/cli", "basis": "Scripted Codex automation through official CLI surfaces."},
     {"area": "Config", "name": "config.toml layers", "tab": "codexHarness", "status": "official", "doc": "https://developers.openai.com/codex/config-basic", "basis": "User/project/system config precedence and profiles."},
     {"area": "Config", "name": "Rules / permissions", "tab": "permissions", "status": "official", "doc": "https://developers.openai.com/codex/rules", "basis": "Rules, permission profiles, and sandbox approval behavior."},
     {"area": "Config", "name": "Hooks", "tab": "hooks", "status": "official", "doc": "https://developers.openai.com/codex/hooks", "basis": "PreToolUse/PostToolUse/Stop and related hook events."},
@@ -89,7 +89,7 @@ HARNESS_CATALOG: list[dict[str, Any]] = [
         "category": "safety",
         "title": "승인 · 샌드박스",
         "keys": [
-            ["approval_policy", "untrusted/on-request/on-failure/never 또는 granular"],
+            ["approval_policy", "untrusted/on-request/never 또는 granular"],
             ["sandbox_mode", "read-only/workspace-write/danger-full-access"],
             ["allow_login_shell", "shell tool login shell 허용 여부"],
             ["sandbox_workspace_write.network_access", "workspace-write 네트워크 허용"],
@@ -99,6 +99,7 @@ HARNESS_CATALOG: list[dict[str, Any]] = [
             ["approvals_reviewer", "user/auto_review"],
             ["auto_review.policy", "자동 승인 리뷰어 정책"],
             ["default_permissions", "기본 permissions profile"],
+            ["projects.<path>.trust_level", "project-local .codex layer trust"],
             ["permissions", "이름 있는 권한 profile"],
             ["permissions.<name>.filesystem", "glob/path 별 read/write/none 정책"],
             ["permissions.<name>.network", "도메인/포트 단위 네트워크 정책"],
@@ -130,6 +131,7 @@ HARNESS_CATALOG: list[dict[str, Any]] = [
         "title": "도구 · MCP · 앱",
         "keys": [
             ["mcp_servers", "MCP 서버 정의"],
+            ["mcp_servers.openaiDeveloperDocs.url", "OpenAI Docs MCP streamable HTTP server"],
             ["mcp_oauth_credentials_store", "MCP OAuth 저장 방식"],
             ["mcp_oauth_callback_port", "MCP OAuth callback 고정 포트"],
             ["mcp_oauth_callback_url", "MCP OAuth redirect URI override"],
@@ -222,6 +224,55 @@ HARNESS_CATALOG: list[dict[str, Any]] = [
 
 
 HARNESS_PRESETS: list[dict[str, Any]] = [
+    {
+        "id": "gpt55-coding-agent",
+        "title": "GPT-5.5 코딩 에이전트",
+        "desc": "OpenAI 최신 모델 가이드 기준: gpt-5.5, reasoning medium, verbosity medium을 기본값으로 둡니다.",
+        "patch": {
+            "model": "gpt-5.5",
+            "review_model": "gpt-5.5",
+            "model_reasoning_effort": "medium",
+            "plan_mode_reasoning_effort": "high",
+            "model_verbosity": "medium",
+            "web_search": "cached",
+        },
+    },
+    {
+        "id": "trusted-current-project",
+        "title": "현재 프로젝트 trust",
+        "desc": "현재 repo의 project-local .codex/config.toml, hooks, rules 로드를 명시적으로 허용합니다.",
+        "patch": {
+            "projects": {
+                str(ROOT): {"trust_level": "trusted"},
+            },
+        },
+    },
+    {
+        "id": "openai-docs-mcp",
+        "title": "OpenAI Docs MCP",
+        "desc": "OpenAI 공식 문서 MCP 서버를 streamable HTTP로 등록하고 tool approval을 prompt로 둡니다.",
+        "patch": {
+            "mcp_servers": {
+                "openaiDeveloperDocs": {
+                    "url": "https://developers.openai.com/mcp",
+                    "required": False,
+                    "default_tools_approval_mode": "prompt",
+                }
+            },
+            "mcp_oauth_credentials_store": "auto",
+        },
+    },
+    {
+        "id": "config-schema-diagnostics",
+        "title": "Config schema 진단",
+        "desc": "config.toml 편집/진단에 필요한 로그, 히스토리, schema reference 친화 설정을 켭니다.",
+        "patch": {
+            "log_dir": str(CODEX_HOME / "log"),
+            "history": {"persistence": "save-all", "max_bytes": 52428800},
+            "tool_output_token_limit": 12000,
+            "tui": {"raw_output_mode": True, "show_tooltips": False},
+        },
+    },
     {
         "id": "safe-local",
         "title": "안전한 로컬 기본값",
@@ -1105,6 +1156,46 @@ HARNESS_FEATURE_FLAGS: list[dict[str, Any]] = [
 
 HARNESS_CONTROLS: list[dict[str, Any]] = [
     {
+        "area": "Model",
+        "key": "model",
+        "label": "기본 모델",
+        "presetId": "gpt55-coding-agent",
+        "doc": "https://developers.openai.com/api/docs/guides/latest-model",
+        "desc": "GPT-5.5를 Codex 기본 모델로 지정하고 review_model도 맞춥니다.",
+    },
+    {
+        "area": "Model",
+        "key": "model_reasoning_effort",
+        "label": "Reasoning effort",
+        "presetId": "gpt55-coding-agent",
+        "doc": "https://developers.openai.com/api/docs/guides/latest-model",
+        "desc": "GPT-5.5 권장 balanced 시작점인 medium을 기본으로 사용합니다.",
+    },
+    {
+        "area": "Project",
+        "key": f"projects.{ROOT}.trust_level",
+        "label": "현재 프로젝트 trust",
+        "presetId": "trusted-current-project",
+        "doc": "https://developers.openai.com/codex/config-reference",
+        "desc": "trusted 프로젝트에서만 project-local .codex/config.toml, hooks, rules 레이어가 로드됩니다.",
+    },
+    {
+        "area": "MCP",
+        "key": "mcp_servers.openaiDeveloperDocs.url",
+        "label": "OpenAI Docs MCP",
+        "presetId": "openai-docs-mcp",
+        "doc": "https://developers.openai.com/learn/docs-mcp",
+        "desc": "OpenAI 공식 문서 MCP 서버를 Codex CLI/IDE extension 공용 config에 등록합니다.",
+    },
+    {
+        "area": "Diagnostics",
+        "key": "log_dir",
+        "label": "Config/CLI 로그",
+        "presetId": "config-schema-diagnostics",
+        "doc": "https://developers.openai.com/codex/config-reference",
+        "desc": "config.toml 진단, history 보존, raw output을 함께 켜서 문제 재현을 쉽게 합니다.",
+    },
+    {
         "area": "Context",
         "key": "include_environment_context",
         "label": "환경 컨텍스트 주입",
@@ -1316,6 +1407,20 @@ HARNESS_TECHNIQUES: list[dict[str, Any]] = [
         "snippet": "codex --profile deep-review\ncodex -c 'sandbox_mode=\"read-only\"'",
     },
     {
+        "title": "프로젝트 trust 를 명시합니다",
+        "why": "Codex는 trusted 프로젝트에서만 project-local .codex/config.toml, hooks, rules 레이어를 로드합니다. 반복 작업 repo는 trust 상태를 config에 남겨두는 편이 예측 가능합니다.",
+        "keys": ["projects.<path>.trust_level", ".codex/config.toml", "hooks", "rules"],
+        "docs": "https://developers.openai.com/codex/config-reference",
+        "snippet": f"[projects.\"{str(ROOT)}\"]\ntrust_level = \"trusted\"",
+    },
+    {
+        "title": "공식 문서는 MCP로 붙입니다",
+        "why": "OpenAI Docs MCP를 등록하면 Codex가 OpenAI API, Codex, Apps SDK 관련 최신 공식 문서를 도구로 검색하고 읽을 수 있습니다.",
+        "keys": ["mcp_servers.openaiDeveloperDocs.url", "mcp_servers.<id>.default_tools_approval_mode", "/mcp"],
+        "docs": "https://developers.openai.com/learn/docs-mcp",
+        "snippet": "[mcp_servers.openaiDeveloperDocs]\nurl = \"https://developers.openai.com/mcp\"\ndefault_tools_approval_mode = \"prompt\"",
+    },
+    {
         "title": "승인 정책을 문자열이 아니라 플로우로 봅니다",
         "why": "approval_policy, sandbox_mode, approvals_reviewer, permissions 를 한 묶음으로 맞춰야 자동화와 안전도가 같이 올라갑니다.",
         "keys": ["approval_policy", "approvals_reviewer", "sandbox_mode", "default_permissions"],
@@ -1417,6 +1522,11 @@ HARNESS_TECHNIQUES: list[dict[str, Any]] = [
 
 
 HARNESS_PLAYBOOKS: list[dict[str, Any]] = [
+    {
+        "name": "공식 Codex 최신 기본값",
+        "steps": ["gpt-5.5 모델/리뷰 모델 설정", "OpenAI Docs MCP 등록", "현재 프로젝트 trust 명시", "config schema 진단/히스토리 보존"],
+        "presetIds": ["gpt55-coding-agent", "openai-docs-mcp", "trusted-current-project", "config-schema-diagnostics"],
+    },
     {
         "name": "낯선 repo 첫 진입",
         "steps": ["safe-local 적용", "AGENTS.md/README fallback 확인", "web_search=cached 유지", "write 작업 전 workspace-builder 로 전환"],

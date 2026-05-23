@@ -40,38 +40,10 @@ from .features import (
 )
 from .guide import api_guide_onboarding, api_guide_toolkit
 from .hooks import api_plugin_hook_update, api_recent_blocked_hooks, get_hooks
-from .prompt_cache import (
-    api_prompt_cache_examples, api_prompt_cache_history,
-    api_prompt_cache_test,
-)
-from .thinking_lab import (
-    api_thinking_lab_examples, api_thinking_lab_history,
-    api_thinking_lab_models, api_thinking_lab_test,
-)
-from .tool_use_lab import (
-    api_tool_use_history, api_tool_use_templates, api_tool_use_turn,
-)
-from .batch_jobs import (
-    api_batch_budget_get, api_batch_budget_set, api_batch_cancel,
-    api_batch_create, api_batch_examples, api_batch_get,
-    api_batch_list, api_batch_results,
-)
-from .api_files import (
-    api_files_delete, api_files_list, api_files_test, api_files_upload,
-)
-from .vision_lab import api_vision_compare, api_vision_models
-from .model_bench import api_model_bench_run, api_model_bench_sets
-from .server_tools import (
-    api_server_tools_catalog, api_server_tools_history, api_server_tools_run,
-)
 from .codex_docs import api_codex_docs_list, api_codex_docs_search
 from .codex_harness import (
     api_codex_harness_apply, api_codex_harness_config, api_codex_harness_save,
 )
-from .citations_lab import (
-    api_citations_examples, api_citations_history, api_citations_test,
-)
-from .agent_sdk_scaffold import api_scaffold_catalog, api_scaffold_create
 from .embedding_lab import (
     api_embedding_compare, api_embedding_examples, api_embedding_providers,
 )
@@ -197,20 +169,9 @@ from .agent_teams import (
     api_agent_teams_delete, api_agent_teams_get, api_agent_teams_list,
     api_agent_teams_save, api_agent_teams_spawn,
 )
-from .computer_use_lab import (
-    api_computer_use_examples, api_computer_use_history, api_computer_use_run,
-)
-from .memory_lab import (
-    api_memory_lab_blocks, api_memory_lab_examples, api_memory_lab_history,
-    api_memory_lab_run,
-)
 from .routines import (
     api_routines_delete, api_routines_get, api_routines_list,
     api_routines_run, api_routines_save,
-)
-from .advisor_lab import (
-    api_advisor_lab_examples, api_advisor_lab_history, api_advisor_lab_models,
-    api_advisor_lab_run,
 )
 from .process_monitor import (
     api_cli_sessions_list, api_kill_idle_codex, api_memory_snapshot,
@@ -416,28 +377,8 @@ ROUTES_GET: dict[str, Callable[[dict], Any]] = {
     "/api/ollama/info": api_ollama_model_info,
     "/api/ollama/serve/status": lambda q: api_ollama_serve_status(),
     "/api/ollama/settings": lambda q: api_ollama_settings_get(),
-    "/api/prompt-cache/examples": api_prompt_cache_examples,
-    "/api/prompt-cache/history": api_prompt_cache_history,
-    "/api/thinking-lab/examples": api_thinking_lab_examples,
-    "/api/thinking-lab/history": api_thinking_lab_history,
-    "/api/thinking-lab/models": api_thinking_lab_models,
-    "/api/tool-use-lab/templates": api_tool_use_templates,
-    "/api/tool-use-lab/history": api_tool_use_history,
-    "/api/batch/examples": api_batch_examples,
-    "/api/batch/list": api_batch_list,
-    "/api/batch/get": api_batch_get,
-    "/api/batch/results": api_batch_results,
-    "/api/batch/budget": api_batch_budget_get,
-    "/api/api-files/list": api_files_list,
-    "/api/vision-lab/models": api_vision_models,
-    "/api/model-bench/sets": api_model_bench_sets,
-    "/api/server-tools/catalog": api_server_tools_catalog,
-    "/api/server-tools/history": api_server_tools_history,
     "/api/codex-docs/list": api_codex_docs_list,
     "/api/codex-docs/search": api_codex_docs_search,
-    "/api/citations-lab/examples": api_citations_examples,
-    "/api/citations-lab/history": api_citations_history,
-    "/api/scaffold/catalog": api_scaffold_catalog,
     "/api/embedding-lab/providers": api_embedding_providers,
     "/api/embedding-lab/examples": api_embedding_examples,
     "/api/prompt-library/list": api_prompt_library_list,
@@ -466,15 +407,7 @@ ROUTES_GET: dict[str, Callable[[dict], Any]] = {
     "/api/hyper-agents/list": api_hyper_list,
     "/api/hooks/recent-blocks": api_recent_blocked_hooks,
     "/api/agent-teams/list": api_agent_teams_list,
-    "/api/computer-use-lab/examples": api_computer_use_examples,
-    "/api/computer-use-lab/history":  api_computer_use_history,
-    "/api/memory-lab/examples":       api_memory_lab_examples,
-    "/api/memory-lab/history":        api_memory_lab_history,
-    "/api/memory-lab/blocks":         api_memory_lab_blocks,
     "/api/routines/list":             api_routines_list,
-    "/api/advisor-lab/examples":      api_advisor_lab_examples,
-    "/api/advisor-lab/history":       api_advisor_lab_history,
-    "/api/advisor-lab/models":        api_advisor_lab_models,
     # v2.44.0 — process / port / memory monitors
     "/api/ports/list":                api_ports_list,
     "/api/sessions-monitor/list":     api_cli_sessions_list,
@@ -623,20 +556,6 @@ ROUTES_POST: dict[str, Callable[[dict], Any]] = {
     "/api/ollama/settings/save": api_ollama_settings_save,
     "/api/ollama/serve/stop": api_ollama_serve_stop,
     "/api/ai-providers/default-model": api_set_default_model,
-    "/api/prompt-cache/test": api_prompt_cache_test,
-    "/api/thinking-lab/test": api_thinking_lab_test,
-    "/api/tool-use-lab/turn": api_tool_use_turn,
-    "/api/batch/create": api_batch_create,
-    "/api/batch/cancel": api_batch_cancel,
-    "/api/batch/budget/set": api_batch_budget_set,
-    "/api/api-files/upload": api_files_upload,
-    "/api/api-files/delete": api_files_delete,
-    "/api/api-files/test": api_files_test,
-    "/api/vision-lab/compare": api_vision_compare,
-    "/api/model-bench/run": api_model_bench_run,
-    "/api/server-tools/run": api_server_tools_run,
-    "/api/citations-lab/test": api_citations_test,
-    "/api/scaffold/create": api_scaffold_create,
     "/api/embedding-lab/compare": api_embedding_compare,
     "/api/prompt-library/save": api_prompt_library_save,
     "/api/prompt-library/delete": api_prompt_library_delete,
@@ -665,12 +584,9 @@ ROUTES_POST: dict[str, Callable[[dict], Any]] = {
     "/api/agent-teams/save":   api_agent_teams_save,
     "/api/agent-teams/delete": api_agent_teams_delete,
     "/api/agent-teams/spawn":  api_agent_teams_spawn,
-    "/api/computer-use-lab/run": api_computer_use_run,
-    "/api/memory-lab/run":       api_memory_lab_run,
     "/api/routines/save":        api_routines_save,
     "/api/routines/delete":      api_routines_delete,
     "/api/routines/run":         api_routines_run,
-    "/api/advisor-lab/run":      api_advisor_lab_run,
     # v2.44.0 — process / port / memory monitors (mutating)
     "/api/process/kill":                  api_process_kill,
     "/api/sessions-monitor/open-terminal": api_session_open_terminal,

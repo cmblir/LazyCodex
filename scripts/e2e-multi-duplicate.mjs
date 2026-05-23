@@ -31,9 +31,9 @@ await page.evaluate(() => {
     id: 'wf-multi-dup-' + Date.now(),
     name: 'multi-dup',
     nodes: [
-      { id: 'n-a', type: 'session',  x: 100, y: 100, data: { subject: 'A', assignee: 'codex:opus' } },
-      { id: 'n-b', type: 'session',  x: 300, y: 100, data: { subject: 'B', assignee: 'codex:opus' } },
-      { id: 'n-c', type: 'session',  x: 500, y: 100, data: { subject: 'C', assignee: 'codex:opus' } },
+      { id: 'n-a', type: 'session',  x: 100, y: 100, data: { subject: 'A', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-b', type: 'session',  x: 300, y: 100, data: { subject: 'B', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-c', type: 'session',  x: 500, y: 100, data: { subject: 'C', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [
       { id: 'e-ab', from: 'n-a', to: 'n-b' },
@@ -98,9 +98,9 @@ await page.evaluate(() => {
     id: 'wf-ctx-dup-' + Date.now(),
     name: 'ctx-dup',
     nodes: [
-      { id: 'n-a', type: 'session',  x: 100, y: 200, data: { subject: 'A', assignee: 'codex:opus' } },
-      { id: 'n-b', type: 'session',  x: 300, y: 200, data: { subject: 'B', assignee: 'codex:opus' } },
-      { id: 'n-c', type: 'session',  x: 500, y: 200, data: { subject: 'C', assignee: 'codex:opus' } },
+      { id: 'n-a', type: 'session',  x: 100, y: 200, data: { subject: 'A', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-b', type: 'session',  x: 300, y: 200, data: { subject: 'B', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-c', type: 'session',  x: 500, y: 200, data: { subject: 'C', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [
       { id: 'e-ab', from: 'n-a', to: 'n-b' },
@@ -152,8 +152,8 @@ await page.evaluate(() => {
     id: 'wf-dup-undo-' + Date.now(),
     name: 'dup-undo',
     nodes: [
-      { id: 'n-1', type: 'session', x: 100, y: 300, data: { subject: '1', assignee: 'codex:opus' } },
-      { id: 'n-2', type: 'session', x: 300, y: 300, data: { subject: '2', assignee: 'codex:opus' } },
+      { id: 'n-1', type: 'session', x: 100, y: 300, data: { subject: '1', assignee: 'codex:gpt-5.5' } },
+      { id: 'n-2', type: 'session', x: 300, y: 300, data: { subject: '2', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [{ id: 'e-12', from: 'n-1', to: 'n-2' }],
   };

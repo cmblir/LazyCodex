@@ -37,7 +37,7 @@ await page.evaluate(() => {
     name: 'ctx-test',
     nodes: [
       { id: 'n-s', type: 'session', x: 200, y: 200, title: 'ctx-target',
-        data: { subject: 'x', assignee: 'codex:opus' } },
+        data: { subject: 'x', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [],
     viewport: { panX: 0, panY: 0, zoom: 1 },

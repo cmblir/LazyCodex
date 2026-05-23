@@ -29,21 +29,21 @@ SEED_ITEMS = [
         "title": "코드 리뷰 요청",
         "body": "다음 코드에 대해 보안·성능·가독성 관점에서 리뷰해줘. 개선 제안은 우선순위 순으로.\n\n```\n<CODE HERE>\n```",
         "tags": ["review", "code", "ko"],
-        "model": "codex-sonnet-4-6",
+        "model": "codex:gpt-5.5",
     },
     {
         "id": "seed-summarize-meeting",
         "title": "회의 요약",
         "body": "다음 회의록을 5줄로 요약해. 핵심 결정, 액션 아이템, 담당자를 bullet 로 정리.\n\n<MEETING TRANSCRIPT>",
         "tags": ["summarize", "meeting", "ko"],
-        "model": "codex-haiku-4-5",
+        "model": "codex:gpt-5.4-mini",
     },
     {
         "id": "seed-sql-optimize",
         "title": "SQL 쿼리 최적화",
         "body": "다음 PostgreSQL 쿼리를 분석해. 인덱스 제안, EXPLAIN 읽는 법, 재작성 방안을 단계별로 제시해.\n\n```sql\n<SQL HERE>\n```",
         "tags": ["sql", "optimize", "db"],
-        "model": "codex-sonnet-4-6",
+        "model": "codex:gpt-5.5",
     },
 ]
 
@@ -217,7 +217,7 @@ def api_prompt_library_to_workflow(body: dict) -> dict:
     wf_store = _wf_load()
     wf_id = _new_wf_id()
     now = int(time.time() * 1000)
-    model = item.get("model") or "codex-sonnet-4-6"
+    model = item.get("model") or "codex:gpt-5.5"
     # 간단 모델 라벨 → assignee 형식
     assignee = model
 

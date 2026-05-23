@@ -40,7 +40,7 @@ const setupResult = await page.evaluate(async () => {
     nodes: [
       { id: 'n-start', type: 'start', x: 50, y: 80, data: {} },
       { id: 'n-s', type: 'session', x: 320, y: 80, title: 'output-test',
-        data: { subject: 'x', assignee: 'codex:opus' } },
+        data: { subject: 'x', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [{ id: 'e1', from: 'n-start', fromPort: 'out', to: 'n-s', toPort: 'in' }],
     viewport: { panX: 0, panY: 0, zoom: 1 },
@@ -55,7 +55,7 @@ const setupResult = await page.evaluate(async () => {
       status: 'ok',
       output: longOut,
       provider: 'codex-cli',
-      model: 'opus',
+      model: 'gpt-5.5',
       durationMs: 1234,
       tokensIn: 100,
       tokensOut: 200,

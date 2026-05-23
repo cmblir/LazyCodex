@@ -18,7 +18,7 @@ _Stop hand-editing every config file. Open one dashboard and wire Codex from the
 
 LazyCodex is a **local-first setup and operations dashboard** for Codex. It turns the scattered files under `~/.codex/` into clickable screens for agents, skills, hooks, plugins, MCP connectors, permissions, sessions, projects, models, and workflows. Everything ships behind one `python3 server.py` — Python stdlib, single-file HTML, no runtime build step.
 
-> ℹ️ The standalone terminal CLI `lazyclaw` now lives in its own repository: <https://github.com/cmblir/lazyclaw> (`npm i -g lazyclaw`).
+> Official Codex references used by this dashboard: <https://developers.openai.com/codex> and the OpenAI Docs MCP server at <https://developers.openai.com/mcp>.
 
 **No cloud. No telemetry. No package to install.**
 

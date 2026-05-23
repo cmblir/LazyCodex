@@ -33,7 +33,7 @@ await page.evaluate(() => {
     name: 'pin-undo',
     nodes: [
       { id: 'n-a', type: 'session', x: 100, y: 200,
-        data: { subject: 'A', assignee: 'codex:opus' } },
+        data: { subject: 'A', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [],
   };

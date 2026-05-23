@@ -40,7 +40,7 @@ await page.evaluate(() => {
     nodes: [
       { id: 'n-start', type: 'start',   x: 60,  y: 80, data: {} },
       { id: 'n-s',     type: 'session', x: 320, y: 80, title: 'pin-target',
-        data: { subject: 'x', assignee: 'codex:opus' } },
+        data: { subject: 'x', assignee: 'codex:gpt-5.5' } },
     ],
     edges: [{ id: 'e1', from: 'n-start', fromPort: 'out', to: 'n-s', toPort: 'in' }],
     viewport: { panX: 0, panY: 0, zoom: 1 },
@@ -54,7 +54,7 @@ await page.evaluate(() => {
     'n-s': {
       status: 'ok',
       output: 'this output should become the pinned value',
-      provider: 'codex-cli', model: 'opus', durationMs: 1234,
+      provider: 'codex-cli', model: 'gpt-5.5', durationMs: 1234,
     },
   };
   __wf._forceFullCanvasRebuild = true;

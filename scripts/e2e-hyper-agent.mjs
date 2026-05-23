@@ -15,7 +15,7 @@ const AGENT_FILE = path.join(AGENTS_DIR, 'hyper-test.md');
 const AGENT_BODY = `---
 name: hyper-test
 description: synthetic agent for hyper smoke
-model: opus
+model: gpt-5.5
 tools: Read, Grep
 ---
 

@@ -1,9 +1,9 @@
 """Ralph loop engine — same-prompt iteration with hard safety guards.
 
-Named after Geoffrey Huntley's "Ralph Wiggum loop" pattern (and Anthropic's
-``codex-code/plugins/ralph-wiggum``): feed the **same** PROMPT.md back to the
-model in a tight loop. Between iterations the model's prior state lives in the
-filesystem + git history (not in the prompt). The loop exits when *any* of:
+This module implements a repeat-until-done harness pattern: feed the **same**
+PROMPT.md back to the model in a tight loop. Between iterations the model's
+prior state lives in the filesystem + git history (not in the prompt). The loop
+exits when *any* of:
 
 1. The model emits the configured ``completion_promise`` string anywhere in
    its output (default ``<promise>DONE</promise>``).
@@ -59,7 +59,7 @@ _DEFAULT_MAX_ITER    = int(os.environ.get("RALPH_DEFAULT_MAX_ITER", "25"))
 _DEFAULT_BUDGET_USD  = float(os.environ.get("RALPH_DEFAULT_BUDGET_USD", "5.0"))
 _DEFAULT_COMPLETION  = os.environ.get("RALPH_DEFAULT_COMPLETION",
                                        "<promise>DONE</promise>")
-_DEFAULT_ASSIGNEE    = os.environ.get("RALPH_DEFAULT_ASSIGNEE", "codex:sonnet")
+_DEFAULT_ASSIGNEE    = os.environ.get("RALPH_DEFAULT_ASSIGNEE", "codex:gpt-5.5")
 
 
 # ───────── Schema ─────────

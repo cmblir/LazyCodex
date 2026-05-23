@@ -29,9 +29,9 @@ await page.evaluate(() => {
     id: 'wf-disable-' + Date.now(),
     name: 'disable',
     nodes: [
-      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:opus', disabled: false } },
-      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:opus', disabled: true  } },
-      { id: 'n-c', type: 'session', x: 500, y: 200, data: { subject: 'C', assignee: 'codex:opus', disabled: false } },
+      { id: 'n-a', type: 'session', x: 100, y: 200, data: { subject: 'A', assignee: 'codex:gpt-5.5', disabled: false } },
+      { id: 'n-b', type: 'session', x: 300, y: 200, data: { subject: 'B', assignee: 'codex:gpt-5.5', disabled: true  } },
+      { id: 'n-c', type: 'session', x: 500, y: 200, data: { subject: 'C', assignee: 'codex:gpt-5.5', disabled: false } },
     ],
     edges: [],
   };
@@ -93,8 +93,8 @@ await page.evaluate(() => {
     id: 'wf-disable-undo-' + Date.now(),
     name: 'disable-undo',
     nodes: [
-      { id: 'n-x', type: 'session', x: 100, y: 200, data: { subject: 'X', assignee: 'codex:opus', disabled: false } },
-      { id: 'n-y', type: 'session', x: 300, y: 200, data: { subject: 'Y', assignee: 'codex:opus', disabled: false } },
+      { id: 'n-x', type: 'session', x: 100, y: 200, data: { subject: 'X', assignee: 'codex:gpt-5.5', disabled: false } },
+      { id: 'n-y', type: 'session', x: 300, y: 200, data: { subject: 'Y', assignee: 'codex:gpt-5.5', disabled: false } },
     ],
     edges: [],
   };

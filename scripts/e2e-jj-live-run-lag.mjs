@@ -22,7 +22,7 @@ const r = await page.evaluate(async () => {
       id: `n-${i}`, type: i === 0 ? 'start' : (i === 6 ? 'output' : 'session'),
       x: 60 + i * 220, y: 200,
       title: `node ${i}`,
-      data: { assignee: 'sonnet-4.6', subject: 's', description: 'd' },
+      data: { assignee: 'gpt-5.5', subject: 's', description: 'd' },
     })),
     edges: Array.from({ length: 6 }, (_, i) => ({
       id: `e-${i}`, from: `n-${i}`, to: `n-${i+1}`, fromPort: 'out', toPort: 'in',

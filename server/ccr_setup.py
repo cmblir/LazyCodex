@@ -430,7 +430,7 @@ _PRESETS: list[dict] = [
         "name": "aihubmix",
         "api_base_url": "https://aihubmix.com/v1/chat/completions",
         "api_key_placeholder": "sk-aihubmix-...",
-        "models": ["Z/glm-4.5", "Z/glm-4.6", "codex-sonnet-4-5", "gpt-5"],
+        "models": ["Z/glm-4.5", "Z/glm-4.6", "gpt-5.5", "gpt-5"],
         "transformer": None,
         "models_help": (
             "aihubmix proxies many providers including Z.AI's GLM family. "
@@ -455,9 +455,9 @@ _PRESETS: list[dict] = [
         "api_key_placeholder": "sk-or-...",
         "models": [
             "google/gemini-2.5-pro-preview",
-            "anthropic/codex-sonnet-4",
-            "anthropic/codex-3.5-sonnet",
-            "anthropic/codex-3.7-sonnet:thinking",
+            "openai/gpt-5.5",
+            "openai/gpt-5.4",
+            "openai/gpt-5.4-mini",
         ],
         "transformer": {"use": ["openrouter"]},
         "models_help": "OpenRouter aggregates many models. Add only the ones you need.",

@@ -32,7 +32,7 @@ const wfId = await page.evaluate(async () => {
       name: 'run-node-' + Date.now(),
       nodes: [
         { id: 'n-pin', type: 'session', x: 50, y: 50,
-          data: { subject: 'x', assignee: 'codex:opus',
+          data: { subject: 'x', assignee: 'codex:gpt-5.5',
                   pinned: true, pinnedOutput: 'frozen-cache-hit' } },
       ],
       edges: [],

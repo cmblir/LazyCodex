@@ -35,7 +35,7 @@ const { id, name } = await page.evaluate(async () => {
       nodes: [
         { id: 'n-stk',   type: 'sticky', x: 50, y: 50, data: { text: 'note', color: 'yellow', width: 220, height: 140 } },
         { id: 'n-start', type: 'start',   x: 280, y: 50, data: {} },
-        { id: 'n-s',     type: 'session', x: 460, y: 50, data: { subject: 'x', assignee: 'codex:opus' } },
+        { id: 'n-s',     type: 'session', x: 460, y: 50, data: { subject: 'x', assignee: 'codex:gpt-5.5' } },
       ],
       edges: [{ id: 'e1', from: 'n-start', fromPort: 'out', to: 'n-s', toPort: 'in' }],
     }),

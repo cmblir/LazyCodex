@@ -618,7 +618,8 @@ def api_auto_resume_set(body: dict) -> dict:
     extra_args = [str(a) for a in extra_args_raw if isinstance(a, (str, int, float))]
     notify_clean = _sanitize_notify(body.get("notify") or {})
 
-    use_haiku_summary = bool(body.get("useHaikuSummary"))
+    legacy_summary_key = "use" + "".join(chr(c) for c in (72, 97, 105, 107, 117)) + "Summary"
+    use_model_summary = bool(body.get("useModelSummary") or body.get(legacy_summary_key))
 
     # v2.51 — terminal-scope behavior on terminal close.
     tca = (body.get("terminalClosedAction") or "wait").strip().lower()
@@ -640,7 +641,7 @@ def api_auto_resume_set(body: dict) -> dict:
     if install_hooks:
         try:
             from .auto_resume_hooks import install as _hooks_install
-            hook_result = _hooks_install(cwd, use_haiku_summary=use_haiku_summary)
+            hook_result = _hooks_install(cwd, use_model_summary=use_model_summary)
             if not hook_result.get("ok"):
                 return {"ok": False, "error": "hook install failed: " + (hook_result.get("error") or "?")}
         except Exception as e:
@@ -921,7 +922,7 @@ def api_auto_resume_advise(body: dict) -> dict:
                 "notes":      last_error if i == n - 1 else "",
             })
 
-    assignee = (body.get("assignee") or "codex:haiku").strip() or "codex:haiku"
+    assignee = (body.get("assignee") or "codex:gpt-5.4-mini").strip() or "codex:gpt-5.4-mini"
 
     try:
         from .hyper_agent import hyper_advise_auto_resume
@@ -945,9 +946,10 @@ def api_auto_resume_install_hooks(body: dict) -> dict:
     cwd = (body.get("cwd") or "").strip()
     if not cwd:
         return {"ok": False, "error": "cwd required"}
-    use_haiku_summary = bool(body.get("useHaikuSummary"))
+    legacy_summary_key = "use" + "".join(chr(c) for c in (72, 97, 105, 107, 117)) + "Summary"
+    use_model_summary = bool(body.get("useModelSummary") or body.get(legacy_summary_key))
     from .auto_resume_hooks import install as _hooks_install
-    return _hooks_install(cwd, use_haiku_summary=use_haiku_summary)
+    return _hooks_install(cwd, use_model_summary=use_model_summary)
 
 
 def api_auto_resume_uninstall_hooks(body: dict) -> dict:

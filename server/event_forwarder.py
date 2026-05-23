@@ -30,7 +30,7 @@ from .utils import _safe_write
 
 SETTINGS_PATH = Path.home() / ".codex" / "settings.json"
 
-# Codex CLI hook 이벤트 타입 (https://docs.anthropic.com/en/docs/codex-code/hooks)
+# Codex CLI hook 이벤트 타입 (https://developers.openai.com/codex/config-reference#hooks)
 _EVENT_TYPES = {
     "PreToolUse", "PostToolUse", "UserPromptSubmit", "Notification",
     "Stop", "SubagentStop", "PreCompact", "SessionStart", "SessionEnd",

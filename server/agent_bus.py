@@ -62,7 +62,7 @@ class AgentEvent:
     id: int = 0
     ts: int = 0           # epoch ms
     topic: str = ""       # "orch.<run_id>.dispatch", "wf.<id>.node.<nid>", ...
-    source: str = ""      # agent identifier ("codex:opus", "slack:Cxxxx", ...)
+    source: str = ""      # agent identifier ("codex:gpt-5.5", "slack:Cxxxx", ...)
     payload: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:

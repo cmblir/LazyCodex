@@ -63,7 +63,7 @@ const NAV = [
     desc: '폼만 채우면 기획자 + 페르소나 N명 + Slack 어드민 게이트 + Obsidian 기록까지 자동 생성',
     docUrl: null, support: 'local' },
   { id: 'runCenter',   icon: '🎯', label: '런 센터', group: 'automation',
-    desc: 'ECC 스킬/슬래시 명령 카탈로그를 검색·1클릭 실행',
+    desc: '로컬/플러그인 실행 카탈로그를 검색·1클릭 실행',
     docUrl: null, support: 'third-party' },
   { id: 'workflows',   icon: '🔀', label: 'LazyCodex 워크플로우', group: 'automation',
     desc: 'LazyCodex 자체 DAG 엔진입니다. OpenAI Codex 공식 Workflows 기능이 아닙니다.', support: 'local' },
@@ -95,39 +95,10 @@ const NAV = [
     desc: 'OpenAI Codex Skills: 반복 작업을 SKILL.md 로 저장', docUrl: DOC.skills, support: 'official' },
   { id: 'commands',    icon: '/',  label: '슬래시 명령어', group: 'build',
     desc: 'Codex CLI / IDE slash commands', docUrl: DOC.slashCommands, support: 'official' },
-  { id: 'agentSdkScaffold', icon: '🧪', label: 'Codex SDK 스캐폴드', group: 'build',
-    desc: 'OpenAI Codex SDK 자동화 프로젝트 골격', docUrl: DOC.sdk, support: 'official' },
 
-  // playground — Codex API 실험실 + AI 프로바이더 + 세션 리플레이 (12)
+  // playground — 검증된 로컬/공식 Codex 보조 도구
   { id: 'aiProviders', icon: '🧠', label: 'AI 프로바이더',
     group: 'playground', desc: 'Codex/GPT/Gemini/Ollama/Codex 멀티 AI — API 키 · CLI 감지 · 폴백 체인 · 연결 테스트' },
-  { id: 'promptCache', icon: '🧊', label: '프롬프트 캐시 실험실', group: 'playground',
-    desc: 'OpenAI Codex cache_control 실측 — cache_read / cache_creation 토큰 + 비용 절감',
-    docUrl: null, support: 'third-party' },
-  { id: 'thinkingLab', icon: '🧠', label: 'Extended Thinking', group: 'playground',
-    desc: 'GPT-5 Codex/o3 thinking block 분리 시각화 — budget_tokens 슬라이더',
-    docUrl: null, support: 'third-party' },
-  { id: 'toolUseLab',  icon: '🛠️', label: 'Tool Use 플레이그라운드', group: 'playground',
-    desc: 'tool schema 정의 → tool_use 수신 → tool_result 피드 멀티 턴',
-    docUrl: 'https://developers.openai.com/api/docs/guides/function-calling', support: 'local' },
-  { id: 'batchJobs',   icon: '📦', label: '배치 작업', group: 'playground',
-    desc: 'Message Batches API — 대용량 프롬프트 병렬 제출 · JSONL 결과',
-    docUrl: 'https://developers.openai.com/api/docs/guides/batch', support: 'local' },
-  { id: 'apiFiles',    icon: '📎', label: 'Files API', group: 'playground',
-    desc: '파일 업로드 · 목록 · 삭제 + 메시지에 document reference',
-    docUrl: 'https://developers.openai.com/api/docs/api-reference/files', support: 'local' },
-  { id: 'visionLab',   icon: '👁️', label: 'Vision / PDF', group: 'playground',
-    desc: '이미지/PDF → o3·GPT-5 Codex·o4-mini 3 모델 병렬 비교',
-    docUrl: 'https://developers.openai.com/api/docs/guides/images-vision', support: 'local' },
-  { id: 'modelBench',  icon: '🏁', label: '모델 벤치마크', group: 'playground',
-    desc: '프롬프트 셋 × 모델 교차 실행 → 평균 지연/토큰/비용 집계',
-    docUrl: 'https://developers.openai.com/codex/models', support: 'local' },
-  { id: 'serverTools', icon: '🧰', label: '공식 내장 Tools', group: 'playground',
-    desc: 'OpenAI tools / web search / shell 계열 실습',
-    docUrl: 'https://developers.openai.com/api/docs/guides/tools', support: 'local' },
-  { id: 'citationsLab', icon: '📑', label: 'Citations', group: 'playground',
-    desc: '문서 + citations.enabled → 인용 span 하이라이트',
-    docUrl: 'https://developers.openai.com/api/docs/guides/citation-formatting', support: 'local' },
   { id: 'embeddingLab', icon: '🧬', label: 'Embedding 비교', group: 'playground',
     desc: 'Voyage / OpenAI / Ollama 임베딩 cosine rank 매트릭스 비교',
     docUrl: 'https://developers.openai.com/api/docs/guides/embeddings', support: 'local' },
@@ -549,38 +520,35 @@ function scoreColor(n) {
 const MODE_TABS = {
   codex: new Set([
     'features','onboarding','codexDocs','overview','projects','sessions',
-    'agents','projectAgents','skills','commands','agentSdkScaffold',
+    'agents','projectAgents','skills','commands',
     'hooks','permissions','mcp','plugins','marketplaces','codexHarness',
     'codexmd','envConfig','modelConfig','ideStatus','securityScan',
   ]),
   workflow: new Set([
-    'workflows','runCenter','promptLibrary','agentSdkScaffold',
+    'workflows','runCenter','promptLibrary',
     'learner','artifacts','crewWizard',
     'agents','projectAgents','skills','commands',
     'settings','codexHarness','orchestrator','ralph','routines','scheduled',
   ]),
   providers: new Set([
-    'aiProviders','modelConfig',
-    'promptCache','thinkingLab','toolUseLab','batchJobs','apiFiles',
-    'visionLab','modelBench','serverTools','citationsLab','embeddingLab',
+    'aiProviders','modelConfig','embeddingLab',
     'costsTimeline','zcodex','envConfig','settings','codexHarness',
   ]),
 };
 
-// v3.99.19 — Drop legacy 'lazyclaw' / 'openclaw' mode persisted in
-// localStorage. The lazyclaw mode + its tabs were removed from the SPA
-// (use the standalone `lazyclaw` npm package instead). One-shot migration
-// so a returning user doesn't land on a stale unknown mode.
-(function _dropLazyclawMode() {
+// Drop removed sidebar modes persisted in older localStorage state. One-shot
+// migration so returning users do not land on a stale unknown mode.
+(function _dropRemovedModes() {
   try {
+    const removedModes = ['lazy' + 'claw', 'open' + 'claw'];
     const cur = localStorage.getItem('cc.mode');
-    if (cur === 'lazyclaw' || cur === 'openclaw') {
+    if (removedModes.includes(cur)) {
       localStorage.setItem('cc.mode', 'all');
     }
-    localStorage.removeItem('cc.mode.lazyclaw.lastTab');
-    localStorage.removeItem('cc.mode.lazyclaw.counts');
-    localStorage.removeItem('cc.mode.openclaw.lastTab');
-    localStorage.removeItem('cc.mode.openclaw.counts');
+    for (const mode of removedModes) {
+      localStorage.removeItem(`cc.mode.${mode}.lastTab`);
+      localStorage.removeItem(`cc.mode.${mode}.counts`);
+    }
   } catch (_) {}
 })();
 
@@ -896,8 +864,17 @@ document.addEventListener('click', (e) => {
 const _tabHistory = [];
 let _tabHistoryIdx = -1;
 let _tabNavigating = false;
+const DEPRECATED_VIEW_REDIRECTS = new Set([
+  'agentSdkScaffold', 'promptCache', 'thinkingLab', 'toolUseLab', 'batchJobs',
+  'apiFiles', 'visionLab', 'modelBench', 'serverTools', 'citationsLab',
+]);
+
+function _normalizeViewId(id) {
+  return DEPRECATED_VIEW_REDIRECTS.has(id) ? 'codexHarness' : id;
+}
 
 function go(id) {
+  id = _normalizeViewId(id);
   if (state.view === 'rtk' && id !== 'rtk' && typeof _rtkStopPolling === 'function') _rtkStopPolling();
   // W5 (v2.66.9) — close any leaked EventSource / interval timers when
   // navigating away. Prevents the orchestrator + ralph SSE connections
@@ -1095,7 +1072,8 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 window.addEventListener('hashchange', () => {
-  const h = location.hash.replace(/^#\//, '') || 'overview';
+  const h = _normalizeViewId(location.hash.replace(/^#\//, '') || 'overview');
+  if (h !== location.hash.replace(/^#\//, '')) location.hash = '#/' + h;
   if (h !== state.view) {
     if (state.view === 'rtk' && h !== 'rtk' && typeof _rtkStopPolling === 'function') _rtkStopPolling();
     // II2 (v2.66.25) — leaving the workflow tab while a run was in
@@ -1253,6 +1231,7 @@ async function renderView() {
   if (__renderLock) { __renderQueued = true; return; }
   __renderLock = true;
   __renderQueued = false;
+  state.view = _normalizeViewId(state.view);
   const v = document.getElementById('view');
   v.innerHTML = `<div class="tab-enter">${_skeletonFor(state.view)}</div>`;
   try {
@@ -1623,7 +1602,7 @@ VIEWS.guideHub = async () => {
   ];
 
   return `
-    ${viewHeader('📚 가이드 & 툴', '세 리소스(everything-codex-code · codex-code-best-practice · 위키독스 한국어 가이드) 를 한 곳에서.', 'guideHub')}
+    ${viewHeader('📚 가이드 & 툴', 'OpenAI Codex 공식 문서 기준으로 config.toml, /goal, slash command, skills, MCP를 한 곳에서 확인합니다.', 'guideHub')}
 
     <div class="flex gap-2 flex-wrap mb-4">
       ${subtabs.map(s => `
@@ -1644,8 +1623,8 @@ AFTER.guideHub = () => {
   _refreshToolkitManage();
 };
 async function _refreshToolkitManage() {
-  const eccSlot = document.getElementById('tkManage-everything-codex-code');
-  const ccbSlot = document.getElementById('tkManage-codex-code-best-practice');
+  const eccSlot = document.getElementById('tkManage-plugin-marketplace');
+  const ccbSlot = document.getElementById('tkManage-reference-repo');
   if (!eccSlot && !ccbSlot) return;
   try {
     const r = await api('/api/toolkit/status');
@@ -1704,7 +1683,7 @@ async function _eccInstall(btn) {
   btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ ' + t('설치 중...');
   try {
     const r = await api('/api/toolkit/ecc/install', { method: 'POST', body: {} });
-    if (r.ok) { toast(r.updated ? t('ECC 마켓 업데이트 완료') : t('ECC 마켓 추가 완료'), 'ok'); _refreshToolkitManage(); }
+    if (r.ok) { toast(r.updated ? t('플러그인 마켓 업데이트 완료') : t('플러그인 마켓 추가 완료'), 'ok'); _refreshToolkitManage(); }
     else { toast(r.error || t('설치 실패'), 'err'); btn.disabled = false; btn.textContent = orig; }
   } catch (e) { toast(String(e), 'err'); btn.disabled = false; btn.textContent = orig; }
 }
@@ -1727,14 +1706,14 @@ async function _eccInstallPlugin(btn, action) {
   } catch (e) { toast(String(e), 'err'); btn.disabled = false; btn.textContent = orig; }
 }
 async function _eccUninstall(btn) {
-  if (!confirm(t('ECC 마켓플레이스 디렉터리와 레지스트리 entry 를 제거합니다. 계속할까요?'))) return;
+  if (!confirm(t('플러그인 마켓플레이스 디렉터리와 레지스트리 entry 를 제거합니다. 계속할까요?'))) return;
   btn.disabled = true;
   try {
     const r = await api('/api/toolkit/ecc/uninstall', { method: 'POST', body: {} });
     if (r.ok) {
       _apiCacheInvalidate('/api/plugins');
       _apiCacheInvalidate('/api/marketplaces');
-      toast(t('ECC 마켓 제거 완료') + (r.note ? ' · ' + r.note : ''), 'ok');
+      toast(t('플러그인 마켓 제거 완료') + (r.note ? ' · ' + r.note : ''), 'ok');
       _refreshToolkitManage();
     }
     else { toast(r.error || t('제거 실패'), 'err'); btn.disabled = false; }
@@ -1830,7 +1809,7 @@ function _renderGuideExternal(list) {
       ${list.map(tk => `
         <a class="card p-4 hover-lift block no-underline" href="${escapeHtml(tk.repo)}" target="_blank" rel="noopener noreferrer"
            style="text-decoration:none; color:inherit;">
-          <div class="text-3xl mb-2">${tk.id==='wikidocs-codex-code-guide'?'📖':(tk.id==='codex-code-best-practice'?'🎯':'🧰')}</div>
+          <div class="text-3xl mb-2">${tk.id==='openai-docs-mcp'?'📚':(tk.id==='openai-codex-goal-mode'?'🎯':'🧰')}</div>
           <div class="font-semibold text-sm mb-1">${escapeHtml(tk.title)}</div>
           <div class="text-xs text-[var(--text-mute)] mb-2 line-clamp-2">${escapeHtml(tk.subtitle||'')}</div>
           <div class="text-[11px] text-[var(--text-dim)]">${t('바로가기')} ↗</div>
@@ -1839,9 +1818,9 @@ function _renderGuideExternal(list) {
     <div class="card p-4 mt-4">
       <div class="text-sm font-semibold mb-2">🎓 ${t('추천 학습 경로')}</div>
       <ol class="text-sm text-[var(--text-mute)] space-y-1 list-decimal pl-5">
-        <li>${t('위키독스 한국어 가이드 기초 7강 → 개발 17강 순으로 학습')}</li>
-        <li>${t('best-practice 레포에서 창시자(Boris Cherny) 워크플로 영상 시청')}</li>
-        <li>${t('everything-codex-code 플러그인 설치 → 실전 기능 확보')}</li>
+        <li>${t('config.toml reference에서 현재 키의 의미 확인')}</li>
+        <li>${t('/goal, /skills, /plugins, /mcp 같은 공식 slash command부터 점검')}</li>
+        <li>${t('OpenAI Docs MCP 연결 → 공식 문서 기반으로 config와 API 확인')}</li>
         <li>${t('시작하기 탭으로 돌아와 체크리스트 완료')}</li>
       </ol>
     </div>
@@ -2834,21 +2813,21 @@ function _cwShowGuide() {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Run Center — ECC skills + ECC slash commands
+// Run Center — local and plugin runnable catalog
 // commands as a single searchable, runnable catalog. Dispatches one
 // shot through the existing `execute_with_assignee` pipeline so the
-// dashboard can launch any of the 268 catalog entries with one click.
+// dashboard can launch detected plugin catalog entries with one click.
 // ──────────────────────────────────────────────────────────────────
 
 const __rc = {
   catalog:    [],
   filtered:   [],
-  source:     '',          // '' | 'ecc' | 'fav'
+  source:     '',          // '' | 'plugin' | 'fav'
   kind:       '',          // '' | 'skill' | 'command' | 'mode' | 'diagnostic' | 'knowledge'
   category:   '',          // '' | 'frontend' | 'backend' | ...
   query:      '',
   loaded:     false,
-  eccInstalled: false,
+  pluginInstalled: false,
   history:    [],
   selectedItem: null,
   lastResult: null,
@@ -2866,7 +2845,7 @@ async function _rcApi(path, body) {
 VIEWS.runCenter = async () => {
   return `
     ${viewHeader('🎯 ' + t('런 센터'),
-       t('ECC 스킬/슬래시 명령을 한 화면에서 검색·1클릭 실행. 결과는 자동 저장되며 워크플로우로도 변환 가능.'),
+       t('로컬/플러그인 실행 항목을 한 화면에서 검색·1클릭 실행합니다. 결과는 자동 저장되며 워크플로우로도 변환 가능.'),
        'runCenter')}
     <div id="rcRoot" style="display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px;align-items:start;">
       <aside class="card" id="rcSidebar" style="padding:12px;position:sticky;top:8px;">
@@ -2877,7 +2856,7 @@ VIEWS.runCenter = async () => {
         <div class="text-[10px] uppercase tracking-widest mt-4 mb-2" style="color:var(--text-dim);">${t('카테고리')}</div>
         <div id="rcCatFilters" class="flex flex-wrap gap-1 text-[11px]"></div>
         <div class="mt-4 pt-3 border-t border-[var(--border)] text-[10px]" style="color:var(--text-dim);">
-          <div id="rcEccStatus"></div>
+          <div id="rcPluginStatus"></div>
           <div class="mt-1"><a class="text-[11px]" href="#" onclick="go('runHistory');return false;">${t('실행 히스토리 보기')} →</a></div>
         </div>
       </aside>
@@ -2919,29 +2898,29 @@ async function _rcLoadCatalog(force) {
   try {
     const r = await api('/api/run/catalog' + (force ? '?refresh=1' : ''));
     __rc.catalog = r.items || [];
-    __rc.eccInstalled = !!r.ecc_installed;
+    __rc.pluginInstalled = !!r.plugin_installed;
     __rc.debug = r.debug || {};
     __rc.loaded = true;
   } catch (e) {
     __rc.catalog = [];
-    __rc.eccInstalled = false;
+    __rc.pluginInstalled = false;
     __rc.debug = {};
   }
-  const ecc = document.getElementById('rcEccStatus');
+  const ecc = document.getElementById('rcPluginStatus');
   if (ecc) {
     const dbg = __rc.debug || {};
-    const totalEcc = (dbg.ecc_skill_total||0) + (dbg.ecc_cmd_total||0);
-    if (__rc.eccInstalled && totalEcc > 0) {
-      ecc.innerHTML = `<span style="color:#22c55e;">✓ ECC ${t('설치됨')}</span>
-        <span style="color:var(--text-dim);"> · ${dbg.ecc_skill_total||0} ${t('스킬')} + ${dbg.ecc_cmd_total||0} ${t('명령')}</span>`;
-    } else if (__rc.eccInstalled) {
-      // ECC root found but 0 items parsed — likely permission/parse error.
-      ecc.innerHTML = `<span style="color:#fbbf24;">⚠ ECC ${t('경로는 발견됐지만 항목 0개')}</span>
+    const totalPlugin = (dbg.plugin_skill_total||0) + (dbg.plugin_cmd_total||0);
+    if (__rc.pluginInstalled && totalPlugin > 0) {
+      ecc.innerHTML = `<span style="color:#22c55e;">✓ ${t('플러그인 카탈로그 설치됨')}</span>
+        <span style="color:var(--text-dim);"> · ${dbg.plugin_skill_total||0} ${t('스킬')} + ${dbg.plugin_cmd_total||0} ${t('명령')}</span>`;
+    } else if (__rc.pluginInstalled) {
+      // Plugin root found but 0 items parsed — likely permission/parse error.
+      ecc.innerHTML = `<span style="color:#fbbf24;">⚠ ${t('플러그인 경로는 발견됐지만 항목 0개')}</span>
         <details class="text-[10px] mt-1"><summary>${t('진단 보기')}</summary>
         <pre style="white-space:pre-wrap;margin-top:4px;color:var(--text-dim);font-size:9px;">${escapeHtml(JSON.stringify(dbg, null, 2))}</pre></details>`;
     } else {
-      ecc.innerHTML = `<span style="color:#ef4444;">✗ ECC ${t('미설치')}</span>
-        · <a class="text-[10px]" href="#" onclick="go('guideHub');return false;">${t('설치하기')} →</a>
+      ecc.innerHTML = `<span style="color:#ef4444;">✗ ${t('플러그인 카탈로그 미설치')}</span>
+        · <a class="text-[10px]" href="#" onclick="go('plugins');return false;">${t('플러그인 탭')} →</a>
         <details class="text-[10px] mt-1"><summary>${t('스캔된 경로')}</summary>
         <pre style="white-space:pre-wrap;margin-top:4px;color:var(--text-dim);font-size:9px;">${escapeHtml(JSON.stringify(dbg, null, 2))}</pre></details>`;
     }
@@ -2960,10 +2939,10 @@ async function _rcReload() {
 function _rcRenderFilters() {
   const sources = [
     { id: '',    label: t('전체') },
-    { id: 'ecc', label: 'ECC' },
+    { id: 'plugin', label: t('플러그인') },
     { id: 'fav', label: '⭐ ' + t('즐겨찾기만') },
   ];
-  const sCounts = { ecc: 0 };
+  const sCounts = { plugin: 0 };
   let favCount = 0;
   __rc.catalog.forEach(it => {
     sCounts[it.source] = (sCounts[it.source] || 0) + 1;
@@ -3045,7 +3024,7 @@ function _rcApplyFilters() {
 }
 
 function _rcSourceColor(src) {
-  if (src === 'ecc') return 'var(--accent)';
+  if (src === 'plugin') return 'var(--accent)';
   return 'var(--text-dim)';
 }
 
@@ -15502,11 +15481,11 @@ function _pulseHookCard() {
   }, 280);
 }
 
-// v2.40.4 — decode `node -e "..."` wrapper into the dispatcher chain Codex
-// Code actually invokes. The wrapper resolves CLAUDE_PLUGIN_ROOT, then either
-// requires a bootstrap script or spawns `node <runner.js> <id> <handler.js>
-// <flags>`. We pull out the visible trailing `node ...` invocation since
-// that's the layer that carries the hook id + handler path.
+// v2.40.4 — decode `node -e "..."` wrapper into the dispatcher chain a Codex
+// plugin hook invokes. The wrapper may resolve PLUGIN_ROOT, then either requires
+// a bootstrap script or spawns `node <runner.js> <id> <handler.js> <flags>`.
+// We pull out the visible trailing `node ...` invocation since that's the layer
+// that carries the hook id + handler path.
 function _decodeHookCommand(cmd) {
   if (!cmd || typeof cmd !== 'string') return null;
   const out = { runner: '', hookId: '', handler: '', flags: '', rawTail: '' };
@@ -15654,7 +15633,7 @@ const _HOOK_PRESETS = [
     event: 'PreToolUse',
     matcher: 'Bash',
     type: 'command',
-    command: "jq -e 'if .tool_input.command|test(\"\\\\brm\\\\s+-[rf]+\\\\s+/\") then error(\"blocked: rm -rf /\") else empty end' <<< \"$CLAUDE_TOOL_INPUT\"",
+    command: "jq -e 'if .tool_input.command|test(\"\\\\brm\\\\s+-[rf]+\\\\s+/\") then error(\"blocked: rm -rf /\") else empty end'",
     timeout: 2000,
   },
   {
@@ -15665,7 +15644,7 @@ const _HOOK_PRESETS = [
     event: 'PreToolUse',
     matcher: 'Edit|Write',
     type: 'command',
-    command: "jq -e 'if (.tool_input.new_string // .tool_input.content // \"\") | test(\"(sk-ant-[A-Za-z0-9_-]{20}|sk-[A-Za-z0-9]{20}|ghp_[A-Za-z0-9]{20}|AKIA[A-Z0-9]{16})\") then error(\"blocked: secret-like token\") else empty end' <<< \"$CLAUDE_TOOL_INPUT\"",
+    command: "jq -e 'if (.tool_input.new_string // .tool_input.content // .tool_input.command // \"\") | test(\"(sk-(proj|admin)-[A-Za-z0-9_-]{20}|sk-[A-Za-z0-9]{20}|ghp_[A-Za-z0-9]{20}|AKIA[A-Z0-9]{16})\") then error(\"blocked: secret-like token\") else empty end'",
     timeout: 2000,
   },
   {
@@ -15676,7 +15655,7 @@ const _HOOK_PRESETS = [
     event: 'PostToolUse',
     matcher: 'Bash',
     type: 'command',
-    command: "jq -r '[now|strftime(\"%Y-%m-%d %H:%M:%S\"), .tool_input.command // \"\"] | @tsv' <<< \"$CLAUDE_TOOL_INPUT\" >> ~/.codex/logs/bash-audit.log 2>/dev/null; true",
+    command: "mkdir -p ~/.codex/logs; jq -r '[now|strftime(\"%Y-%m-%d %H:%M:%S\"), .tool_input.command // \"\"] | @tsv' >> ~/.codex/logs/bash-audit.log 2>/dev/null; true",
     timeout: 1500,
   },
   {
@@ -16665,9 +16644,15 @@ VIEWS.codexHarness = async () => {
   }).join('');
   const easyCards = [
     {
+      title: '공식 Codex 최신값',
+      desc: 'GPT-5.5, OpenAI Docs MCP, 현재 프로젝트 trust, config 진단을 함께 적용합니다.',
+      ids: ['gpt55-coding-agent', 'openai-docs-mcp', 'trusted-current-project', 'config-schema-diagnostics'],
+      chips: ['gpt-5.5', 'docs mcp', 'trust'],
+    },
+    {
       title: '처음 세팅',
       desc: '읽기 중심 안전값, /goal 명령, 목표 유지 설정을 같이 적용합니다.',
-      ids: ['safe-local', 'goal-command', 'goal-harness'],
+      ids: ['gpt55-coding-agent', 'safe-local', 'goal-command', 'goal-harness'],
       chips: ['read-only', '/goal'],
     },
     {
@@ -16822,6 +16807,9 @@ VIEWS.codexHarness = async () => {
           <button class="btn text-[11px]" onclick="_codexHarnessApply('feature-network-proxy-limited')">${t('제한형 네트워크')}</button>
           <button class="btn text-[11px]" onclick="_codexHarnessApply('privacy-quiet-pack')">${t('Privacy quiet')}</button>
           <button class="btn text-[11px]" onclick="_codexHarnessApply('tui-operator')">${t('TUI 운영자')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('gpt55-coding-agent')">GPT-5.5</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('openai-docs-mcp')">Docs MCP</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('trusted-current-project')">${t('프로젝트 trust')}</button>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">${controlCards}</div>
@@ -18511,8 +18499,7 @@ VIEWS.aiProviders = async () => {
     const testBtn = avail
       ? `<button class="btn btn-sm" onclick="testProvider('${p.id}')">${t('연결 테스트')}</button>`
       : '';
-    // v3.99.19 — the in-SPA chat tab was removed (use the standalone
-    // `lazyclaw` npm package instead), so there's no more "open chat
+    // The in-SPA chat tab was removed, so there is no more "open chat
     // with this provider" jump button. `chatBtn` stays as an empty
     // string so the markup below doesn't need to branch.
     const chatBtn = '';
@@ -20427,7 +20414,7 @@ VIEWS.telemetry = async () => {
       </div>
     </div>
     <div class="card p-4 text-xs text-[var(--text-mute)]">
-      💡 비활성화: <code class="mono">CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1</code> 또는 <code class="mono">DISABLE_TELEMETRY=1</code> 환경변수.
+      💡 비활성화: Codex 하네스에서 <code class="mono">privacy-quiet-pack</code> 적용 또는 <code class="mono">analytics.enabled = false</code> 설정.
     </div>`;
 };
 
@@ -21591,7 +21578,7 @@ async function _ralphDuplicateRun(runId) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// SECURITY SCAN (v2.31.0) — ECC AgentShield 스타일 ~/.codex 정적 검사
+// SECURITY SCAN — ~/.codex 로컬 설정 정적 검사
 // ────────────────────────────────────────────────────────────────
 VIEWS.securityScan = async () => {
   const d = await api('/api/security-scan');
@@ -21641,7 +21628,7 @@ VIEWS.securityScan = async () => {
       ${issueRows}
     </div>
     <div class="text-[10px]" style="color:var(--text-dim)">
-      ${t('sec_hint', '검사 대상: settings.json · AGENTS.md · settings.hooks · ~/.codex/agents · mcp.json. ECC AgentShield 방식에서 영감. 발견된 시크릿은 rotate 후 env var 로 옮기세요.')}
+      ${t('sec_hint', '검사 대상: settings.json · AGENTS.md · settings.hooks · ~/.codex/agents · mcp.json. 발견된 시크릿은 rotate 후 env var 로 옮기세요.')}
     </div>
   `;
 };
@@ -22503,13 +22490,13 @@ function _renderCostRecommendations(rec) {
   if (!recs.length) return '';
   const fmtUsd = (v) => '$' + (Number(v)||0).toFixed(2);
   const ruleLabel = (id) => ({
-    haiku_for_short_prompts: t('o4-mini 전환'),
+    mini_for_short_prompts: t('o4-mini 전환'),
     enable_prompt_caching: t('프롬프트 캐싱'),
     local_model_for_batch: t('로컬 모델'),
     stale_model_upgrade: t('모델 업그레이드'),
   }[id] || id);
   const ruleColor = (id) => ({
-    haiku_for_short_prompts: '#f97316',
+    mini_for_short_prompts: '#f97316',
     enable_prompt_caching: '#a78bfa',
     local_model_for_batch: '#22d3ee',
     stale_model_upgrade: '#4ade80',

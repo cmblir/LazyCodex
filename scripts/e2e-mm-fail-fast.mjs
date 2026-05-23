@@ -42,9 +42,9 @@ wf = {
   'nodes': [
     {'id': 'n-s', 'type': 'start', 'x': 0, 'y': 0, 'title': 'S', 'data': {}},
     {'id': 'n-fail', 'type': 'subagent', 'x': 200, 'y': 0, 'title': 'fail',
-     'data': {'assignee': 'sonnet-4.6', 'subject': 'MARKER_FAIL', 'description': 'MARKER_FAIL'}},
+     'data': {'assignee': 'gpt-5.5', 'subject': 'MARKER_FAIL', 'description': 'MARKER_FAIL'}},
     {'id': 'n-hang', 'type': 'subagent', 'x': 200, 'y': 200, 'title': 'hang',
-     'data': {'assignee': 'sonnet-4.6',
+     'data': {'assignee': 'gpt-5.5',
               'subject': '한국어로 매우 긴 답변을 5000자 이상 작성해주세요.',
               'description': '디테일하게 답해주세요. ' * 50}},
     {'id': 'n-o', 'type': 'output', 'x': 400, 'y': 100, 'title': 'out', 'data': {}},

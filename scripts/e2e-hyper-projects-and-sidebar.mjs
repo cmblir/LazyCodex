@@ -27,7 +27,7 @@ const PROJ_AGENT = path.join(PROJ_AGENTS_DIR, 'v40-test.md');
 const AGENT_BODY = (label) => `---
 name: v40-test
 description: synthetic v2.40 ${label} agent
-model: opus
+model: gpt-5.5
 tools: Read, Grep
 ---
 

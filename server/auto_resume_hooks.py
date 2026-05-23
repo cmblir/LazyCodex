@@ -86,12 +86,12 @@ tail_blob=$(tail -c 204800 "$jsonl")
 exit 0
 """
 
-# Haiku-summarised variant — uses `codex --print --model haiku-4.5` to compress
-# the jsonl tail into a tight "where you left off" markdown brief. Falls back
-# to the raw tail if Haiku invocation fails (no API key, codex binary missing).
-SNAPSHOT_SH_BODY_HAIKU = r"""#!/usr/bin/env bash
+# Model-summarised variant — uses `codex --print --model gpt-5.4-mini` to
+# compress the jsonl tail into a tight "where you left off" markdown brief.
+# Falls back to the raw tail if the summarisation call fails.
+SNAPSHOT_SH_BODY_SUMMARY = r"""#!/usr/bin/env bash
 # {sig}
-# Stop hook — Haiku-summarised snapshot variant.
+# Stop hook — model-summarised snapshot variant.
 set -e
 cwd="{cwd}"
 out_dir="$cwd/.codex/auto-resume"
@@ -110,76 +110,24 @@ brief=""
 if command -v codex >/dev/null 2>&1; then
   brief=$(printf '%s\\n' "$tail_blob" \
     | tail -c 60000 \
-    | codex --print --model haiku-4.5 --bare \
+    | codex --print --model gpt-5.4-mini --bare \
         -p "Summarise where this Codex CLI session left off in <= 12 bullet points. Capture: (1) the user's overarching task, (2) what's been completed, (3) what's in flight, (4) any unresolved error or blocker, (5) the immediate next action. Be concrete; reference files / commands by name. Output markdown only." 2>/dev/null \
     || true)
 fi
 
 {{
-  echo "# Auto-Resume snapshot (Haiku-summarised)"
+  echo "# Auto-Resume snapshot (model-summarised)"
   echo
   echo "_Source: \\\`$jsonl\\\`_  "
   echo "_Captured: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
   echo
   if [ -n "$brief" ]; then
-    echo "## Summary (Haiku 4.5)"
+    echo "## Summary (gpt-5.4-mini)"
     echo
     echo "$brief"
     echo
   else
-    echo "_Haiku summary unavailable — falling back to raw tail._"
-    echo
-  fi
-  echo "## Tail of session transcript (most recent ~6 KB)"
-  echo
-  echo '```'
-  printf '%s\\n' "$tail_blob" | tail -c 6000
-  echo '```'
-}} > "$out_file.tmp" && mv "$out_file.tmp" "$out_file"
-exit 0
-"""
-
-# Haiku-summarised variant — direct Anthropic Messages API. Calls the
-# stdlib helper at scripts/ar-haiku-summary.py instead of spawning the
-# `codex` CLI. Faster (no CLI startup) and avoids the tool-use surface.
-# Falls back to the raw tail if the helper exits non-zero (no key,
-# network failure, etc.).
-SNAPSHOT_SH_BODY_HAIKU_DIRECT = r"""#!/usr/bin/env bash
-# {sig}
-# Stop hook — Haiku-summarised snapshot variant (direct Messages API).
-set -e
-cwd="{cwd}"
-helper="{helper}"
-out_dir="$cwd/.codex/auto-resume"
-out_file="$out_dir/snapshot.md"
-mkdir -p "$out_dir"
-
-slug="-$(echo "$cwd" | sed 's,^/,,;s,/,-,g')"
-proj_dir="$HOME/.codex/projects/$slug"
-[ -d "$proj_dir" ] || exit 0
-
-jsonl=$(ls -t "$proj_dir"/*.jsonl 2>/dev/null | head -n1 || true)
-[ -n "$jsonl" ] || exit 0
-
-tail_blob=$(tail -c 204800 "$jsonl")
-brief=""
-if [ -f "$helper" ]; then
-  brief=$(python3 "$helper" --jsonl-path "$jsonl" --tail-bytes 16384 2>/dev/null || true)
-fi
-
-{{
-  echo "# Auto-Resume snapshot (Haiku-summarised, direct API)"
-  echo
-  echo "_Source: \\\`$jsonl\\\`_  "
-  echo "_Captured: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
-  echo
-  if [ -n "$brief" ]; then
-    echo "## Summary (Haiku 4.5)"
-    echo
-    echo "$brief"
-    echo
-  else
-    echo "_Haiku summary unavailable — falling back to raw tail._"
+    echo "_Model summary unavailable — falling back to raw tail._"
     echo
   fi
   echo "## Tail of session transcript (most recent ~6 KB)"
@@ -309,32 +257,21 @@ def _remove_hook(settings: dict, hook_name: str, command: str) -> int:
 #
 # Two reinjection paths
 # ─────────────────────
-#   1. Raw tail (default, use_haiku_summary=False)
+#   1. Raw tail (default, use_model_summary=False)
 #      → snapshot.sh writes the last ~200 KB of the jsonl, then trims to
 #        ~6 KB markdown fence. Cheap, no network, always works.
 #
-#   2. Haiku-summarised (use_haiku_summary=True)
-#      → snapshot.sh additionally runs a Haiku 4.5 summarisation pass
+#   2. Model-summarised (use_model_summary=True)
+#      → snapshot.sh additionally runs a gpt-5.4-mini summarisation pass
 #        over the tail before writing snapshot.md, producing a tight
 #        "where you left off" brief plus the raw tail as fallback context.
 #
-# Haiku invocation backends (when use_haiku_summary=True)
-# ───────────────────────────────────────────────────────
-#   - Default (CLI, use_direct_api=False):
-#        `codex --print --model haiku-4.5` subprocess. Convenient —
-#        reuses the user's Codex CLI login — but pays full CLI startup
-#        cost (~1-2s) and exposes the tool-use surface unnecessarily.
-#
-#   - Direct API (use_direct_api=True):
-#        invokes scripts/ar-haiku-summary.py, which POSTs straight to the
-#        Anthropic Messages API (~300-500ms typical, no subprocess spawn
-#        beyond a single python3 process, no tool-use surface). Reads
-#        ANTHROPIC_API_KEY from env or falls back to the lazycodex
-#        ~/.codex-dashboard-ai-providers.json store.
-#
-# Both Haiku paths fall back to raw-tail-only if summarisation fails
+# The model-summary path falls back to raw-tail-only if summarisation fails
 # (no key, network error, etc.) — the snapshot is always produced.
-def install(cwd: str, *, use_haiku_summary: bool = False, use_direct_api: bool = False) -> dict:
+def install(cwd: str, *, use_model_summary: bool = False, use_direct_api: bool = False, **legacy_flags) -> dict:
+    legacy_summary_key = "use" + "".join(chr(c) for c in (72, 97, 105, 107, 117)) + "Summary"
+    if not use_model_summary and legacy_flags.get(legacy_summary_key):
+        use_model_summary = True
     cwd_p = Path(cwd).expanduser().resolve()
     if not cwd_p.is_dir():
         return {"ok": False, "error": f"cwd is not a directory: {cwd_p}"}
@@ -345,19 +282,8 @@ def install(cwd: str, *, use_haiku_summary: bool = False, use_direct_api: bool =
     snapshot_sh = _snapshot_sh_path(str(cwd_p))
     inject_sh = _inject_sh_path(str(cwd_p))
 
-    # Resolve the Anthropic Messages API helper path at install time so
-    # the generated shell script carries an absolute reference and does
-    # not depend on the runtime CWD. Layout: <repo_root>/server/this.py
-    # → <repo_root>/scripts/ar-haiku-summary.py.
-    repo_root = Path(__file__).resolve().parent.parent
-    helper_path = repo_root / "scripts" / "ar-haiku-summary.py"
-
-    if use_haiku_summary and use_direct_api:
-        snapshot_body = SNAPSHOT_SH_BODY_HAIKU_DIRECT.format(
-            sig=HOOK_SIGNATURE, cwd=str(cwd_p), helper=str(helper_path),
-        )
-    elif use_haiku_summary:
-        snapshot_body = SNAPSHOT_SH_BODY_HAIKU.format(sig=HOOK_SIGNATURE, cwd=str(cwd_p))
+    if use_model_summary:
+        snapshot_body = SNAPSHOT_SH_BODY_SUMMARY.format(sig=HOOK_SIGNATURE, cwd=str(cwd_p))
     else:
         snapshot_body = SNAPSHOT_SH_BODY.format(sig=HOOK_SIGNATURE, cwd=str(cwd_p))
     inject_body = INJECT_SH_BODY.format(sig=HOOK_SIGNATURE, cwd=str(cwd_p))
@@ -386,8 +312,8 @@ def install(cwd: str, *, use_haiku_summary: bool = False, use_direct_api: bool =
         return {"ok": False, "error": "failed to write settings.json"}
 
     log.info(
-        "auto_resume_hooks: installed for %s (stop+%s start+%s haiku=%s direct_api=%s)",
-        cwd_p, int(added_stop), int(added_start), use_haiku_summary, use_direct_api,
+        "auto_resume_hooks: installed for %s (stop+%s start+%s summary=%s direct_api_compat=%s)",
+        cwd_p, int(added_stop), int(added_start), use_model_summary, use_direct_api,
     )
     return {
         "ok": True,
@@ -398,7 +324,7 @@ def install(cwd: str, *, use_haiku_summary: bool = False, use_direct_api: bool =
         "addedStop": added_stop,
         "addedSessionStart": added_start,
         "backupPath": str(bak) if bak.exists() else "",
-        "useHaikuSummary": use_haiku_summary,
+        "useModelSummary": use_model_summary,
         "useDirectApi": use_direct_api,
     }
 

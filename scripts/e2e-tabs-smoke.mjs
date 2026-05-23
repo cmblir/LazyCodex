@@ -5,7 +5,7 @@
  *  - console error 카운트 0
  *  - "_escapeHTML is not defined" / "is not defined" 류 즉시 실패
  *
- * 서버가 127.0.0.1:8080 에 기동돼 있어야 한다.
+ * 서버가 127.0.0.1:19500 에 기동돼 있어야 한다.
  *
  * 사용:
  *   node scripts/e2e-tabs-smoke.mjs
@@ -15,7 +15,7 @@
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 
-const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 8080}`;
+const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 19500}`;
 const HEADLESS = process.env.HEADLESS !== '0';
 const ONLY = process.env.TAB_ID || null;
 

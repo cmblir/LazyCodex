@@ -1,9 +1,9 @@
 """Hyper Agent — sub-agents that self-refine their own settings over time.
 
 A "hyper" sub-agent is a regular Codex CLI agent (`<scope>/agents/<name>.md`)
-with an opt-in supervisor that periodically asks a meta-LLM (Opus by default)
-to propose refinements to its system prompt, tool list, and description, given
-the user's stated objective and recent transcripts. Each proposal is applied
+with an opt-in supervisor that periodically asks a meta-LLM to propose
+refinements to its system prompt, tool list, and description, given the user's
+stated objective and recent transcripts. Each proposal is applied
 atomically with a `.bak.md` backup so any iteration is reversible.
 
 Scope:
@@ -79,7 +79,7 @@ def _default_agent_meta() -> dict:
         "enabled":            False,
         "objective":          "",
         "refineTargets":      ["systemPrompt"],
-        "refineProvider":     "codex:opus",
+        "refineProvider":     "codex:gpt-5.5",
         "trigger":            "manual",
         "cronSpec":           "0 */6 * * *",
         "minSessionsBetween": 5,
@@ -113,10 +113,10 @@ def _coerce_agent_meta(raw: Any) -> dict:
     if isinstance(targets, list):
         out["refineTargets"] = [t for t in targets if t in _VALID_TARGETS] or ["systemPrompt"]
 
-    rp = str(raw.get("refineProvider") or "codex:opus").strip()
+    rp = str(raw.get("refineProvider") or "codex:gpt-5.5").strip()
     if len(rp) > 120:
         rp = rp[:120]
-    out["refineProvider"] = rp or "codex:opus"
+    out["refineProvider"] = rp or "codex:gpt-5.5"
 
     trig = str(raw.get("trigger") or "manual")
     out["trigger"] = trig if trig in _VALID_TRIGGERS else "manual"
@@ -670,7 +670,7 @@ def refine_agent(name: str, *, trigger: str = "manual",
 
     targets = agent_meta.get("refineTargets") or ["systemPrompt"]
     objective = agent_meta.get("objective") or ""
-    assignee = agent_meta.get("refineProvider") or "codex:opus"
+    assignee = agent_meta.get("refineProvider") or "codex:gpt-5.5"
 
     user_prompt = _build_meta_prompt(
         agent=cur,
@@ -805,11 +805,11 @@ def _build_ar_advisor_prompt(entry: dict, recent_failures: list[dict]) -> str:
 
 
 def hyper_advise_auto_resume(entry: dict, recent_failures: list[dict],
-                             assignee: str = "codex:haiku") -> dict:
+                             assignee: str = "codex:gpt-5.4-mini") -> dict:
     """Ask meta-LLM for retry-policy adjustments given an AR entry's failure pattern.
 
     Returns ``{ok: bool, advice: dict | None, error: str | None, cost_usd: float}``.
-    Uses Haiku by default (fast + cheap; advice is structural, not creative).
+    Uses a mini model by default; advice is structural, not creative.
     """
     # Pre-call validation — short-circuit before spending tokens.
     if not isinstance(entry, dict):

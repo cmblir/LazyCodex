@@ -154,9 +154,9 @@ def api_chat(body: dict) -> dict:
 
     full_prompt = "\n".join(prompt_parts)
 
-    # 챗봇은 간단한 JSON 라우팅이므로 저비용 Haiku 로 고정.
-    # CHAT_MODEL 환경변수로 오버라이드 가능 (예: 고품질 필요 시 sonnet).
-    chat_model = os.environ.get("CHAT_MODEL", "haiku")
+    # 챗봇은 간단한 JSON 라우팅이므로 빠른 OpenAI mini 모델을 기본값으로 둔다.
+    # CHAT_MODEL 환경변수로 오버라이드 가능.
+    chat_model = os.environ.get("CHAT_MODEL", "gpt-5.4-mini")
     try:
         proc = subprocess.run(
             [codex_bin, "-p", full_prompt, "--model", chat_model, "--output-format", "json"],
@@ -264,8 +264,8 @@ def handle_chat_stream(handler: "Handler", body: dict) -> None:
         except Exception:
             pass
 
-    # 스트리밍 챗도 동일하게 Haiku 사용 (CHAT_MODEL env 로 오버라이드)
-    chat_model = os.environ.get("CHAT_MODEL", "haiku")
+    # 스트리밍 챗도 동일한 기본 모델 사용 (CHAT_MODEL env 로 오버라이드)
+    chat_model = os.environ.get("CHAT_MODEL", "gpt-5.4-mini")
     try:
         proc = subprocess.Popen(
             [codex_bin, "-p", full_prompt, "--model", chat_model,
@@ -366,12 +366,10 @@ def _resolve_provider_cli(assignee: str) -> dict:
 
     PROVIDER_ALIASES = {
         "codex": "codex-cli", "codex-cli": "codex-cli",
-        "anthropic": "codex-cli", "anthropic-api": "codex-cli",
         "gemini": "gemini-cli", "gemini-cli": "gemini-cli",
         "google": "gemini-cli", "gemini-api": "gemini-cli",
         "ollama": "ollama", "ollama-api": "ollama",
-        "codex": "codex",
-        "openai": "codex", "gpt": "codex", "openai-api": "codex",
+        "openai": "codex-cli", "gpt": "codex-cli", "openai-api": "codex-cli",
     }
     pid = PROVIDER_ALIASES.get(provider_hint, "codex-cli")
 
@@ -415,7 +413,7 @@ def _resolve_provider_cli(assignee: str) -> dict:
 
 def api_session_spawn(body: dict) -> dict:
     """Open a new Terminal window and run the AI CLI matching the node's
-    ``assignee`` (e.g. ``codex:opus``, ``gemini:gemini-2.5-pro``,
+    ``assignee`` (e.g. ``codex:gpt-5.5``, ``gemini:gemini-2.5-pro``,
     ``ollama:llama3.1``, ``codex:o4-mini``). macOS only.
 
     body:
@@ -511,14 +509,14 @@ end tell
 # Orchestrator chat — v3.99.25
 #
 # The sidebar chat panel in the dashboard has historically been a
-# navigation help-bot (haiku → JSON {answer, navigate}). v3.99.25 adds
+# navigation help-bot (mini model → JSON {answer, navigate}). v3.99.25 adds
 # a second mode that routes the same input through the multi-agent
 # orchestrator: the chat panel POSTs ``{message, history?}`` to
 # ``/api/chat/orchestrator`` and renders the synthesised reply alongside
 # the plan + per-sub-agent breakdown.
 #
 # Why a separate endpoint instead of overloading ``/api/chat``? The
-# help-bot path is synchronous + cheap (single haiku call, ~1 s);
+# help-bot path is synchronous + cheap (single mini-model call, ~1 s);
 # orchestrator can take 30 s+ and produces a much richer response shape
 # (plan / results / runId). Splitting the routes keeps each side's
 # error handling readable.
@@ -618,4 +616,3 @@ def api_chat_orchestrator(body: dict) -> dict:
         "durationMs": resp.duration_ms,
         "cost_usd": resp.cost_usd,
     }
-

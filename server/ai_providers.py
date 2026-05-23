@@ -1,6 +1,6 @@
 """멀티 AI 프로바이더 추상 레이어.
 
-CLI 기반 (codex, ollama, gemini CLI, codex) + API 기반 (OpenAI, Gemini, Anthropic)
+CLI 기반 (Codex, Ollama, Gemini CLI) + API 기반 (OpenAI, Gemini, Ollama, OpenAI-compatible)
 을 통합하는 인터페이스. 워크플로우 노드의 `assignee` 가 `provider:model` 형태일 때
 적절한 프로바이더를 선택·실행한다.
 
@@ -358,34 +358,42 @@ class BaseProvider(ABC):
 # ═══════════════════════════════════════════
 
 class CodexCliProvider(BaseProvider):
-    """Codex CLI CLI (`codex -p`) — 기존 동작과 100% 호환."""
+    """OpenAI Codex CLI (`codex -p`) provider."""
 
     provider_id = "codex-cli"
     provider_name = "Codex (CLI)"
     provider_type = "cli"
-    homepage = "https://docs.anthropic.com/en/docs/codex-code"
-    icon = "🟠"
+    homepage = "https://developers.openai.com/codex/cli"
+    icon = "◇"
 
     _MODELS = [
-        ModelInfo("codex-opus-4-7", "Opus 4.7 (1M)", 1_000_000,
-                  15.0, 75.0, 1.5, 18.75, note="최강 성능"),
-        ModelInfo("codex-opus-4-6", "Opus 4.6", 1_000_000,
-                  15.0, 75.0, 1.5, 18.75, note="Fast mode 기본"),
-        ModelInfo("codex-sonnet-4-6", "Sonnet 4.6", 200_000,
-                  3.0, 15.0, 0.3, 3.75, note="균형형"),
-        ModelInfo("codex-haiku-4-5", "Haiku 4.5", 200_000,
-                  0.8, 4.0, 0.08, 1.0, note="가장 빠름/저렴"),
+        ModelInfo("gpt-5.5", "GPT-5.5", 400_000,
+                  0.0, 0.0, note="최신 OpenAI coding-agent 권장 기본값"),
+        ModelInfo("gpt-5.4", "GPT-5.4", 400_000,
+                  0.0, 0.0, note="강한 범용/코딩 모델"),
+        ModelInfo("gpt-5.4-mini", "GPT-5.4 Mini", 400_000,
+                  0.0, 0.0, note="빠르고 비용 효율적인 작업"),
+        ModelInfo("gpt-5.2", "GPT-5.2", 400_000,
+                  0.0, 0.0, note="전문 작업/긴 에이전트 작업"),
+        ModelInfo("o3", "o3", 200_000,
+                  0.0, 0.0, note="고난도 추론"),
+        ModelInfo("o4-mini", "o4-mini", 200_000,
+                  0.0, 0.0, note="빠른 추론/분류/검증"),
     ]
 
     # 별칭 매핑 — 워크플로우에서 짧은 이름 사용 가능
     _ALIASES = {
-        "opus": "codex-opus-4-7",
-        "opus-4.7": "codex-opus-4-7",
-        "opus-4.6": "codex-opus-4-6",
-        "sonnet": "codex-sonnet-4-6",
-        "sonnet-4.6": "codex-sonnet-4-6",
-        "haiku": "codex-haiku-4-5",
-        "haiku-4.5": "codex-haiku-4-5",
+        "latest": "gpt-5.5",
+        "deep": "gpt-5.5",
+        "gpt55": "gpt-5.5",
+        "gpt-5.5": "gpt-5.5",
+        "gpt54": "gpt-5.4",
+        "gpt-5.4": "gpt-5.4",
+        "fast": "gpt-5.4-mini",
+        "mini": "gpt-5.4-mini",
+        "gpt-5.4-mini": "gpt-5.4-mini",
+        "o3": "o3",
+        "o4-mini": "o4-mini",
     }
 
     def _bin(self) -> str:
@@ -397,17 +405,9 @@ class CodexCliProvider(BaseProvider):
     def list_models(self) -> list[ModelInfo]:
         return list(self._MODELS)
 
-    # FF1 (v2.66.17) — codex-cli hangs indefinitely when given a full
-    # model name like "codex-sonnet-4-6" via --model, but works in ~30s
-    # with the short alias "sonnet". Verified empirically. Map full names
-    # back to aliases before passing to the CLI.
-    _CLI_FLAG_ALIASES = {
-        "codex-opus-4-7":   "opus",
-        "codex-opus-4-6":   "opus",
-        "codex-sonnet-4-6": "sonnet",
-        "codex-sonnet-4-5": "sonnet",
-        "codex-haiku-4-5":  "haiku",
-    }
+    # Keep this hook for legacy alias compatibility. Current OpenAI model
+    # slugs are already CLI-friendly and pass through unchanged.
+    _CLI_FLAG_ALIASES: dict[str, str] = {}
 
     def _resolve_model(self, model: str) -> str:
         if not model:
@@ -466,7 +466,7 @@ class CodexCliProvider(BaseProvider):
                 }[opt_key]
                 cmd += [flag, val]
 
-        # FF1 (v2.66.17) — codex-cli (Anthropic backend) sporadically
+        # FF1 (v2.66.17) — codex-cli can sporadically
         # hangs on otherwise-valid requests. Short per-attempt timeout
         # (60s default) with up to 4 retries, killing the hung
         # subprocess on each timeout.
@@ -1831,230 +1831,6 @@ class XAIApiProvider(_OpenAICompatibleProvider):
     ]
 
 
-class AnthropicApiProvider(BaseProvider):
-    """Anthropic Messages API — codex CLI 없이 직접 API 호출."""
-
-    provider_id = "anthropic-api"
-    provider_name = "Codex (API)"
-    provider_type = "api"
-    homepage = "https://docs.anthropic.com/en/api"
-    icon = "🟠"
-
-    _MODELS = CodexCliProvider._MODELS  # 같은 모델 카탈로그 공유
-
-    def __init__(self, api_key: str = ""):
-        self._api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
-
-    def is_available(self) -> bool:
-        return bool(self._api_key)
-
-    def list_models(self) -> list[ModelInfo]:
-        return list(self._MODELS)
-
-    def execute(
-        self,
-        prompt: str,
-        *,
-        system_prompt: str = "",
-        model: str = "",
-        cwd: str = "",
-        timeout: int = 300,
-        extra: dict | None = None,
-    ) -> AIResponse:
-        import urllib.request
-        import urllib.error
-
-        t0 = int(time.time() * 1000)
-        if not self._api_key:
-            return AIResponse(
-                status="err", error="ANTHROPIC_API_KEY not set",
-                provider=self.provider_id, duration_ms=int(time.time() * 1000) - t0,
-            )
-
-        resolved = CodexCliProvider._ALIASES.get((model or "").lower(), model) or "codex-sonnet-4-6"
-        # QQ40 (v2.66.115) — multimodal: extract inline base64 images
-        # and emit them as Anthropic image content blocks.
-        clean_prompt, images = _extract_inline_images(prompt)
-        if images:
-            user_content: list = [{"type": "text", "text": clean_prompt or "(image)"}]
-            for img in images:
-                user_content.append({
-                    "type": "image",
-                    "source": {
-                        "type": "base64",
-                        "media_type": img["mime"],
-                        "data": img["base64"],
-                    },
-                })
-            messages_payload = [{"role": "user", "content": user_content}]
-        else:
-            messages_payload = [{"role": "user", "content": prompt}]
-        body_obj: dict = {
-            "model": resolved,
-            "max_tokens": int((extra or {}).get("max_tokens", 4096)),
-            "messages": messages_payload,
-        }
-        if system_prompt:
-            body_obj["system"] = system_prompt
-
-        body = json.dumps(body_obj).encode("utf-8")
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=body,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": self._api_key,
-                "anthropic-version": "2023-06-01",
-            },
-        )
-
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.HTTPError as e:
-            err_body = ""
-            try:
-                err_body = e.read().decode("utf-8")[:500]
-            except Exception:
-                pass
-            return AIResponse(
-                status="err", error=f"HTTP {e.code}: {err_body}",
-                provider=self.provider_id, model=resolved,
-                duration_ms=int(time.time() * 1000) - t0,
-            )
-        except Exception as e:
-            return AIResponse(
-                status="err", error=str(e),
-                provider=self.provider_id, model=resolved,
-                duration_ms=int(time.time() * 1000) - t0,
-            )
-
-        duration = int(time.time() * 1000) - t0
-        output = ""
-        for block in data.get("content", []):
-            if isinstance(block, dict) and block.get("type") == "text":
-                output += block.get("text", "")
-
-        usage = data.get("usage") or {}
-        ti = usage.get("input_tokens", 0)
-        to_ = usage.get("output_tokens", 0)
-        cost = self.estimate_cost(resolved, ti, to_)
-
-        return AIResponse(
-            status="ok", output=output,
-            provider=self.provider_id, model=resolved,
-            tokens_in=ti, tokens_out=to_, tokens_total=ti + to_,
-            cost_usd=cost, duration_ms=duration, raw=data,
-        )
-
-    def execute_stream(
-        self,
-        prompt: str,
-        *,
-        system_prompt: str = "",
-        model: str = "",
-        cwd: str = "",
-        timeout: int = 300,
-        extra: dict | None = None,
-        messages: "list[dict] | None" = None,
-    ) -> Iterator[dict]:
-        import urllib.request
-        import urllib.error
-
-        t0 = int(time.time() * 1000)
-        if not self._api_key:
-            yield {"type": "error", "error": "ANTHROPIC_API_KEY not set"}
-            return
-
-        resolved = CodexCliProvider._ALIASES.get((model or "").lower(), model) or "codex-sonnet-4-6"
-
-        # QQ42 (v2.66.117) — multimodal in streaming: extract inline images.
-        clean_prompt, images = _extract_inline_images(prompt)
-        if messages is None:
-            if images:
-                user_content: list = [{"type": "text", "text": clean_prompt or "(image)"}]
-                for img in images:
-                    user_content.append({
-                        "type": "image",
-                        "source": {"type": "base64", "media_type": img["mime"], "data": img["base64"]},
-                    })
-                msgs: list[dict] = [{"role": "user", "content": user_content}]
-            else:
-                msgs = [{"role": "user", "content": prompt}]
-        else:
-            msgs = list(messages)
-
-        body_obj: dict = {
-            "model": resolved,
-            "max_tokens": int((extra or {}).get("max_tokens", 4096)),
-            "messages": msgs,
-            "stream": True,
-        }
-        if system_prompt:
-            body_obj["system"] = system_prompt
-
-        body = json.dumps(body_obj).encode("utf-8")
-        req = urllib.request.Request(
-            "https://api.anthropic.com/v1/messages",
-            data=body,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": self._api_key,
-                "anthropic-version": "2023-06-01",
-            },
-        )
-
-        tokens_in = tokens_out = 0
-        try:
-            with urllib.request.urlopen(req, timeout=timeout) as resp:
-                event_type = ""
-                for raw_line in resp:
-                    line = raw_line.decode("utf-8").rstrip("\r\n")
-                    if line.startswith("event: "):
-                        event_type = line[7:].strip()
-                        continue
-                    if not line.startswith("data: "):
-                        continue
-                    payload = line[6:]
-                    try:
-                        obj = json.loads(payload)
-                    except Exception:
-                        continue
-                    etype = obj.get("type", event_type)
-                    if etype == "content_block_delta":
-                        delta = obj.get("delta") or {}
-                        if delta.get("type") == "text_delta":
-                            text = delta.get("text") or ""
-                            if text:
-                                yield {"type": "token", "text": text}
-                    elif etype == "message_start":
-                        usage = (obj.get("message") or {}).get("usage") or {}
-                        tokens_in = usage.get("input_tokens", tokens_in)
-                    elif etype == "message_delta":
-                        usage = obj.get("usage") or {}
-                        tokens_out = usage.get("output_tokens", tokens_out)
-        except urllib.error.HTTPError as e:
-            err = ""
-            try:
-                err = e.read().decode("utf-8")[:300]
-            except Exception:
-                pass
-            yield {"type": "error", "error": f"HTTP {e.code}: {err}"}
-            return
-        except Exception as exc:
-            yield {"type": "error", "error": str(exc)}
-            return
-
-        cost = self.estimate_cost(resolved, tokens_in, tokens_out)
-        yield {
-            "type": "done", "ok": True, "error": "",
-            "provider": self.provider_id, "model": resolved,
-            "tokensIn": tokens_in, "tokensOut": tokens_out,
-            "durationMs": int(time.time() * 1000) - t0,
-            "costUsd": cost,
-        }
-
-
 class OllamaApiProvider(BaseProvider):
     """Ollama HTTP API — CLI 대신 REST API 직접 호출 (원격 서버 지원).
 
@@ -2493,7 +2269,7 @@ class ProviderRegistry:
 
     사용법:
         registry = get_registry()
-        resp = registry.execute("codex-cli", "opus", prompt="Hello")
+        resp = registry.execute("codex-cli", "gpt-5.5", prompt="Hello")
     """
 
     def __init__(self):
@@ -2521,9 +2297,9 @@ class ProviderRegistry:
         """assignee 문자열 → (provider_id, model).
 
         지원 형식:
-          "opus-4.7"         → ("codex-cli", "codex-opus-4-7")
-          "codex:opus"      → ("codex-cli", "codex-opus-4-7")
-          "openai:gpt-4.1"   → ("openai-api", "gpt-4.1")
+          "gpt55"            → ("codex-cli", "gpt-5.5")
+          "codex:gpt-5.5"    → ("codex-cli", "gpt-5.5")
+          "openai:gpt-5.5"   → ("openai-api", "gpt-5.5")
           "gemini:2.5-pro"   → ("gemini-cli" or "gemini-api", "gemini-2.5-pro")
           "ollama:llama3.1"  → ("ollama" or "ollama-api", "llama3.1")
           "codex:o4-mini"    → ("codex", "o4-mini")
@@ -2542,8 +2318,7 @@ class ProviderRegistry:
             PROVIDER_ALIASES = {
                 "codex": "codex-cli",
                 "codex-cli": "codex-cli",
-                "codex-api": "anthropic-api",
-                "anthropic": "anthropic-api",
+                "codex-api": "openai-api",
                 "openai": "openai-api",
                 "gpt": "openai-api",
                 "gemini": "gemini-cli",  # CLI 우선
@@ -2552,7 +2327,6 @@ class ProviderRegistry:
                 "google": "gemini-api",
                 "ollama": "ollama",
                 "ollama-api": "ollama-api",
-                "codex": "codex",
                 # v2.66.9 — OpenAI-compatible third-party APIs
                 "groq": "groq-api",
                 "deepseek": "deepseek-api",
@@ -2638,24 +2412,21 @@ class ProviderRegistry:
             log.warning("provider %s failed: %s — trying fallback",
                         provider_id, primary_resp.error)
 
-        # FF1 (v2.66.17) — when codex-cli's primary error is a timeout
-        # (verified Anthropic-backend hang), DON'T waste another full
-        # timeout window on a different Codex model — those tend to
-        # hang together. Skip straight to the cross-provider chain
-        # (gemini-cli / codex / ollama). Only do the in-family swap
-        # for non-timeout errors (e.g. transient rate-limit).
+        # When codex-cli's primary error is a timeout, skip same-provider model
+        # swaps and move to the cross-provider chain. For non-timeout errors,
+        # try a smaller/deeper OpenAI model before leaving Codex CLI.
         if fallback and provider_id == "codex-cli" and primary_resp and primary_resp.status == "err":
             err_lower = (primary_resp.error or "").lower()
             is_hang = "timeout" in err_lower
             if not is_hang:
                 model_chain: list[str] = []
                 cur = (model or "").lower()
-                if "sonnet" in cur:
-                    model_chain = ["opus", "haiku"]
-                elif "haiku" in cur:
-                    model_chain = ["sonnet", "opus"]
-                elif "opus" in cur:
-                    model_chain = ["sonnet", "haiku"]
+                if "mini" in cur or "o4" in cur:
+                    model_chain = ["gpt-5.5", "gpt-5.4"]
+                elif "o3" in cur:
+                    model_chain = ["gpt-5.5", "gpt-5.4-mini"]
+                else:
+                    model_chain = ["gpt-5.4-mini", "o4-mini"]
                 for alt_model in model_chain:
                     log.info("codex-cli model fallback: %s → %s", model, alt_model)
                     alt_resp = p.execute(
@@ -2742,7 +2513,7 @@ class ProviderRegistry:
         ad hoc.
 
         Each assignee follows the same ``provider:model`` syntax accepted by
-        :func:`execute_with_assignee` (e.g. ``"codex:opus"``,
+        :func:`execute_with_assignee` (e.g. ``"codex:gpt-5.5"``,
         ``"openai:gpt-4.1"``). Submissions run on a dedicated
         ``ThreadPoolExecutor`` sized to ``min(len(assignees), 8)``. The first
         future whose result has ``status == "ok"`` wins; the remaining
@@ -2824,7 +2595,6 @@ def get_registry() -> ProviderRegistry:
     # 빌트인 API 프로바이더
     reg.register(OpenAIApiProvider())
     reg.register(GeminiApiProvider())
-    reg.register(AnthropicApiProvider())
     reg.register(OllamaApiProvider())
     # v2.66.9 — OpenAI-compatible third-party APIs
     reg.register(GroqApiProvider())
@@ -2863,12 +2633,12 @@ def get_registry() -> ProviderRegistry:
     except Exception as e:
         log.warning("api keys load failed: %s", e)
 
-    # 기본 폴백 체인: Codex CLI → Anthropic API → OpenAI API → Gemini API → Ollama
+    # 기본 폴백 체인: Codex CLI → OpenAI API → Gemini API → Ollama
     # FF1 (v2.66.17) — append `ollama` so workflows still complete when
     # codex-cli hangs and no API keys are configured. Local model
     # produces lower-quality output but is always available.
     reg.set_fallback_chain([
-        "codex-cli", "anthropic-api", "openai-api", "gemini-api",
+        "codex-cli", "openai-api", "gemini-api",
         "gemini-cli", "codex", "ollama",
     ])
 
@@ -2950,7 +2720,7 @@ def execute_with_assignee(
 ) -> AIResponse:
     """워크플로우 노드에서 직접 호출하는 편의 함수.
 
-    assignee 예시: "codex:opus", "openai:gpt-4.1", "ollama:llama3.1", "codex:o4-mini"
+    assignee 예시: "codex:gpt-5.5", "openai:gpt-5.5", "ollama:llama3.1", "codex:o4-mini"
     """
     reg = get_registry()
     pid, model = reg.resolve_assignee(assignee)
@@ -2990,7 +2760,7 @@ def execute_stream_with_assignee(
 ) -> "Iterator[dict]":
     """Like execute_with_assignee but streams tokens via execute_stream().
 
-    assignee: "openai:gpt-4.1-mini", "anthropic:codex-sonnet-4-6", "ollama:llama3.1", ...
+    assignee: "openai:gpt-5.4-mini", "codex:gpt-5.5", "ollama:llama3.1", ...
     Yields {"type":"token","text":"..."} ... {"type":"done",...} or {"type":"error",...}.
     """
     reg = get_registry()

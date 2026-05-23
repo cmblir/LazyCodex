@@ -43,7 +43,7 @@ const srcId = await page.evaluate(async () => {
           data: { text: '## doc', color: 'blue', width: 240, height: 140 } },
         { id: 'n-start', type: 'start',  x: 320, y: 40, data: {} },
         { id: 'n-s',     type: 'session', x: 540, y: 40,
-          title: 'Worker', data: { subject: 'do work', assignee: 'codex:opus', inputsMode: 'concat' } },
+          title: 'Worker', data: { subject: 'do work', assignee: 'codex:gpt-5.5', inputsMode: 'concat' } },
       ],
       edges: [{ id: 'e1', from: 'n-start', fromPort: 'out', to: 'n-s', toPort: 'in' }],
       viewport: { panX: 12, panY: -8, zoom: 1.25 },

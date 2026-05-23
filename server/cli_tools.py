@@ -1,6 +1,6 @@
 """CLI 프로바이더 설치·상태·로그인 관리.
 
-codex / codex / gemini / ollama 4종 CLI 에 대해
+codex / gemini / ollama 3종 CLI 에 대해
   - 설치 여부 + 버전 감지 (PATH 포함 넓은 경로 탐색)
   - brew/npm 기반 자동 설치 (macOS: AppleScript 터미널에서 sudo 없이 수행)
   - 로그인 명령을 대화형 터미널에서 실행
@@ -68,19 +68,9 @@ def _which(name: str) -> str:
 # installCmd 는 **단일 shell 명령**이며 AppleScript `do script` 에 그대로 전달됨.
 CLI_CATALOG: dict[str, dict] = {
     "codex": {
-        "label": "Codex CLI CLI",
-        "command": "codex",
-        "homepage": "https://docs.anthropic.com/en/docs/codex-code",
-        "installCmd": "npm install -g @anthropic-ai/codex-code",
-        "installBrew": "brew install --cask codex-code",
-        "loginCmd": "codex auth login",
-        "logoutCmd": "codex auth logout",
-        "versionArgs": ["--version"],
-    },
-    "codex": {
         "label": "Codex CLI",
         "command": "codex",
-        "homepage": "https://github.com/openai/codex",
+        "homepage": "https://developers.openai.com/codex/cli",
         "installCmd": "npm install -g @openai/codex",
         "installBrew": "brew install codex",
         "loginCmd": "codex login",

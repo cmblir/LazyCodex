@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * UI 요소 무결성 E2E — 워크플로우 탭의 중요 DOM 구조가 v2.10.x UX 변경
- * 이후에도 깨지지 않았는지 검증. Anthropic API 키 없이도 돌림.
+ * 이후에도 깨지지 않았는지 검증. OpenAI API 키 없이도 돌림.
  *
  * 검증 항목:
  *  - #wfRoot / #wfCanvasHost / #wfCanvas / #wfViewport / #wfMinimap 존재
