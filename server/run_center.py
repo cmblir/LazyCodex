@@ -1,9 +1,6 @@
-"""Run Center — unified catalog + executor for ECC skills, ECC slash commands,
-OMC modes, OMX commands.
+"""Run Center — unified catalog + executor for ECC skills and ECC slash commands.
 
-Why: ECC v1.10 ships 181 skills + 79 slash commands. OMC contributed 4 named
-modes (autopilot / ralph / ultrawork / deep-interview) which are already
-present as built-in workflow templates. Until v2.36 the dashboard could only
+Why: ECC v1.10 ships 181 skills + 79 slash commands. Until v2.36 the dashboard could only
 *see* skills/commands (read-only list) — to actually invoke them users had to
 go into Codex CLI itself. Run Center wires them up to the existing
 `execute_with_assignee` pipeline so a single dashboard click runs the skill.
@@ -246,138 +243,6 @@ def _list_ecc_commands(root: Path) -> list[dict]:
     return out
 
 
-# ── OMC modes ───────────────────────────────────────────────────────────────
-# These four are already shipped as built-in workflow templates (bt-*); the
-# Run Center exposes them as quick-shot one-prompt items so users don't have
-# to scaffold a workflow. The execution path for these is "one shot to the
-# Planner" rather than a full multi-stage DAG.
-
-OMC_MODES = [
-    {
-        "id":   "omc:autopilot",
-        "source": "omc", "kind": "mode",
-        "name": "/autopilot",
-        "description": (
-            "OMC mode — single uninterrupted flow: requirements → plan → execute → "
-            "verify. No mid-flight confirmations. Maps to the `bt-autopilot` template; "
-            "one-shot run here just dispatches to Planner."
-        ),
-        "category": "ai",
-        "invocation": (
-            "You are running in OMC autopilot mode. Decompose the user's goal into a "
-            "checklist, execute each step in sequence, then verify the result. Do not "
-            "stop for confirmation; surface blockers explicitly only when truly stuck."
-        ),
-        "workflow_template_id": "bt-autopilot",
-    },
-    {
-        "id":   "omc:ralph",
-        "source": "omc", "kind": "mode",
-        "name": "/ralph",
-        "description": (
-            "OMC mode — verify → fix loop until pass. The full DAG is at `bt-ralph`; "
-            "one-shot here runs verify and proposes the next fix."
-        ),
-        "category": "ai",
-        "invocation": (
-            "You are running in OMC ralph mode. Verify the user's goal against the "
-            "current state, then propose a single concrete fix that would move it "
-            "closer to PASS. Do not implement — output the next-fix plan."
-        ),
-        "workflow_template_id": "bt-ralph",
-    },
-    {
-        "id":   "omc:ultrawork",
-        "source": "omc", "kind": "mode",
-        "name": "/ultrawork",
-        "description": (
-            "OMC mode — 5 parallel agents → merge. Full DAG is at `bt-ultrawork`. "
-            "One-shot here returns the dispatch plan (which agent owns what)."
-        ),
-        "category": "ai",
-        "invocation": (
-            "You are running in OMC ultrawork mode. Split the user's goal into 5 "
-            "independent sub-tasks suitable for parallel agents (label them A-E), "
-            "then specify the merge criterion. Do not execute — output the dispatch "
-            "plan only."
-        ),
-        "workflow_template_id": "bt-ultrawork",
-    },
-    {
-        "id":   "omc:deep-interview",
-        "source": "omc", "kind": "mode",
-        "name": "/deep-interview",
-        "description": (
-            "OMC mode — Socratic clarification before design. Full DAG is at "
-            "`bt-deep-interview`. One-shot returns the clarification questions."
-        ),
-        "category": "ai",
-        "invocation": (
-            "You are running in OMC deep-interview mode. Ask the user 3-7 sharp "
-            "Socratic questions that surface hidden assumptions, scope ambiguity, and "
-            "non-functional constraints. Do not propose a solution yet."
-        ),
-        "workflow_template_id": "bt-deep-interview",
-    },
-]
-
-
-# ── OMX commands ────────────────────────────────────────────────────────────
-# OMX (oh-my-codex) is the Codex-targeted sibling of OMC. The dashboard does
-# not run codex by default but several OMX patterns are useful as one-shot
-# prompts dispatched to whichever provider the user picks.
-
-OMX_COMMANDS = [
-    {
-        "id": "omx:doctor",
-        "source": "omx", "kind": "diagnostic",
-        "name": "$doctor",
-        "description": "OMX-style install/health diagnostic — sweep the user's setup for missing tools and stale config.",
-        "category": "ops",
-        "invocation": (
-            "You are running an OMX-style doctor pass. Inspect the project's health: "
-            "missing dependencies, stale lockfiles, broken scripts, env mismatches. "
-            "Output a checklist with status per item."
-        ),
-    },
-    {
-        "id": "omx:wiki-summarise",
-        "source": "omx", "kind": "knowledge",
-        "name": "$wiki",
-        "description": "OMX wiki helper — distil the working context into a 1-page reference for future agents.",
-        "category": "ai",
-        "invocation": (
-            "You are an OMX wiki summariser. Read the user's input and produce a "
-            "concise reference document covering: purpose, key concepts, key files, "
-            "current open questions. Markdown."
-        ),
-    },
-    {
-        "id": "omx:hud-snapshot",
-        "source": "omx", "kind": "diagnostic",
-        "name": "$hud",
-        "description": "OMX hud snapshot — one-line live status of the project (where things are right now).",
-        "category": "ops",
-        "invocation": (
-            "You are taking an OMX-style hud snapshot. Output one or two lines that "
-            "tell a returning developer: current phase, last action, next blocker. "
-            "No prose — bullet form."
-        ),
-    },
-    {
-        "id": "omx:tasks-extract",
-        "source": "omx", "kind": "knowledge",
-        "name": "$tasks",
-        "description": "OMX-style task extraction — pull every actionable TODO/FIXME/BUG from the user's input.",
-        "category": "ops",
-        "invocation": (
-            "You are extracting actionable tasks OMX-style. Scan the input and emit a "
-            "JSON array of { title, priority, source_line }. Skip vague aspirations."
-        ),
-    },
-]
-
-
 _CATALOG_CACHE: dict = {"ts": 0, "items": [], "debug": {}}
 _CATALOG_TTL_S = 30
 
@@ -413,8 +278,6 @@ def _build_catalog() -> tuple[list[dict], dict]:
         debug["ecc_skill_total"] += added_s
         debug["ecc_cmd_total"]   += added_c
 
-    items.extend(OMC_MODES)
-    items.extend(OMX_COMMANDS)
     return items, debug
 
 
@@ -454,7 +317,7 @@ def _save_favorites(ids: set[str]) -> bool:
 # ── Public APIs ─────────────────────────────────────────────────────────────
 
 def api_run_catalog(query: dict | None = None) -> dict:
-    """GET /api/run/catalog?source=ecc|omc|omx&kind=skill|command|mode|diagnostic|knowledge&q=...&refresh=1"""
+    """GET /api/run/catalog?source=ecc&kind=skill|command&q=...&refresh=1"""
     q = query or {}
     src    = (q.get("source", [""])[0] if isinstance(q.get("source"), list) else q.get("source", "")).strip()
     kind   = (q.get("kind",   [""])[0] if isinstance(q.get("kind"),   list) else q.get("kind",   "")).strip()
@@ -642,7 +505,7 @@ def api_run_execute(body: dict) -> dict:
     if not item:
         return {"ok": False, "error": f"item not found: {item_id}"}
 
-    assignee = (body.get("assignee") or "codex:sonnet").strip()
+    assignee = (body.get("assignee") or "codex:gpt-5-codex").strip()
     cwd      = (body.get("cwd") or "").strip()
     timeout  = max(15, min(int(body.get("timeoutSeconds") or 180), 1800))
 
@@ -710,9 +573,8 @@ def api_run_execute(body: dict) -> dict:
 
 
 def api_run_to_workflow(body: dict) -> dict:
-    """POST /api/run/to-workflow  body: {itemId} — for OMC modes that have a
-    matching built-in template, return the template id so the UI can hand off
-    to the Workflows tab. For ECC items, scaffold a minimal one-node workflow.
+    """POST /api/run/to-workflow  body: {itemId}
+    For catalog items, scaffold a minimal one-node workflow.
     """
     if not isinstance(body, dict):
         return {"ok": False, "error": "bad body"}
@@ -721,10 +583,6 @@ def api_run_to_workflow(body: dict) -> dict:
     item = next((it for it in items if it["id"] == item_id), None)
     if not item:
         return {"ok": False, "error": f"item not found: {item_id}"}
-
-    tpl_id = item.get("workflow_template_id")
-    if tpl_id:
-        return {"ok": True, "kind": "template", "templateId": tpl_id, "item": item["name"]}
 
     # No template → emit a draft workflow (caller saves via /api/workflows/save).
     nid_start = "n-rcstart"
@@ -740,7 +598,7 @@ def api_run_to_workflow(body: dict) -> dict:
              "data": {
                  "subject":     item.get("name", "Run Center item"),
                  "description": invocation or item.get("description", ""),
-                 "assignee":    "codex:sonnet",
+                 "assignee":    "codex:gpt-5-codex",
                  "inputsMode":  "concat",
              }},
             {"id": nid_out,     "type": "output",  "x": 560, "y": 200, "title": "Output", "data": {"exportTo": ""}},

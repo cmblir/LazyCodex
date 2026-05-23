@@ -1,6 +1,6 @@
 {
   "source": "dist/index.html",
-  "total": 212,
+  "total": 207,
   "items": [
     {
       "text": "'{name}' 가 {mcp_file} 에 없음",
@@ -10,12 +10,6 @@
     },
     {
       "text": "- 한국어 요약이 불가능하면 원문 기술 용어 나열.",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": ".codex.json 파싱 실패: {e}",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
@@ -99,7 +93,7 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "Codex CLI 를 새 세션에서 이 MCP 호출 시 활성화. 필요 시 재시작.",
+      "text": "Codex CLI 를 새 세션에서 이 MCP 호출 시 활성화됩니다. 필요 시 재시작하세요.",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
@@ -137,6 +131,12 @@
       "in_existing_en_dict": false
     },
     {
+      "text": "Codex 기본 모델",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
       "text": "DB에서 slug(project_dir) → 실제 cwd 매핑.",
       "count": 0,
       "sample_lines": [],
@@ -150,12 +150,6 @@
     },
     {
       "text": "EDA, 가설 검증, 비즈니스 지표 분석, 대시보드 작성.",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": "Fast mode 기본",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
@@ -191,12 +185,6 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "Haiku (가장 빠름/저렴)",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
       "text": "Haiku 등 작은 보조 모델 지정",
       "count": 0,
       "sample_lines": [],
@@ -209,7 +197,7 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "LazyCodex — 최적화 대시보드",
+      "text": "LazyCodex — Codex 셋업 콘솔",
       "count": 1,
       "sample_lines": [
         6
@@ -230,12 +218,6 @@
     },
     {
       "text": "OWASP 관점 코드 리뷰, 비밀 누출, 인증·인가, 의존성 취약점.",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": "Opus (최강/느림)",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
@@ -266,12 +248,6 @@
     },
     {
       "text": "Slack 메시지 조회/전송. SLACK_BOT_TOKEN 필요.",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": "Sonnet (균형형)",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
@@ -313,25 +289,13 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "codex-haiku-4-5 (핀)",
+      "text": "config.toml 저장 실패",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
     },
     {
-      "text": "codex-opus-4-6 (핀)",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": "codex-opus-4-7 (핀)",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": "codex-sonnet-4-6 (핀)",
+      "text": "config.toml 파싱 실패: {e}",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
@@ -433,18 +397,6 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "~/.codex.json 없음",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": "~/.codex.json 없음. `codex auth login` 먼저 실행.",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
       "text": "~/.codex/homunculus/projects.json — Codex CLI 내부 프로젝트 추적.",
       "count": 0,
       "sample_lines": [],
@@ -501,6 +453,12 @@
       "in_existing_en_dict": false
     },
     {
+      "text": "고난도 추론",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
       "text": "구현 전략 수립 — 단계별 플랜과 핵심 파일 식별.",
       "count": 0,
       "sample_lines": [],
@@ -546,7 +504,7 @@
       "text": "내리기",
       "count": 1,
       "sample_lines": [
-        188
+        187
       ],
       "in_existing_en_dict": false
     },
@@ -554,7 +512,7 @@
       "text": "네비게이션 도우미 ↔ 멀티 에이전트 오케스트레이터 전환",
       "count": 1,
       "sample_lines": [
-        207
+        206
       ],
       "in_existing_en_dict": false
     },
@@ -576,7 +534,7 @@
       "text": "닫기",
       "count": 1,
       "sample_lines": [
-        187
+        186
       ],
       "in_existing_en_dict": false
     },
@@ -584,7 +542,7 @@
       "text": "대시보드 도우미",
       "count": 1,
       "sample_lines": [
-        195
+        194
       ],
       "in_existing_en_dict": false
     },
@@ -739,6 +697,12 @@
       "in_existing_en_dict": false
     },
     {
+      "text": "범용 안정형",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
       "text": "범용 에이전트 — 복잡한 질의 조사 / 코드 검색 / 멀티스텝 작업.",
       "count": 0,
       "sample_lines": [],
@@ -758,6 +722,12 @@
     },
     {
       "text": "부팅 시 호출 — 첫 요청의 6초 지연을 제거한다.",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "비용 최적화",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false
@@ -915,7 +885,7 @@
       "text": "안녕하세요! 대시보드 기능에 대해 무엇이든 물어보세요.",
       "count": 1,
       "sample_lines": [
-        201
+        200
       ],
       "in_existing_en_dict": false
     },
@@ -957,7 +927,7 @@
       "text": "예: MCP 어디서 설정해?",
       "count": 1,
       "sample_lines": [
-        219
+        218
       ],
       "in_existing_en_dict": false
     },
@@ -965,7 +935,7 @@
       "text": "오케스트레이터 프리셋",
       "count": 1,
       "sample_lines": [
-        212
+        211
       ],
       "in_existing_en_dict": false
     },
@@ -1026,10 +996,16 @@
       "in_existing_en_dict": false
     },
     {
+      "text": "저지연/경량",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
       "text": "전송",
       "count": 1,
       "sample_lines": [
-        220
+        219
       ],
       "in_existing_en_dict": false
     },
@@ -1049,7 +1025,7 @@
       "text": "채팅 전송",
       "count": 1,
       "sample_lines": [
-        220
+        219
       ],
       "in_existing_en_dict": false
     },
@@ -1141,16 +1117,10 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "특정 버전 고정",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
       "text": "펼치기",
       "count": 1,
       "sample_lines": [
-        189
+        188
       ],
       "in_existing_en_dict": false
     },
@@ -1246,7 +1216,7 @@
       "text": "해당 탭으로 바로 안내해 드릴게요.",
       "count": 1,
       "sample_lines": [
-        201
+        200
       ],
       "in_existing_en_dict": false
     },
@@ -1290,7 +1260,7 @@
       "text": "💬 도우미 모드",
       "count": 1,
       "sample_lines": [
-        208
+        207
       ],
       "in_existing_en_dict": false
     },

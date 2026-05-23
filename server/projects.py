@@ -744,13 +744,11 @@ def api_project_agent_save(body: dict) -> dict:
 
 SUBAGENT_MODEL_CHOICES = [
     {"id": "inherit",              "label": "inherit (메인 Codex 따라감)", "note": "세션의 메인 모델과 동일 — 기본값"},
-    {"id": "haiku",                "label": "Haiku (가장 빠름/저렴)",       "note": "Haiku 4.5 alias"},
-    {"id": "sonnet",               "label": "Sonnet (균형형)",              "note": "Sonnet 4.6 alias"},
-    {"id": "opus",                 "label": "Opus (최강/느림)",             "note": "Opus 4.7 alias"},
-    {"id": "codex-haiku-4-5",     "label": "codex-haiku-4-5 (핀)",        "note": "특정 버전 고정"},
-    {"id": "codex-sonnet-4-6",    "label": "codex-sonnet-4-6 (핀)",       "note": "특정 버전 고정"},
-    {"id": "codex-opus-4-7",      "label": "codex-opus-4-7 (핀)",         "note": "1M context"},
-    {"id": "codex-opus-4-6",      "label": "codex-opus-4-6 (핀)",         "note": "Fast mode 기본"},
+    {"id": "gpt-5-codex",          "label": "gpt-5-codex",                 "note": "Codex 기본 모델"},
+    {"id": "o3",                   "label": "o3",                          "note": "고난도 추론"},
+    {"id": "o4-mini",              "label": "o4-mini",                     "note": "저지연/경량"},
+    {"id": "gpt-4.1",              "label": "gpt-4.1",                     "note": "범용 안정형"},
+    {"id": "gpt-4.1-mini",         "label": "gpt-4.1-mini",                "note": "비용 최적화"},
 ]
 
 def api_subagent_model_choices() -> dict:
@@ -1133,4 +1131,3 @@ def api_project_command_delete(body: dict) -> dict:
     except Exception as e:
         return {"ok": False, "error": str(e)}
     return {"ok": True}
-

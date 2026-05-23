@@ -10,15 +10,142 @@ from __future__ import annotations
 
 import json
 import re
+import tomllib
+from pathlib import Path
 
 from .codex_md import get_settings, put_settings
-from .config import INSTALLED_PLUGINS_JSON, KNOWN_MARKETPLACES_JSON, PLUGINS_DIR
+from .config import CODEX_CONFIG_TOML, INSTALLED_PLUGINS_JSON, KNOWN_MARKETPLACES_JSON, PLUGINS_DIR
 from .translations import _load_translation_cache
 from .utils import _safe_read
 
 
+def _config_plugin_enabled() -> dict[str, bool]:
+    if not CODEX_CONFIG_TOML.exists():
+        return {}
+    try:
+        data = tomllib.loads(_safe_read(CODEX_CONFIG_TOML))
+    except Exception:
+        return {}
+    plugins = data.get("plugins", {}) if isinstance(data, dict) else {}
+    out: dict[str, bool] = {}
+    if isinstance(plugins, dict):
+        for pid, meta in plugins.items():
+            if isinstance(meta, dict):
+                out[str(pid)] = bool(meta.get("enabled", True))
+    return out
+
+
+def _plugin_counts(root: Path) -> dict:
+    skills_dir = root / "skills"
+    commands_dir = root / "commands"
+    agents_dir = root / "agents"
+    hooks_dir = root / "hooks"
+    return {
+        "agents": len(list(agents_dir.glob("*.md"))) if agents_dir.exists() else 0,
+        "skills": sum(1 for x in skills_dir.iterdir() if x.is_dir() and (x / "SKILL.md").exists()) if skills_dir.exists() else 0,
+        "commands": len(list(commands_dir.glob("*.md"))) if commands_dir.exists() else 0,
+        "hooks": len(list(hooks_dir.iterdir())) if hooks_dir.exists() else 0,
+    }
+
+
+def _read_plugin_json(root: Path) -> dict:
+    for candidate in (root / ".codex-plugin" / "plugin.json", root / "codex-plugin.json", root / "plugin.json"):
+        if candidate.exists():
+            try:
+                return json.loads(_safe_read(candidate))
+            except Exception:
+                return {}
+    return {}
+
+
+def discover_plugin_roots() -> list[dict]:
+    """Return concrete plugin roots Codex can load.
+
+    Current Codex installs bundled/runtime plugins under
+    ``~/.codex/plugins/cache/<market>/<plugin>/<version>`` and records enabled
+    state in ``config.toml``. Older marketplace checkouts are still supported.
+    """
+    settings = get_settings()
+    legacy_enabled = settings.get("enabledPlugins", {}) if isinstance(settings, dict) else {}
+    config_enabled = _config_plugin_enabled()
+    out: list[dict] = []
+    seen: set[str] = set()
+
+    cache_dir = PLUGINS_DIR / "cache"
+    if cache_dir.exists():
+        for pj in sorted(cache_dir.glob("*/*/*/.codex-plugin/plugin.json")):
+            root = pj.parent.parent
+            plugin = root.parent.name
+            market = root.parent.parent.name
+            plugin_id = f"{plugin}@{market}"
+            if plugin_id in seen:
+                continue
+            seen.add(plugin_id)
+            meta = _read_plugin_json(root)
+            iface = meta.get("interface") if isinstance(meta.get("interface"), dict) else {}
+            out.append({
+                "id": plugin_id,
+                "name": meta.get("name") or plugin,
+                "marketplace": market,
+                "description": meta.get("description") or iface.get("shortDescription", ""),
+                "author": (meta.get("author") or {}).get("name") if isinstance(meta.get("author"), dict) else meta.get("author", ""),
+                "tags": meta.get("keywords", []) if isinstance(meta.get("keywords"), list) else [],
+                "version": meta.get("version") or root.name,
+                "installed": True,
+                "enabled": bool(config_enabled.get(plugin_id, legacy_enabled.get(plugin_id, True))),
+                "installPath": str(root),
+                "source": "cache",
+                "counts": _plugin_counts(root),
+            })
+
+    markets_dir = PLUGINS_DIR / "marketplaces"
+    if markets_dir.exists():
+        for market in sorted(markets_dir.iterdir()):
+            if not market.is_dir() or market.name.endswith(".bak"):
+                continue
+            plugins_root = market / "plugins"
+            if not plugins_root.exists():
+                continue
+            for plugin_dir in sorted(plugins_root.iterdir()):
+                if not plugin_dir.is_dir():
+                    continue
+                plugin_id = f"{plugin_dir.name}@{market.name}"
+                if plugin_id in seen:
+                    continue
+                seen.add(plugin_id)
+                meta = _read_plugin_json(plugin_dir)
+                out.append({
+                    "id": plugin_id,
+                    "name": meta.get("name") or plugin_dir.name,
+                    "marketplace": market.name,
+                    "description": meta.get("description", ""),
+                    "author": (meta.get("author") or {}).get("name") if isinstance(meta.get("author"), dict) else meta.get("author", ""),
+                    "tags": meta.get("keywords", []) if isinstance(meta.get("keywords"), list) else [],
+                    "version": meta.get("version", ""),
+                    "installed": plugin_id in config_enabled or bool(legacy_enabled.get(plugin_id)),
+                    "enabled": bool(config_enabled.get(plugin_id, legacy_enabled.get(plugin_id, False))),
+                    "installPath": str(plugin_dir),
+                    "source": "marketplace",
+                    "counts": _plugin_counts(plugin_dir),
+                })
+    return out
+
+
 def api_plugins_browse() -> dict:
     """설치된 마켓플레이스의 모든 plugins 리스트 + 설치/활성 상태."""
+    roots = discover_plugin_roots()
+    if roots:
+        cache = _load_translation_cache()
+        for p in roots:
+            pid = p["id"]
+            p["descriptionKo"] = cache.get(f"plugin:{pid}", "")
+            p["descriptionEn"] = cache.get(f"en:plugin:{pid}", "")
+            p["descriptionZh"] = cache.get(f"zh:plugin:{pid}", "")
+        return {
+            "plugins": roots,
+            "marketplaces": len({p.get("marketplace", "") for p in roots if p.get("marketplace")}),
+        }
+
     markets_dir = PLUGINS_DIR / "marketplaces"
     if not markets_dir.exists():
         return {"plugins": []}
@@ -121,6 +248,19 @@ def api_plugin_toggle(body: dict) -> dict:
 
 
 def list_plugins_api() -> list:
+    discovered = discover_plugin_roots()
+    if discovered:
+        return [{
+            "id": p["id"],
+            "name": p["name"],
+            "marketplace": p["marketplace"],
+            "version": p.get("version", ""),
+            "scope": "user",
+            "enabled": bool(p.get("enabled")),
+            "installPath": p.get("installPath", ""),
+            "installedAt": "",
+            "lastUpdated": "",
+        } for p in discovered]
     if not INSTALLED_PLUGINS_JSON.exists():
         return []
     try:

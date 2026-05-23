@@ -552,9 +552,9 @@ def _suggest_files_for_project(cwd: str, avg_breakdown: dict, repo: dict, settin
             "axis": "diversity",
             "impact": "+4~10",
             "reason": f"평균 다양성 점수 {avg_breakdown.get('diversity',0)}. MCP 서버(Context7, GitHub, Memory) 중 하나라도 붙이면 도구 풀이 크게 늘어납니다.",
-            "relpath": "~/.codex.json",
+            "relpath": "~/.codex/config.toml",
             "mode": "manual",
-            "content": "터미널에서: codex mcp add context7 npx -y @upstash/context7-mcp  (MCP는 대시보드에서 직접 편집하지 않고 CLI로 추가)",
+            "content": "터미널에서: codex mcp add context7 -- npx -y @upstash/context7-mcp  (설정은 ~/.codex/config.toml 의 [mcp_servers.*]에 저장됨)",
         })
 
     # 7) 에이전트 위임이 낮으면
@@ -1732,4 +1732,3 @@ from server.system import (
     api_ide_status, api_scheduled_tasks, api_bash_history,
     api_telemetry_summary, api_homunculus_projects,
 )
-

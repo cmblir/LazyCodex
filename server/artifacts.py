@@ -179,7 +179,7 @@ _SRCDOC_WRAPPER = """<!doctype html>
   code { background:rgba(255,255,255,0.08); padding:1px 4px; border-radius:3px; font-family:ui-monospace,Menlo,monospace; font-size:11px; }
   pre code { background:transparent; padding:0; }
   h1,h2,h3,h4 { color:#fff; }
-  a { color:#d97757; text-decoration:underline; }
+  a { color:#10a37f; text-decoration:underline; }
   svg { max-width:100%; height:auto; }
   img { max-width:100%; height:auto; }
   table { border-collapse:collapse; }

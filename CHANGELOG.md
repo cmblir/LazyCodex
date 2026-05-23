@@ -10,6 +10,86 @@
 기능 업데이트 시 (a) `VERSION` 파일 번호 bump, (b) 아래 표에 한 줄 추가, (c) `git tag v<버전>` 권장.
 
 ---
+## [3.99.33] — 2026-05-19  ✅ Official OpenAI Codex surface cleanup
+
+### Changed
+
+- Rebuilt the `Build` and `Config` dashboard taxonomy against the official
+  OpenAI Codex docs on `developers.openai.com/codex`.
+- `Codex` mode now shows only documented Codex surfaces: config.toml,
+  rules/permissions, hooks, AGENTS.md, MCP, plugins/marketplaces, skills,
+  subagents, slash commands, SDK, CLI/IDE status, and security scan.
+- Moved LazyCodex-only DAG workflows, Run Center, Crew Wizard, prompt library,
+  RTK, zcodex, routines, output styles, statusline, and settings.json into
+  local/legacy/third-party areas with visible support badges.
+- Converted `envConfig` and `modelConfig` from legacy settings.json guidance
+  to official config.toml summaries for `shell_environment_policy`, model,
+  provider, reasoning, and profile overrides.
+- Replaced old Anthropic / docs.codex.com / platform.codex.com links in the
+  active dashboard docs surfaces with official OpenAI Codex and OpenAI API
+  documentation links.
+
+---
+## [3.99.32] — 2026-05-19  🧠 Rich Codex harness dashboard
+
+### Changed
+
+- Expanded the `Codex 하네스` tab from a basic config editor into a denser
+  operations dashboard:
+  - 10 mergeable presets, including granular approval, controlled autonomy,
+    profile packs, permission profiles, and telemetry/audit settings.
+  - 9 researched harness techniques covering config layering, approval flows,
+    goal/context persistence, tool surface control, skills/subagents, shell
+    policy, hooks, and observability.
+  - 4 playbooks that apply preset sequences for unfamiliar repos, long
+    refactors, repeated operations, and CI-style runs.
+  - Current config coverage, high-risk combination diagnostics, profile count,
+    and copyable CLI override examples.
+- Added richer EN/ZH translations for the new harness content.
+
+---
+## [3.99.31] — 2026-05-19  🧷 Codex config.toml harness + Codex teal theme
+
+### Added
+
+- Added a `Codex 하네스` tab backed by `~/.codex/config.toml`.
+  It reads and validates raw TOML, exposes official Codex config keys from
+  the OpenAI Codex schema, and can merge focused presets for safe local work,
+  workspace writing, goal/instruction quality, sub-agent fleets, connected
+  tools, and quieter terminal behavior.
+- Added stdlib-only backend routes for the harness:
+  `/api/codex-harness/config`, `/api/codex-harness/apply`, and
+  `/api/codex-harness/config` PUT. Preset application preserves existing
+  parsed settings by deep-merging the selected patch.
+
+### Changed
+
+- Replaced the dashboard's default orange accent usage with a Codex-style
+  teal palette across CSS tokens, workflow chrome, analytics highlights,
+  and setup surfaces.
+- Added EN/ZH i18n coverage for the new harness UI and preset labels.
+
+---
+## [3.99.30] — 2026-05-19  🔐 Codex auth.json login detection + LazyCodex setup polish
+
+### Fixed
+
+- Dashboard login gate now recognizes the current Codex CLI auth store at
+  `~/.codex/auth.json`. Recent `codex-cli 0.128.x` writes browser-login
+  credentials there instead of legacy `~/.codex.json`, so the UI could stay
+  stuck on "로그인 확인 중..." even after the terminal printed
+  "Successfully logged in".
+- `/api/auth/status` no longer depends on `codex auth status`, which is not
+  available in the installed CLI. The subprocess probe remains best-effort,
+  with stderr suppressed, and `auth.json` is treated as canonical.
+
+### Changed
+
+- README copy and the overview hero now position LazyCodex as a local Codex
+  setup console for settings, MCP, agents, skills, sessions, and workflows.
+- Added EN/ZH i18n coverage for the new overview setup hero.
+
+---
 ## [3.99.29] — 2026-05-18  ✂️ lazyclaw split out into its own repository
 
 `lazyclaw` (the standalone terminal CLI) is now developed and published

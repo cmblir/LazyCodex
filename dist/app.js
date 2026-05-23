@@ -8,172 +8,193 @@ const state = { view: 'overview', data: {}, loading: {},
   mode: (() => { try { return localStorage.getItem('cc.mode') || 'all'; } catch(_) { return 'all'; } })(),
 };
 
-const DOCS_BASE = 'https://docs.codex.com/en/docs/codex-code/';
+const DOCS_BASE = 'https://developers.openai.com/codex/';
+const DOC = {
+  overview: DOCS_BASE,
+  cli: DOCS_BASE + 'cli',
+  ide: DOCS_BASE + 'ide',
+  web: DOCS_BASE + 'cloud',
+  configBasic: DOCS_BASE + 'config-basic',
+  configAdvanced: DOCS_BASE + 'config-advanced',
+  configReference: DOCS_BASE + 'config-reference',
+  sampleConfig: DOCS_BASE + 'sample-config',
+  rules: DOCS_BASE + 'rules',
+  hooks: DOCS_BASE + 'hooks',
+  agentsMd: DOCS_BASE + 'agents-md',
+  mcp: DOCS_BASE + 'mcp',
+  plugins: DOCS_BASE + 'plugins',
+  skills: DOCS_BASE + 'skills',
+  subagents: DOCS_BASE + 'subagents',
+  slashCommands: DOCS_BASE + 'slash-commands',
+  nonInteractive: DOCS_BASE + 'non-interactive',
+  sdk: DOCS_BASE + 'sdk',
+  githubAction: DOCS_BASE + 'github-action',
+  sandboxing: DOCS_BASE + 'concepts/sandboxing',
+  managedConfig: DOCS_BASE + 'managed-configuration',
+  useCases: DOCS_BASE + 'use-cases',
+  bestPractices: DOCS_BASE + 'best-practices',
+};
 // v2.26.0 — 상위 6 카테고리로 재분류 (hover flyout 사이드바).
 // 기존: new/main/work/config/advanced/system (6 그룹, advanced 2탭으로 얕음)
 // 신규: learn/main/build/playground/config/observe (advanced 해체 — plans→main, 나머지→config)
 const NAV = [
   // learn — 신기능 · 온보딩 · 문서 · 가이드 (4)
   { id: 'features', icon: '🆕', label: '신기능', group: 'learn',
-    desc: 'Anthropic 최신 발표 · 카드 클릭 → 창으로 열림 (여러 개 동시 가능)' },
+    desc: 'OpenAI Codex 공식 업데이트와 LazyCodex 로컬 변경 사항' },
   { id: 'onboarding', icon: '🚀', label: '시작하기', group: 'learn',
     desc: '처음 사용자를 위한 단계별 체크리스트 (현재 셋업 자동 감지)' },
   { id: 'codexDocs', icon: '📖', label: 'Codex Docs', group: 'learn',
-    desc: 'docs.anthropic.com 공식 문서 색인 + 검색',
-    docUrl: 'https://docs.anthropic.com/' },
+    desc: 'OpenAI Codex 공식 문서 색인 + 검색',
+    docUrl: DOC.overview, support: 'official' },
   { id: 'guideHub',   icon: '📚', label: '가이드 & 툴', group: 'learn',
     desc: '외부 가이드 · 유용한 툴 · 베스트 프랙티스 · 치트시트' },
 
   // main — 한눈에 보기 (6, plans 포함)
-  { id: 'overview',    icon: '✦',  label: '개요',            group: 'main', docUrl: DOCS_BASE+'overview' },
-  { id: 'projects',    icon: '📁', label: '프로젝트',          group: 'main', desc: '프로젝트별 Codex 세팅 + AI 추천', docUrl: DOCS_BASE+'memory' },
+  { id: 'overview',    icon: '✦',  label: '개요',            group: 'main', docUrl: DOC.overview, support: 'official' },
+  { id: 'projects',    icon: '📁', label: '프로젝트',          group: 'main', desc: '프로젝트별 AGENTS.md / .codex/config.toml / 세션 상태', docUrl: DOC.configBasic, support: 'official' },
   { id: 'plans',       icon: '🧭', label: '플랜 보관소',
-    group: 'main', desc: 'Plan Mode 로 만든 계획 문서들', docUrl: DOCS_BASE+'plan-mode' },
-  { id: 'analytics',   icon: '📊', label: '통계 & 스코어',      group: 'main', docUrl: DOCS_BASE+'costs' },
+    group: 'main', desc: 'LazyCodex가 수집한 Plan Mode 문서 보관소', docUrl: null, support: 'local' },
+  { id: 'analytics',   icon: '📊', label: '통계 & 스코어',      group: 'main', support: 'local' },
   { id: 'aiEval',      icon: '🤖', label: 'AI 종합 평가',       group: 'main', desc: 'Codex 가 전체 셋업을 보고 우선순위 진단' },
-  { id: 'sessions',    icon: '🗂️', label: '세션 히스토리',      group: 'main', docUrl: DOCS_BASE+'interactive-mode' },
+  { id: 'sessions',    icon: '🗂️', label: '세션 히스토리',      group: 'main', docUrl: DOC.cli, support: 'official' },
 
-  // build — 워크플로우/에이전트/프롬프트 (8)
-  { id: 'crewWizard',  icon: '🧑‍✈️', label: '크루 위저드', group: 'build',
+  // automation — LazyCodex 자체 워크플로우/운영 도구
+  { id: 'crewWizard',  icon: '🧑‍✈️', label: '크루 위저드', group: 'automation',
     desc: '폼만 채우면 기획자 + 페르소나 N명 + Slack 어드민 게이트 + Obsidian 기록까지 자동 생성',
-    docUrl: null },
-  { id: 'runCenter',   icon: '🎯', label: '런 센터', group: 'build',
-    desc: 'ECC 스킬 181개 + 슬래시 명령 79개 + OMC 4모드 + OMX 명령을 검색·1클릭 실행',
-    docUrl: null },
-  { id: 'workflows',   icon: '🔀', label: '워크플로우', group: 'build',
-    desc: '세션 노드를 DAG 로 연결해 업무 흐름 설계' },
-  { id: 'promptLibrary', icon: '📝', label: '프롬프트 라이브러리', group: 'build',
+    docUrl: null, support: 'local' },
+  { id: 'runCenter',   icon: '🎯', label: '런 센터', group: 'automation',
+    desc: 'ECC 스킬/슬래시 명령 카탈로그를 검색·1클릭 실행',
+    docUrl: null, support: 'third-party' },
+  { id: 'workflows',   icon: '🔀', label: 'LazyCodex 워크플로우', group: 'automation',
+    desc: 'LazyCodex 자체 DAG 엔진입니다. OpenAI Codex 공식 Workflows 기능이 아닙니다.', support: 'local' },
+  { id: 'promptLibrary', icon: '📝', label: '프롬프트 라이브러리', group: 'automation',
     desc: '자주 쓰는 프롬프트 저장 · 태그 검색 · 워크플로우로 복제',
-    docUrl: null },
-  { id: 'rtk', icon: '🦀', label: 'RTK Optimizer', group: 'build',
+    docUrl: null, support: 'local' },
+  { id: 'rtk', icon: '🦀', label: 'RTK Optimizer', group: 'automation',
     desc: 'rtk-ai/rtk Rust 프록시로 Codex 토큰 60-90% 절감 · 설치/훅 활성/통계 조회',
-    docUrl: 'https://www.rtk-ai.app/guide' },
+    docUrl: 'https://www.rtk-ai.app/guide', support: 'third-party' },
+  { id: 'learner', icon: '🎓', label: 'Learner', group: 'automation',
+    desc: 'LazyCodex가 최근 세션 JSONL 에서 반복 tool 시퀀스/프롬프트를 추출합니다',
+    docUrl: null, support: 'local' },
+  { id: 'artifacts', icon: '🎨', label: 'Artifacts Viewer', group: 'automation',
+    desc: 'LazyCodex 워크플로우 출력(HTML/SVG/Markdown/JSON) 안전 미리보기',
+    docUrl: null, support: 'local' },
+  { id: 'orchestrator', icon: '🎼', label: 'Orchestrator', group: 'automation',
+    desc: 'LazyCodex 자체 멀티 채널/멀티 모델 오케스트레이션',
+    docUrl: null, support: 'local' },
+  { id: 'ralph', icon: '🧪', label: 'Ralph Loop', group: 'automation',
+    desc: '동일 프롬프트를 반복 개선하는 LazyCodex 실험 루프',
+    docUrl: null, support: 'third-party' },
+
+  // build — OpenAI Codex 공식 확장 표면
   { id: 'projectAgents', icon: '👥', label: '프로젝트 서브 에이전트', group: 'build',
-    desc: '프로젝트별 서브 에이전트 보기/추가/교체 + 16개 역할 프리셋', docUrl: DOCS_BASE+'sub-agents' },
-  { id: 'agents',      icon: '🤝', label: '에이전트 & 그래프',  group: 'build', docUrl: DOCS_BASE+'sub-agents' },
-  { id: 'skills',      icon: '✨', label: '스킬',              group: 'build', docUrl: DOCS_BASE+'skills' },
-  { id: 'commands',    icon: '/',  label: '슬래시 명령어',      group: 'build', docUrl: DOCS_BASE+'slash-commands' },
-  { id: 'agentSdkScaffold', icon: '🧪', label: 'Agent SDK 스캐폴드', group: 'build',
-    desc: 'codex-agent-sdk Python/TS 프로젝트 뼈대 생성',
-    docUrl: 'https://docs.anthropic.com/en/docs/codex-code/sdk/sdk-overview' },
+    desc: 'OpenAI Codex subagents 정의와 프로젝트별 역할 파일 관리', docUrl: DOC.subagents, support: 'official' },
+  { id: 'agents',      icon: '🤝', label: '서브 에이전트',  group: 'build',
+    desc: 'OpenAI Codex subagents / [agents] 설정 점검', docUrl: DOC.subagents, support: 'official' },
+  { id: 'skills',      icon: '✨', label: '스킬', group: 'build',
+    desc: 'OpenAI Codex Skills: 반복 작업을 SKILL.md 로 저장', docUrl: DOC.skills, support: 'official' },
+  { id: 'commands',    icon: '/',  label: '슬래시 명령어', group: 'build',
+    desc: 'Codex CLI / IDE slash commands', docUrl: DOC.slashCommands, support: 'official' },
+  { id: 'agentSdkScaffold', icon: '🧪', label: 'Codex SDK 스캐폴드', group: 'build',
+    desc: 'OpenAI Codex SDK 자동화 프로젝트 골격', docUrl: DOC.sdk, support: 'official' },
 
   // playground — Codex API 실험실 + AI 프로바이더 + 세션 리플레이 (12)
   { id: 'aiProviders', icon: '🧠', label: 'AI 프로바이더',
     group: 'playground', desc: 'Codex/GPT/Gemini/Ollama/Codex 멀티 AI — API 키 · CLI 감지 · 폴백 체인 · 연결 테스트' },
   { id: 'promptCache', icon: '🧊', label: '프롬프트 캐시 실험실', group: 'playground',
-    desc: 'Anthropic cache_control 실측 — cache_read / cache_creation 토큰 + 비용 절감',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/prompt-caching' },
+    desc: 'OpenAI Codex cache_control 실측 — cache_read / cache_creation 토큰 + 비용 절감',
+    docUrl: null, support: 'third-party' },
   { id: 'thinkingLab', icon: '🧠', label: 'Extended Thinking', group: 'playground',
-    desc: 'Opus/Sonnet thinking block 분리 시각화 — budget_tokens 슬라이더',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/extended-thinking' },
+    desc: 'GPT-5 Codex/o3 thinking block 분리 시각화 — budget_tokens 슬라이더',
+    docUrl: null, support: 'third-party' },
   { id: 'toolUseLab',  icon: '🛠️', label: 'Tool Use 플레이그라운드', group: 'playground',
     desc: 'tool schema 정의 → tool_use 수신 → tool_result 피드 멀티 턴',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/tool-use' },
+    docUrl: 'https://developers.openai.com/api/docs/guides/function-calling', support: 'local' },
   { id: 'batchJobs',   icon: '📦', label: '배치 작업', group: 'playground',
     desc: 'Message Batches API — 대용량 프롬프트 병렬 제출 · JSONL 결과',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/message-batches' },
+    docUrl: 'https://developers.openai.com/api/docs/guides/batch', support: 'local' },
   { id: 'apiFiles',    icon: '📎', label: 'Files API', group: 'playground',
     desc: '파일 업로드 · 목록 · 삭제 + 메시지에 document reference',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/files' },
+    docUrl: 'https://developers.openai.com/api/docs/api-reference/files', support: 'local' },
   { id: 'visionLab',   icon: '👁️', label: 'Vision / PDF', group: 'playground',
-    desc: '이미지/PDF → Opus·Sonnet·Haiku 3 모델 병렬 비교',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/vision' },
+    desc: '이미지/PDF → o3·GPT-5 Codex·o4-mini 3 모델 병렬 비교',
+    docUrl: 'https://developers.openai.com/api/docs/guides/images-vision', support: 'local' },
   { id: 'modelBench',  icon: '🏁', label: '모델 벤치마크', group: 'playground',
     desc: '프롬프트 셋 × 모델 교차 실행 → 평균 지연/토큰/비용 집계',
-    docUrl: 'https://docs.anthropic.com/en/docs/about-codex/models' },
+    docUrl: 'https://developers.openai.com/codex/models', support: 'local' },
   { id: 'serverTools', icon: '🧰', label: '공식 내장 Tools', group: 'playground',
-    desc: 'Anthropic hosted web_search / code_execution 실습',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/tool-use' },
+    desc: 'OpenAI tools / web search / shell 계열 실습',
+    docUrl: 'https://developers.openai.com/api/docs/guides/tools', support: 'local' },
   { id: 'citationsLab', icon: '📑', label: 'Citations', group: 'playground',
     desc: '문서 + citations.enabled → 인용 span 하이라이트',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/citations' },
+    docUrl: 'https://developers.openai.com/api/docs/guides/citation-formatting', support: 'local' },
   { id: 'embeddingLab', icon: '🧬', label: 'Embedding 비교', group: 'playground',
     desc: 'Voyage / OpenAI / Ollama 임베딩 cosine rank 매트릭스 비교',
-    docUrl: 'https://docs.anthropic.com/en/docs/build-with-codex/embeddings' },
+    docUrl: 'https://developers.openai.com/api/docs/guides/embeddings', support: 'local' },
   { id: 'sessionReplay', icon: '🎞️', label: 'Session Replay', group: 'playground',
     desc: 'Codex CLI JSONL 세션 로그 타임라인 재생 · 툴 호출 강조 · 누적 토큰 차트',
     docUrl: null },
-  // v2.42.0 — four new Anthropic API features
-  { id: 'computerUseLab', icon: '🖱️', label: 'Computer Use', group: 'playground',
-    desc: 'computer-use-2025-01-24 beta · screenshot+mouse+key 시연 (plan-only, 안전)',
-    docUrl: 'https://platform.codex.com/docs/en/agents-and-tools/tool-use/computer-use-tool' },
-  { id: 'memoryLab', icon: '🧩', label: 'Memory Tool', group: 'playground',
-    desc: 'memory-2025-08-18 beta · 서버측 memory blocks · 기억/회상/삭제 라운드트립',
-    docUrl: 'https://platform.codex.com/docs/en/agents-and-tools/tool-use/memory-tool' },
-  { id: 'advisorLab', icon: '🧭', label: 'Advisor Tool', group: 'playground',
-    desc: 'Executor (Haiku) + Advisor (Opus) 페어링 · 토큰/비용/지연 델타 비교',
-    docUrl: 'https://platform.codex.com/docs/en/agents-and-tools/tool-use/advisor-tool' },
-  { id: 'routines', icon: '🔁', label: 'Routines', group: 'config',
-    desc: '~/.codex/scheduled-tasks/*.yaml CRUD + 즉시 실행 — Codex CLI Routines',
-    docUrl: 'https://docs.codex.com/en/docs/codex-code/routines' },
-  { id: 'learner', icon: '🎓', label: 'Learner', group: 'build',
-    desc: '최근 세션 JSONL 에서 반복 tool 시퀀스/프롬프트 자동 추출 → Prompt Library / 워크플로우 제안',
-    docUrl: null },
-  { id: 'artifacts', icon: '🎨', label: 'Artifacts Viewer', group: 'build',
-    desc: '워크플로우 출력(HTML/SVG/Markdown/JSON)을 sandbox iframe + CSP + 정적 필터로 안전 미리보기',
-    docUrl: null },
-  { id: 'orchestrator', icon: '🎼', label: 'Orchestrator', group: 'build',
-    desc: 'Slack/Telegram/Discord 채널 멘션 → Codex 플래너 → 멀티 모델 병렬 분담 → 채널 회신. 채널별 fallback + 일일 예산 cap.',
-    docUrl: null },
-  { id: 'ralph', icon: '🦞', label: 'Ralph Loop', group: 'build',
-    desc: 'Geoffrey Huntley Ralph Wiggum 패턴 — 같은 PROMPT.md를 4중 안전장치 안에서 반복. 프로젝트 추천기 + 라이브 SSE + CLI.',
-    docUrl: null },
+  { id: 'routines', icon: '🔁', label: 'Routines (Legacy)', group: 'automation',
+    desc: 'LazyCodex legacy scheduled-tasks 관리. 현재 OpenAI Codex 공식 문서에는 없는 로컬 기능입니다.',
+    docUrl: null, support: 'legacy' },
 
   // config — Codex CLI 설정 전반 (13, advanced 흡수)
   { id: 'hooks',       icon: '🪝', label: '훅',
-    group: 'config', desc: '이벤트(프롬프트 전/후, 도구 사용 등) 시 자동 실행되는 쉘 훅', docUrl: DOCS_BASE+'hooks' },
+    group: 'config', desc: 'OpenAI Codex hooks: PreToolUse/PostToolUse/Stop 등 자동 실행 지점', docUrl: DOC.hooks, support: 'official' },
   { id: 'eventForwarder', icon: '📤', label: 'Event Forwarder',
-    group: 'config', desc: 'Codex CLI hook 이벤트를 외부 HTTP endpoint 로 포워딩 · 호스트 화이트리스트',
-    docUrl: DOCS_BASE+'hooks' },
+    group: 'automation', desc: 'LazyCodex가 hook 이벤트를 외부 HTTP endpoint 로 포워딩하는 로컬 확장',
+    docUrl: DOC.hooks, support: 'local' },
   { id: 'permissions', icon: '🔐', label: '권한',
-    group: 'config', desc: '허용/차단할 도구·명령 규칙. deny가 안전도를 높입니다', docUrl: DOCS_BASE+'iam' },
+    group: 'config', desc: 'OpenAI Codex rules / permission profiles / sandbox approval 정책', docUrl: DOC.rules, support: 'official' },
   { id: 'mcp',         icon: '🔗', label: 'MCP 커넥터',
-    group: 'config', desc: '외부 시스템(DB·GitHub·브라우저 등)과 연결하는 MCP 서버', docUrl: DOCS_BASE+'mcp' },
+    group: 'config', desc: 'OpenAI Codex MCP 서버와 외부 도구 연결', docUrl: DOC.mcp, support: 'official' },
   { id: 'plugins',     icon: '🔌', label: '플러그인',
-    group: 'config', desc: '마켓플레이스에서 설치한 기능 팩(스킬+에이전트+명령어 묶음)', docUrl: DOCS_BASE+'plugins' },
+    group: 'config', desc: 'OpenAI Codex Plugins: skills/agents/commands 묶음', docUrl: DOC.plugins, support: 'official' },
   { id: 'marketplaces',icon: '🏪', label: '마켓플레이스',
-    group: 'config', desc: '플러그인 마켓 추가/삭제 (git URL)', docUrl: DOCS_BASE+'plugins' },
-  { id: 'settings',    icon: '⚙️', label: 'Settings 편집',
-    group: 'config', desc: '~/.codex/settings.json 직접 편집 + 추천 프로파일 원클릭', docUrl: DOCS_BASE+'settings' },
+    group: 'config', desc: 'Plugin marketplace 추가/삭제', docUrl: DOC.plugins, support: 'official' },
+  { id: 'settings',    icon: '⚙️', label: 'Legacy settings.json',
+    group: 'automation', desc: '구버전/플러그인 호환용 settings.json 편집. 최신 공식 런타임 설정은 config.toml 입니다.', docUrl: DOC.configBasic, support: 'legacy' },
+  { id: 'codexHarness', icon: '🧷', label: 'Codex 하네스',
+    group: 'config', desc: '~/.codex/config.toml 기반 공식 모델·승인·샌드박스·프로파일·도구 설정', docUrl: DOC.configReference, support: 'official' },
   { id: 'zcodex',     icon: '🛣️', label: 'zcodex (CCR)',
-    group: 'config', desc: 'Codex CLI를 GLM/Z.AI/DeepSeek 등 다른 LLM으로 라우팅 + zcodex 별칭 안내' },
+    group: 'playground', desc: '서드파티 codex-code-router 기반 라우팅. OpenAI Codex 공식 기능은 아닙니다.', support: 'third-party' },
   { id: 'codexmd',    icon: '📜', label: 'AGENTS.md',
-    group: 'config', desc: '모든 세션 시작 시 로드되는 글로벌 지침(기억·규칙·취향)', docUrl: DOCS_BASE+'memory' },
-  { id: 'envConfig',   icon: '🌿', label: '환경 변수',
-    group: 'config', desc: 'ANTHROPIC_MODEL, CLAUDE_CONFIG_DIR, 프록시 등', docUrl: DOCS_BASE+'settings#environment-variables' },
+    group: 'config', desc: 'OpenAI Codex AGENTS.md 프로젝트 지침', docUrl: DOC.agentsMd, support: 'official' },
+  { id: 'envConfig',   icon: '🌿', label: 'Shell env policy',
+    group: 'config', desc: '공식 shell_environment_policy 기준으로 환경 변수 상속/차단을 점검', docUrl: DOC.configAdvanced, support: 'official' },
   { id: 'modelConfig', icon: '🧬', label: '모델 설정',
-    group: 'config', desc: 'settings.json 의 model / autoUpdates / cleanup 등', docUrl: DOCS_BASE+'settings' },
-  { id: 'outputStyles',icon: '🎨', label: '출력 스타일',
-    group: 'config', desc: '답변 톤/포맷을 바꾸는 output styles', docUrl: DOCS_BASE+'output-styles' },
-  { id: 'statusline',  icon: '📡', label: '상태라인 / 키바인딩',
-    group: 'config', desc: 'Codex CLI 하단 상태라인, 키 바인딩', docUrl: DOCS_BASE+'statusline' },
+    group: 'config', desc: '공식 config.toml model/model_provider/reasoning 설정 요약', docUrl: DOC.configReference, support: 'official' },
+  { id: 'outputStyles',icon: '🎨', label: 'Output Styles (Legacy)',
+    group: 'automation', desc: '구버전/로컬 출력 스타일 파일 관리. 현재 OpenAI Codex 공식 config 표면은 아닙니다.', docUrl: null, support: 'legacy' },
+  { id: 'statusline',  icon: '📡', label: 'Statusline (Legacy)',
+    group: 'automation', desc: '구버전 statusLine/keybindings 점검. 현재 공식 config.toml 핵심 표면은 아닙니다.', docUrl: null, support: 'legacy' },
   { id: 'ideStatus',   icon: '💻', label: 'IDE 통합',
-    group: 'config', desc: 'VS Code/JetBrains 연결 상태, 감지된 터미널', docUrl: DOCS_BASE+'ide-integrations' },
-  { id: 'scheduled',   icon: '⏰', label: '예약된 작업',
-    group: 'config', desc: '~/.codex/scheduled-tasks/ 정의 스킬', docUrl: DOCS_BASE+'overview' },
+    group: 'config', desc: 'OpenAI Codex IDE extension / CLI 세션 감지', docUrl: DOC.ide, support: 'official' },
+  { id: 'scheduled',   icon: '⏰', label: '예약된 작업 (Legacy)',
+    group: 'automation', desc: 'LazyCodex legacy scheduled-tasks 뷰. OpenAI Codex 공식 문서 기능이 아닙니다.', docUrl: null, support: 'legacy' },
 
   // observe — 비용/메트릭/세션 관측 (11)
   { id: 'costsTimeline', icon: '💸', label: '비용 타임라인', group: 'observe',
     desc: '모든 플레이그라운드/워크플로우 비용 통합 타임라인' },
   { id: 'usage',       icon: '💳', label: '사용량 / 비용',
-    group: 'observe', desc: '최근 도구 호출 통계 + 일자별 그래프', docUrl: DOCS_BASE+'costs' },
+    group: 'observe', desc: '최근 도구 호출 통계 + 일자별 그래프', docUrl: 'https://developers.openai.com/codex/pricing', support: 'local' },
   { id: 'metrics',     icon: '📉', label: '토큰 메트릭',
-    group: 'observe', desc: 'metrics/costs.jsonl 토큰 사용량 시계열', docUrl: DOCS_BASE+'monitoring-usage' },
+    group: 'observe', desc: 'metrics/costs.jsonl 토큰 사용량 시계열', docUrl: DOC.configAdvanced, support: 'local' },
   { id: 'memory',      icon: '🧠', label: '프로젝트 메모리',
-    group: 'observe', desc: '~/.codex/projects/*/memory 자동 기억', docUrl: DOCS_BASE+'memory' },
+    group: 'observe', desc: '~/.codex/projects/*/memory 자동 기억', docUrl: DOC.agentsMd, support: 'local' },
   { id: 'tasks',       icon: '✅', label: '태스크 / TODO',
-    group: 'observe', desc: '세션별 TaskCreate 저장소', docUrl: DOCS_BASE+'overview' },
+    group: 'observe', desc: '세션별 TaskCreate 저장소', docUrl: DOC.useCases, support: 'local' },
   { id: 'backups',     icon: '💾', label: '백업 / 파일 히스토리',
-    group: 'observe', desc: 'backups/, file-history/, shell-snapshots/ 관측', docUrl: DOCS_BASE+'troubleshooting' },
+    group: 'observe', desc: 'backups/, file-history/, shell-snapshots/ 관측', docUrl: DOC.cli, support: 'local' },
   { id: 'bashHistory', icon: '📜', label: '셸 명령 기록',
-    group: 'observe', desc: 'Bash 도구 실행 히스토리 (~/.codex/bash-commands.log)', docUrl: DOCS_BASE+'settings' },
+    group: 'observe', desc: 'Bash 도구 실행 히스토리 (~/.codex/bash-commands.log)', docUrl: DOC.cli, support: 'local' },
   { id: 'telemetry',   icon: '📡', label: '텔레메트리',
-    group: 'observe', desc: 'Codex CLI 내부 이벤트 로그', docUrl: DOCS_BASE+'monitoring-usage' },
+    group: 'observe', desc: 'Codex CLI 내부 이벤트 로그', docUrl: DOC.configAdvanced, support: 'local' },
   { id: 'homunculus',  icon: '🏠', label: 'Homunculus',
-    group: 'observe', desc: 'Codex CLI 내부 프로젝트 추적기', docUrl: DOCS_BASE+'overview' },
+    group: 'observe', desc: 'Codex CLI 내부 프로젝트 추적기', docUrl: DOC.configBasic, support: 'local' },
   { id: 'team',        icon: '👨‍👩‍👧', label: '팀 / 조직',
     group: 'observe', desc: '워크스페이스 / 조직 정보 (codex.ai)', docUrl: 'https://codex.ai/settings/organization' },
-  { id: 'system',      icon: '🖥️', label: '시스템 상태',       group: 'observe', docUrl: DOCS_BASE+'troubleshooting' },
+  { id: 'system',      icon: '🖥️', label: '시스템 상태',       group: 'observe', docUrl: DOC.cli, support: 'local' },
   // v2.44.0 — process / port / memory monitors
   { id: 'openPorts',     icon: '🔌', label: '열린 포트 모니터',
     group: 'observe', desc: 'TCP/UDP listening 소켓 + PID/Command/User · 한 번 클릭으로 프로세스 종료' },
@@ -187,17 +208,31 @@ const NAV = [
     group: 'reliability', desc: '워크플로우/AR/AI 키/설정 스냅샷 + 복원' },
   { id: 'securityScan', icon: '🛡️', label: 'Security Scan',
     group: 'observe', desc: '~/.codex 정적 검사 — 시크릿 / 위험 훅 / 과도한 권한 / 신뢰 불가 MCP',
-    docUrl: DOCS_BASE+'security' },
+    docUrl: 'https://developers.openai.com/codex/cyber-safety', support: 'local' },
 ];
 const GROUPS = [
   { id: 'learn',      icon: '🆕', label: '학습',         short: '학습',   desc: '신기능 · 온보딩 · 공식 문서 · 가이드' },
   { id: 'main',       icon: '🏠', label: '메인',         short: '메인',   desc: '대시보드 · 프로젝트 · 플랜 · 세션' },
-  { id: 'build',      icon: '🔀', label: '빌드',         short: '빌드',   desc: '워크플로우 · 에이전트 · 프롬프트' },
-  { id: 'playground', icon: '🧪', label: '플레이그라운드', short: '실험실', desc: 'Codex API 실험 12종 + 프로바이더' },
-  { id: 'config',     icon: '⚙️', label: '구성',         short: '구성',   desc: '훅 · 권한 · MCP · 플러그인 · 설정' },
+  { id: 'build',      icon: '🧩', label: 'Codex 빌드',   short: '빌드',   desc: 'Subagents · Skills · Slash Commands · SDK' },
+  { id: 'automation', icon: '🔀', label: 'LazyCodex 자동화', short: '자동화', desc: '로컬 DAG · Run Center · Legacy 확장' },
+  { id: 'playground', icon: '🧪', label: '플레이그라운드', short: '실험실', desc: 'OpenAI API/서드파티 실험 + 프로바이더' },
+  { id: 'config',     icon: '⚙️', label: 'Codex 구성',   short: '구성',   desc: 'config.toml · Rules · Hooks · MCP · AGENTS.md' },
   { id: 'observe',    icon: '📊', label: '관측',         short: '관측',   desc: '비용 · 메트릭 · 시스템 관측' },
   { id: 'reliability',icon: '🛟', label: '안정성',       short: '안정성', desc: 'Auto-Resume · 자동 복구 · 바인딩 관리' },
 ];
+
+const SUPPORT_META = {
+  official: { label: '공식', color: '#10a37f', title: 'OpenAI Codex 공식 문서에 있는 기능' },
+  local: { label: '로컬', color: '#7dd3fc', title: 'LazyCodex 로컬 대시보드/관측 기능' },
+  legacy: { label: 'Legacy', color: '#fbbf24', title: '구버전 호환 또는 현재 공식 config 표면이 아닌 기능' },
+  'third-party': { label: '3rd', color: '#c084fc', title: '서드파티 또는 외부 실험 기능' },
+};
+
+function supportBadge(n) {
+  const m = SUPPORT_META[n && n.support];
+  if (!m) return '';
+  return `<span class="support-badge" title="${escapeHtml(t(m.title))}" style="--support-color:${m.color};">${escapeHtml(t(m.label))}</span>`;
+}
 
 function viewHeader(title, subtitle, viewId) {
   const meta = NAV.find(n => n.id === viewId) || {};
@@ -209,7 +244,7 @@ function viewHeader(title, subtitle, viewId) {
   return `
     <div class="lc-view-header mb-5 flex items-start justify-between gap-3 flex-wrap">
       <div class="min-w-0 flex-1">
-        <h1 class="text-2xl font-bold leading-tight">${escapeHtml(t(title))}</h1>
+        <h1 class="text-2xl font-bold leading-tight flex items-center gap-2 flex-wrap">${escapeHtml(t(title))}${supportBadge(meta)}</h1>
         ${subtitle ? `<p class="text-sm text-[var(--text-mute)] mt-2" style="max-width:64ch;line-height:1.5;">${t(subtitle)}</p>` : ''}
       </div>
       ${docUrl ? `<a class="btn text-xs" href="${docUrl}" target="_blank" rel="noopener noreferrer">📖 ${t('공식 문서 ↗')}</a>` : ''}
@@ -513,29 +548,22 @@ function scoreColor(n) {
 // audit, easy to reorganise without touching the NAV array.
 const MODE_TABS = {
   codex: new Set([
-    'features','onboarding','guideHub','overview','projects','analytics',
-    'aiEval','sessions','agents','projectAgents','skills','commands',
-    'sessionReplay','rtk',
-    'hooks','permissions','mcp','plugins','marketplaces','settings',
-    'codexmd','envConfig','modelConfig','statusline',
-    'memory','memoryManager','tasks','plans','outputStyles','team',
-    'eventForwarder','autoResumeManager','backupRestore','backups',
-    'system','telemetry','metrics','costsTimeline',
-    'securityScan','codexDocs','zcodex','homunculus','routines',
-    'usage','ideStatus','scheduled','bashHistory','cliSessions','openPorts',
+    'features','onboarding','codexDocs','overview','projects','sessions',
+    'agents','projectAgents','skills','commands','agentSdkScaffold',
+    'hooks','permissions','mcp','plugins','marketplaces','codexHarness',
+    'codexmd','envConfig','modelConfig','ideStatus','securityScan',
   ]),
   workflow: new Set([
     'workflows','runCenter','promptLibrary','agentSdkScaffold',
     'learner','artifacts','crewWizard',
     'agents','projectAgents','skills','commands',
-    'settings',
+    'settings','codexHarness','orchestrator','ralph','routines','scheduled',
   ]),
   providers: new Set([
     'aiProviders','modelConfig',
     'promptCache','thinkingLab','toolUseLab','batchJobs','apiFiles',
     'visionLab','modelBench','serverTools','citationsLab','embeddingLab',
-    'computerUseLab','memoryLab','advisorLab',
-    'costsTimeline','zcodex','envConfig','settings',
+    'costsTimeline','zcodex','envConfig','settings','codexHarness',
   ]),
 };
 
@@ -724,6 +752,7 @@ function renderNav() {
       const hotBadge = isHot
         ? '<span title="' + escapeHtml(t('이 모드에서 가장 많이 사용한 탭')) + '" style="margin-left:4px;font-size:10px;">🔥</span>'
         : '';
+      const supBadge = supportBadge(n);
       // H3 (v2.60.0) — mode badges, only visible in 'all' mode so users can
       // see at a glance which mode each tab also lives in.
       let modeBadges = '';
@@ -741,7 +770,7 @@ function renderNav() {
       el.innerHTML = `
         <span class="w-5 text-center self-start mt-0.5 flex-shrink-0">${n.icon}</span>
         <div class="nav-label flex-1 min-w-0">
-          <div>${escapeHtml(t(n.label))}${hotBadge}${modeBadges}</div>
+          <div>${escapeHtml(t(n.label))}${hotBadge}${modeBadges}${supBadge}</div>
           ${descHtml}
         </div>
         ${favBtn}`;
@@ -1303,11 +1332,11 @@ VIEWS.features = async () => {
     <div class="mb-4 flex items-start justify-between gap-3 flex-wrap">
       <div>
         <h1 class="text-2xl font-bold">🆕 신기능</h1>
-        <p class="text-sm text-[var(--text-mute)] mt-1">Anthropic 최신 발표 · 카드 클릭 → 창으로 열림 · 여러 개 동시 · 🔴닫기 🟡내리기 🟢펼치기</p>
+        <p class="text-sm text-[var(--text-mute)] mt-1">OpenAI Codex 공식 업데이트와 LazyCodex 로컬 변경 사항 · 카드 클릭 → 창으로 열림</p>
       </div>
       <div class="flex gap-2">
         <button class="btn text-xs" onclick="refreshFeatures()">📡 최신 정보 로딩</button>
-        <a class="btn text-xs" href="https://platform.codex.com/docs/en/release-notes/overview" target="_blank" rel="noopener noreferrer">📖 전체 릴리즈 노트</a>
+        <a class="btn text-xs" href="https://developers.openai.com/codex/changelog" target="_blank" rel="noopener noreferrer">📖 전체 릴리즈 노트</a>
       </div>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -2036,7 +2065,7 @@ function _wfAssigneeOptions(selectedValue) {
     groups[gLabel] = (groups[gLabel]||[]);
     for (const m of prov.models) {
       const val = prov.id === 'codex-cli'
-        ? (m.id.replace('codex-','').replace('-4-7','4.7').replace('-4-6','4.6').replace('-4-5','4.5').replace('opus','opus-').replace('sonnet','sonnet-').replace('haiku','haiku-').replace('--','-'))
+        ? (m.id.replace('codex-','').replace('--','-'))
         : (prov.id.replace('-cli','').replace('-api','') + ':' + m.id);
       // Codex CLI alias 정리
       const displayVal = prov.id === 'codex-cli' ? m.id : val;
@@ -2045,7 +2074,7 @@ function _wfAssigneeOptions(selectedValue) {
   }
   // Codex 기본 3개는 항상 포함 (프로바이더 로드 전 fallback)
   if (!Object.keys(groups).length) {
-    return ['opus-4.7','sonnet-4.6','haiku-4.5'].map(m =>
+    return ['o3','gpt-5-codex','o4-mini'].map(m =>
       `<option value="${m}" ${selectedValue===m?'selected':''}>${m}</option>`
     ).join('');
   }
@@ -2083,9 +2112,9 @@ VIEWS.workflows = async () => {
   return `
     ${viewHeader('🔀 워크플로우', '세션 노드를 DAG 로 연결해 업무 흐름 설계. 포트를 드래그해 화살표로 연결.', 'workflows')}
 
-    <!-- v2.36.0 — Quick Actions: OMC 4 modes one-click workflow scaffold -->
+    <!-- Quick Actions: one-click workflow templates -->
     <div class="card mb-3" style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-      <span class="text-[11px] font-semibold mr-1" style="color:var(--text-dim);">⚡ ${t('빠른 실행 (OMC 모드)')}</span>
+      <span class="text-[11px] font-semibold mr-1" style="color:var(--text-dim);">⚡ ${t('빠른 실행 (워크플로 템플릿)')}</span>
       <button class="btn text-xs" onclick="_wfQuickAction('autopilot')" title="${t('요구사항 → 계획 → 실행 → 검증 단일 흐름')}">🚀 Autopilot</button>
       <button class="btn text-xs" onclick="_wfQuickAction('ralph')" title="${t('verify → fix 루프 (최대 5회)')}">🔁 Ralph</button>
       <button class="btn text-xs" onclick="_wfQuickAction('ultrawork')" title="${t('5 병렬 에이전트 → 합류')}">🤝 Ultrawork</button>
@@ -2198,7 +2227,7 @@ VIEWS.workflows = async () => {
           <svg id="wfCanvas" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <marker id="wfArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-                <path d="M0,0 L0,6 L9,3 z" fill="#d97757"/>
+                <path d="M0,0 L0,6 L9,3 z" fill="#10a37f"/>
               </marker>
             </defs>
             <g id="wfViewport" transform="translate(0,0)">
@@ -2267,9 +2296,9 @@ const __cw = {
   form: {
     project:  '',
     goal:     '',
-    plannerModel: 'codex:opus',
+    plannerModel: 'codex:o3',
     personas: [
-      { role: 'Researcher', model: 'codex:sonnet', focus: '' },
+      { role: 'Researcher', model: 'codex:gpt-5-codex', focus: '' },
       { role: 'Builder',    model: 'gemini:gemini-2.5-pro', focus: '' },
       { role: 'Reviewer',   model: 'ollama:llama3.1', focus: '' },
     ],
@@ -2317,7 +2346,7 @@ VIEWS.crewWizard = async () => {
       if (realisticAssignees.length >= 6) break;
     }
     if (!realisticAssignees.length) return;
-    const isStaticDefault = (val) => /^codex:(opus|sonnet|haiku)$|^gemini:gemini-2\.5-pro$|^ollama:llama3\.1$/.test(val || '');
+    const isStaticDefault = (val) => /^codex:(o3|gpt-5-codex|o4-mini)$|^gemini:gemini-2\.5-pro$|^ollama:llama3\.1$/.test(val || '');
     if (isStaticDefault(__cw.form.plannerModel)) {
       __cw.form.plannerModel = realisticAssignees[0];
     }
@@ -2431,7 +2460,7 @@ function _cwStep1() {
       <label class="block">
         <div class="text-xs font-semibold mb-1">${t('Planner 모델')}</div>
         <select id="cw_planner" class="input w-full">${_wfAssigneeOptions(f.plannerModel)}</select>
-        <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('전체 사이클을 지휘하는 두뇌 — Opus 등 가장 깊이 있는 모델 권장.')}</div>
+        <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('전체 사이클을 지휘하는 두뇌 — o3 등 가장 깊이 있는 모델 권장.')}</div>
       </label>
       <label class="block">
         <div class="text-xs font-semibold mb-1">${t('작업 디렉터리 (선택)')}</div>
@@ -2582,7 +2611,7 @@ function _cwBindStepInputs() {
       // pick the first available provider:model so newly-added personas
       // don't pin a model the user can't actually run.
       const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
-      let realModel = 'codex:sonnet';
+      let realModel = 'codex:gpt-5-codex';
       if (provs.length) {
         const p0 = provs[0];
         const m0 = (p0.models || [])[0];
@@ -2721,7 +2750,7 @@ function _cwShowGuide() {
       <pre class="rounded p-3 text-[11px] leading-relaxed overflow-x-auto mb-4" style="background:var(--code-bg);border:1px solid var(--border);color:var(--text);">
 🚀 시작
   ↓
-🧭 기획자 (Planner — Opus 권장)
+🧭 기획자 (Planner — o3 권장)
   ↓ ↓ ↓     (페르소나마다 병렬 분기)
 👤 Researcher  👤 Builder  👤 Reviewer ...
   ↓ ↓ ↓
@@ -2742,7 +2771,7 @@ function _cwShowGuide() {
           <ul class="mt-1 ml-4 list-disc text-[11.5px]" style="color:var(--text-mute);">
             <li>${t('프로젝트 이름 — Obsidian 폴더명으로 그대로 사용. 영문/숫자/공백/_-./ 만.')}</li>
             <li>${t('목표 — Planner 가 받는 첫 입력. 한 줄로 명확하게.')}</li>
-            <li>${t('Planner 모델 — Opus 권장. 사이클을 지휘하는 두뇌입니다.')}</li>
+            <li>${t('Planner 모델 — o3 권장. 사이클을 지휘하는 두뇌입니다.')}</li>
           </ul>
         </li>
         <li>
@@ -2750,7 +2779,7 @@ function _cwShowGuide() {
           <ul class="mt-1 ml-4 list-disc text-[11.5px]" style="color:var(--text-mute);">
             <li>${t('1~8명. 역할 + 모델 + 중점 영역 입력.')}</li>
             <li>${t('Codex · Gemini · Ollama 자유 조합 — 서로 다른 모델을 섞을수록 다양한 시각을 얻습니다.')}</li>
-            <li>${t('예: Researcher(Codex Sonnet) + Builder(Gemini Pro) + Reviewer(Ollama)')}</li>
+            <li>${t('예: Researcher(Codex GPT-5 Codex) + Builder(Gemini Pro) + Reviewer(Ollama)')}</li>
           </ul>
         </li>
         <li>
@@ -2804,7 +2833,7 @@ function _cwShowGuide() {
 }
 
 // ──────────────────────────────────────────────────────────────────
-// Run Center — ECC skills + ECC slash commands + OMC modes + OMX
+// Run Center — ECC skills + ECC slash commands
 // commands as a single searchable, runnable catalog. Dispatches one
 // shot through the existing `execute_with_assignee` pipeline so the
 // dashboard can launch any of the 268 catalog entries with one click.
@@ -2813,7 +2842,7 @@ function _cwShowGuide() {
 const __rc = {
   catalog:    [],
   filtered:   [],
-  source:     '',          // '' | 'ecc' | 'omc' | 'omx' | 'fav'
+  source:     '',          // '' | 'ecc' | 'fav'
   kind:       '',          // '' | 'skill' | 'command' | 'mode' | 'diagnostic' | 'knowledge'
   category:   '',          // '' | 'frontend' | 'backend' | ...
   query:      '',
@@ -2836,7 +2865,7 @@ async function _rcApi(path, body) {
 VIEWS.runCenter = async () => {
   return `
     ${viewHeader('🎯 ' + t('런 센터'),
-       t('ECC 181 스킬 + 79 슬래시 명령 + OMC 4 모드 + OMX 명령을 한 화면에서 검색·1클릭 실행. 결과는 자동 저장되며 워크플로우로도 변환 가능.'),
+       t('ECC 스킬/슬래시 명령을 한 화면에서 검색·1클릭 실행. 결과는 자동 저장되며 워크플로우로도 변환 가능.'),
        'runCenter')}
     <div id="rcRoot" style="display:grid;grid-template-columns:240px minmax(0,1fr);gap:14px;align-items:start;">
       <aside class="card" id="rcSidebar" style="padding:12px;position:sticky;top:8px;">
@@ -2853,22 +2882,6 @@ VIEWS.runCenter = async () => {
       </aside>
 
       <main style="min-width:0;display:flex;flex-direction:column;gap:10px;">
-        <!-- v2.36.1 — info banner explaining the OMC/OMX origin so users know
-             they don't need to install anything extra. -->
-        <details class="card" style="padding:10px 14px;font-size:12px;color:var(--text-mute);">
-          <summary class="cursor-pointer font-semibold" style="color:var(--text);user-select:none;">
-            ℹ️ ${t('ECC / OMC / OMX 의 출처와 설치')}
-          </summary>
-          <div class="mt-2 space-y-1">
-            <div><b>ECC</b> — ${t('가이드 & 툴 탭에서 원클릭 설치. 181 스킬 + 79 슬래시 명령은 ~/.codex/plugins/ 의 ECC plugin을 직접 스캔.')}</div>
-            <div><b>OMC</b> — ${t('별도 설치 불필요. 4 모드(autopilot/ralph/ultrawork/deep-interview)는 v2.25 부터 LazyCodex 빌트인 워크플로우 템플릿으로 흡수됨.')}</div>
-            <div><b>OMX</b> — ${t('별도 설치 불필요. 4 명령(doctor/wiki/hud/tasks)은 정적 매핑으로 임의 프로바이더에 dispatch.')}</div>
-            <div class="mt-2 text-[11px]" style="color:var(--text-dim);">
-              ${t('진짜 OMC/OMX CLI를 Codex CLI 세션에서 슬래시 명령으로 쓰고 싶다면 가이드 & 툴 탭의 카드를 참고하세요.')}
-            </div>
-          </div>
-        </details>
-
         <div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:10px;">
           <input id="rcSearch" type="search" class="input flex-1" placeholder="${t('이름 · 설명 · 카테고리 검색…')}" />
           <button class="btn text-[11px]" onclick="_rcReload()" title="${t('카탈로그 새로고침')}">🔄</button>
@@ -2947,11 +2960,9 @@ function _rcRenderFilters() {
   const sources = [
     { id: '',    label: t('전체') },
     { id: 'ecc', label: 'ECC' },
-    { id: 'omc', label: 'OMC' },
-    { id: 'omx', label: 'OMX' },
     { id: 'fav', label: '⭐ ' + t('즐겨찾기만') },
   ];
-  const sCounts = { ecc: 0, omc: 0, omx: 0 };
+  const sCounts = { ecc: 0 };
   let favCount = 0;
   __rc.catalog.forEach(it => {
     sCounts[it.source] = (sCounts[it.source] || 0) + 1;
@@ -2971,9 +2982,6 @@ function _rcRenderFilters() {
     { id: '',           label: t('전체') },
     { id: 'skill',      label: t('스킬') },
     { id: 'command',    label: t('슬래시 명령') },
-    { id: 'mode',       label: t('모드') },
-    { id: 'diagnostic', label: t('진단') },
-    { id: 'knowledge',  label: t('지식') },
   ];
   const khost = document.getElementById('rcKindFilters');
   if (khost) khost.innerHTML = kinds.map(k =>
@@ -3037,8 +3045,6 @@ function _rcApplyFilters() {
 
 function _rcSourceColor(src) {
   if (src === 'ecc') return 'var(--accent)';
-  if (src === 'omc') return '#a78bfa';
-  if (src === 'omx') return '#7dd3fc';
   return 'var(--text-dim)';
 }
 
@@ -3120,7 +3126,7 @@ function _rcOpenItem(itemId) {
       <div class="grid gap-3 mt-3" style="grid-template-columns:1fr 160px;">
         <label class="block">
           <div class="text-[11px] font-semibold mb-1">${t('모델')}</div>
-          <select id="rcAssignee" class="input w-full">${_wfAssigneeOptions('codex:sonnet')}</select>
+          <select id="rcAssignee" class="input w-full">${_wfAssigneeOptions('codex:gpt-5-codex')}</select>
         </label>
         <label class="block">
           <div class="text-[11px] font-semibold mb-1">${t('타임아웃 (초)')}</div>
@@ -3157,12 +3163,12 @@ function _rcOpenItem(itemId) {
 async function _rcExecute(itemId) {
   const goal     = (document.getElementById('rcGoal')?.value || '').trim();
   // QQ234 — fall back through cached providers if the dropdown has no
-  // value (which happens when 'codex:sonnet' wasn't in its options
+  // value (which happens when 'codex:gpt-5-codex' wasn't in its options
   // because the user lacks codex-cli). Prefer first-available real
   // assignee over a hardcoded one the runtime might reject.
   const _firstRealAssignee = () => {
     const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
-    if (!provs.length) return 'codex:sonnet';
+    if (!provs.length) return 'codex:gpt-5-codex';
     const p0 = provs[0];
     const m0 = (p0.models || [])[0];
     return `${p0.id.replace('-cli', '').replace('-api', '')}:${m0.id || m0.name}`;
@@ -3340,7 +3346,7 @@ function _wfRenderList() {
   }).join('');
 }
 
-// v2.36.0 — One-click OMC mode workflow. Loads the matching `bt-*` built-in
+// One-click workflow template loader. Loads the matching `bt-*` built-in
 // template, injects the user's goal into the planner node's description, saves
 // as a new workflow, navigates to it. Optionally auto-runs.
 const _WF_QUICK_TPL = {
@@ -3349,7 +3355,7 @@ const _WF_QUICK_TPL = {
   'ralph':           { id: 'bt-ralph',          title: '🔁 Ralph',
     desc: 'verify 통과까지 fix 루프를 자동 반복 (최대 5회)' },
   'ultrawork':       { id: 'bt-ultrawork',      title: '🤝 Ultrawork',
-    desc: '5명의 병렬 에이전트(Sonnet×2 + Haiku×3)가 동시 작업 후 결과 합류' },
+    desc: '5명의 병렬 에이전트(GPT-5 Codex×2 + o4-mini×3)가 동시 작업 후 결과 합류' },
   'deep-interview':  { id: 'bt-deep-interview', title: '🧐 Deep Interview',
     desc: '요구사항을 소크라테스식 질문으로 명확히한 후 설계 문서 산출' },
 };
@@ -3363,9 +3369,9 @@ const _WF_QUICK_TPL = {
 //
 // Canonical Codex CLI aliases — kept in lockstep with
 // server/ai_providers.py::_CLI_FLAG_ALIASES. Without this map a
-// perfectly-valid `codex:sonnet` would be considered "unavailable"
-// because the strict id check looks for `codex:codex-sonnet-4-6`.
-const _WF_CODEX_CLI_ALIASES = ['opus', 'sonnet', 'haiku'];
+// perfectly-valid `codex:gpt-5-codex` would be considered "unavailable"
+// because the strict id check looks for `codex:codex-gpt-5-codex`.
+const _WF_CODEX_CLI_ALIASES = ['o3', 'gpt-5-codex', 'o4-mini'];
 
 async function _wfPatchTemplateAssignees(nodes) {
   if (!Array.isArray(nodes) || !nodes.length) return;
@@ -4158,7 +4164,7 @@ async function _wfLoadStats() {
 // ─── 미니맵 ────────────────────────────────────────────────
 const _WF_MINIMAP_W = 150, _WF_MINIMAP_H = 100;
 const _WF_NODE_COLORS = {
-  start: '#d97757', session: '#d97757', subagent: '#d97757',
+  start: '#10a37f', session: '#10a37f', subagent: '#10a37f',
   aggregate: '#c084fc', branch: '#fbbf24', output: '#4ade80',
   http: '#4ade80', transform: '#c084fc', variable: '#fbbf24',
   subworkflow: '#7dd3fc', embedding: '#f472b6',
@@ -4191,7 +4197,7 @@ function _wfRenderMinimap() {
   const offY = (_WF_MINIMAP_H - rangeY * scale) / 2;
   function toMini(x, y) { return { mx: offX + (x - minX) * scale, my: offY + (y - minY) * scale }; }
   // edges
-  ctx.strokeStyle = 'rgba(217,119,87,0.3)';
+  ctx.strokeStyle = 'rgba(16,163,127,0.3)';
   ctx.lineWidth = 0.5;
   (__wf.current.edges || []).forEach(e => {
     const fromN = nodes.find(n => n.id === e.from);
@@ -4207,7 +4213,7 @@ function _wfRenderMinimap() {
   nodes.forEach(n => {
     const c = toMini(n.x + WF_NODE_W / 2, n.y + WF_NODE_H / 2);
     const r = lastResults[n.id];
-    const color = (r && statusColors[r.status]) || _WF_NODE_COLORS[n.type] || '#d97757';
+    const color = (r && statusColors[r.status]) || _WF_NODE_COLORS[n.type] || '#10a37f';
     ctx.fillStyle = color;
     // running 은 살짝 더 크게
     const size = (r && r.status === 'running') ? 5 : 3;
@@ -4227,9 +4233,9 @@ function _wfRenderMinimap() {
   const wY1 = (rect.height - (view.panY || 0)) / zoom;
   const vp0 = toMini(wX0, wY0);
   const vp1 = toMini(wX1, wY1);
-  ctx.strokeStyle = 'rgba(217,119,87,0.6)';
+  ctx.strokeStyle = 'rgba(16,163,127,0.6)';
   ctx.lineWidth = 1;
-  ctx.fillStyle = 'rgba(217,119,87,0.08)';
+  ctx.fillStyle = 'rgba(16,163,127,0.08)';
   const vw = vp1.mx - vp0.mx, vh = vp1.my - vp0.my;
   ctx.fillRect(vp0.mx, vp0.my, vw, vh);
   ctx.strokeRect(vp0.mx, vp0.my, vw, vh);
@@ -4326,7 +4332,7 @@ function _wfRenderNode(n) {
     ? `
       <g class="wf-node-spawn" data-spawn="${n.id}" transform="translate(${WF_NODE_W - 26},6)" style="cursor:pointer;">
         <title>${t('새 Codex 세션 spawn')}</title>
-        <rect width="20" height="20" rx="6" ry="6" fill="rgba(217,119,87,0.18)" stroke="rgba(217,119,87,0.45)"></rect>
+        <rect width="20" height="20" rx="6" ry="6" fill="rgba(16,163,127,0.18)" stroke="rgba(16,163,127,0.45)"></rect>
         <text x="10" y="15" text-anchor="middle" font-size="12" pointer-events="none">🖥️</text>
       </g>` : '';
   return `
@@ -6690,7 +6696,7 @@ function _wfPickNodeType(winId, type) {
   draft.type = type;
   // 타입별 기본 data 세팅
   if (type === 'session' || type === 'subagent') {
-    draft.data = { subject:'', description:'', assignee:'sonnet-4.6', agentRole:'', cwd:'', inputsMode:'concat' };
+    draft.data = { subject:'', description:'', assignee:'gpt-5-codex', agentRole:'', cwd:'', inputsMode:'concat' };
   } else if (type === 'branch')    draft.data = { condition:'', conditionType:'contains' };
   else if (type === 'aggregate') draft.data = { mode:'concat' };
   else if (type === 'output')    draft.data = { exportTo:'' };
@@ -6894,8 +6900,8 @@ function _wfRenderEditorBody(winId) {
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('설명 (description)')}</label>
       <textarea class="input w-full mt-1" rows="4" oninput="_wfDraftSetData('${winId}','description',this.value)" placeholder="${t('상세 지시·제약·출력 형식')}">${escapeHtml(d.description||'')}</textarea>
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('AI 프로바이더 : 모델')}</label>
-      <select class="input w-full mt-1" onchange="if(this.value==='__custom__'){const v=prompt('provider:model 입력 (예: openai:gpt-4.1)');if(v){_wfDraftSetData('${winId}','assignee',v);this.value=v;}else{this.value='${escapeHtml(d.assignee||'sonnet-4.6')}';}}else{_wfDraftSetData('${winId}','assignee',this.value);}">
-        ${_wfAssigneeOptions(d.assignee||'sonnet-4.6')}
+      <select class="input w-full mt-1" onchange="if(this.value==='__custom__'){const v=prompt('provider:model 입력 (예: openai:gpt-4.1)');if(v){_wfDraftSetData('${winId}','assignee',v);this.value=v;}else{this.value='${escapeHtml(d.assignee||'gpt-5-codex')}';}}else{_wfDraftSetData('${winId}','assignee',this.value);}">
+        ${_wfAssigneeOptions(d.assignee||'gpt-5-codex')}
       </select>
       ${draft.type === 'subagent' ? `
         <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('에이전트 역할')}</label>
@@ -7196,7 +7202,7 @@ function _wfRenderEditorBody(winId) {
         oninput="_wfDraftSetData('${winId}','prompt',this.value)">${escapeHtml(d.prompt||'')}</textarea>
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('AI 프로바이더 : 모델')}</label>
       <input class="input w-full mt-1" value="${escapeHtml(d.assignee||'')}"
-        placeholder="codex:sonnet" oninput="_wfDraftSetData('${winId}','assignee',this.value)">
+        placeholder="codex:gpt-5-codex" oninput="_wfDraftSetData('${winId}','assignee',this.value)">
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('Completion 표식 (정확 일치)')}</label>
       <input class="input w-full mt-1" value="${escapeHtml(d.completion||'<promise>DONE</promise>')}"
         oninput="_wfDraftSetData('${winId}','completion',this.value)">
@@ -7402,7 +7408,7 @@ function _wfNodeSetData(nid, field, value) {
 }
 
 // v2.44.1 — multi-assignee parallel fan-out helpers.
-// Storage shape: node.data.multiAssignee = ['codex:opus', 'openai:gpt-4.1', …]
+// Storage shape: node.data.multiAssignee = ['codex:o3', 'openai:gpt-4.1', …]
 // Back-compat: if the array has 0 or 1 entries, the single `assignee` field is
 // authoritative. When length >= 2, ProviderRegistry.execute_parallel races them
 // and returns the first ok response.
@@ -7411,7 +7417,7 @@ function _wfMultiAssigneeRows(n) {
   const arr = Array.isArray(d.multiAssignee) ? d.multiAssignee.slice() : [];
   // Row 0 is always the canonical single-assignee dropdown so empty/legacy
   // workflows render exactly as before.
-  if (arr.length === 0) return [d.assignee || 'sonnet-4.6'];
+  if (arr.length === 0) return [d.assignee || 'gpt-5-codex'];
   return arr;
 }
 function _wfMultiAssigneeSet(nid, idx, val) {
@@ -7447,7 +7453,7 @@ function _wfMultiAssigneeAdd(nid) {
   if (rows.length >= 8) return; // matches execute_parallel pool cap
   // QQ234 — pick the first available provider:model the user actually has,
   // falling through the cached `__wfProviders` snapshot. The hardcoded
-  // `codex:opus` / `openai:gpt-4.1` / `gemini:2.5-pro` candidates were
+  // `codex:o3` / `openai:gpt-4.1` / `gemini:2.5-pro` candidates were
   // useless on machines without those exact installs.
   const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
   const candidates = [];
@@ -7458,7 +7464,7 @@ function _wfMultiAssigneeAdd(nid) {
   }
   // Last-ditch fallback for environments where the wizard fires before
   // /api/ai-providers/list resolved.
-  if (!candidates.length) candidates.push('codex:opus');
+  if (!candidates.length) candidates.push('codex:o3');
   const already = new Set(rows);
   const pick = candidates.find(c => !already.has(c)) || candidates[0];
   rows.push(pick);
@@ -7489,14 +7495,14 @@ function _wfMultiAssigneeRemove(nid, idx) {
 function _wfMultiAssigneeRowHtml(nid, idx, val, removable) {
   // The inline `__custom__` handler mirrors the existing single-assignee
   // dropdown — picking "직접 입력..." prompts for a custom provider:model.
-  const safe = escapeHtml(val || 'sonnet-4.6');
+  const safe = escapeHtml(val || 'gpt-5-codex');
   const removeBtn = removable
     ? `<button class="btn text-xs px-2" title="${t('행 제거')}" onclick="_wfMultiAssigneeRemove('${nid}', ${idx})">−</button>`
     : '';
   return `
     <div class="flex gap-1 items-center mt-1">
       <select class="input flex-1" onchange="if(this.value==='__custom__'){const v=prompt('provider:model 입력 (예: openai:gpt-4.1)');if(v){_wfMultiAssigneeSet('${nid}', ${idx}, v);}else{this.value='${safe}';}}else{_wfMultiAssigneeSet('${nid}', ${idx}, this.value);}">
-        ${_wfAssigneeOptions(val || 'sonnet-4.6')}
+        ${_wfAssigneeOptions(val || 'gpt-5-codex')}
       </select>
       ${removeBtn}
     </div>
@@ -8711,26 +8717,26 @@ const WF_TEMPLATES = [
         { id:'n-l1', type:'session',   x:260, y:180, title:t('리드 스프린트 기획'), data:{
           subject: t('이번 스프린트 목표와 업무 분담'),
           description: t('아래 형식으로 답하라.') + '\n\n# ' + t('프론트') + '\n' + t('(프론트엔드에게 전달할 구체적 업무 지시)') + '\n\n# ' + t('백엔드') + '\n' + t('(백엔드에게 전달할 구체적 업무 지시)'),
-          assignee: 'opus-4.7', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
+          assignee: 'o3', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
           systemPrompt: t('너는 스프린트를 이끄는 테크 리드다. 요구사항을 명확한 실행 단위로 분해해 프론트·백엔드 팀에게 분배한다. 모호함을 남기지 말고 수용 기준까지 명시하라.'),
         }},
         { id:'n-fe', type:'subagent',  x:520, y:60,  title:t('프론트엔드'), data:{
           subject: t('프론트엔드 구현'),
           description: t('리드 지시 중 프론트 섹션만 구현. React + TypeScript 기준. 완료된 파일 경로·핵심 변경 요약 반환.'),
-          assignee: 'sonnet-4.6', agentRole: 'frontend-dev', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5-codex', agentRole: 'frontend-dev', cwd: '~', inputsMode: 'first',
           systemPrompt: t('너는 React + TypeScript + Tailwind 에 능숙한 시니어 프론트엔드 개발자다. 접근성·성능·타입 안전성을 우선시한다. 입력에서 프론트 관련 업무만 실행하고, 백엔드 섹션은 무시한다.'),
         }},
         { id:'n-be', type:'subagent',  x:520, y:300, title:t('백엔드'), data:{
           subject: t('백엔드 구현'),
           description: t('리드 지시 중 백엔드 섹션만 구현. API · DB · 테스트까지. 완료된 파일 경로·핵심 변경 요약 반환.'),
-          assignee: 'sonnet-4.6', agentRole: 'backend-dev', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5-codex', agentRole: 'backend-dev', cwd: '~', inputsMode: 'first',
           systemPrompt: t('너는 Node.js · PostgreSQL · REST/GraphQL 에 능숙한 시니어 백엔드 개발자다. 보안·확장성·테스트 커버리지를 우선시한다. 입력에서 백엔드 관련 업무만 실행하고, 프론트 섹션은 무시한다.'),
         }},
         { id:'n-agg', type:'aggregate', x:780, y:180, title:t('결과 취합'), data:{ mode: 'concat' }},
         { id:'n-l2',  type:'session',   x:1040, y:180, title:t('리드 리뷰 + 다음 기획'), data:{
           subject: t('스프린트 리뷰 및 다음 스프린트 계획'),
           description: t('두 결과를 보고 1) 문제/개선, 2) 다음 스프린트 업무 분담(다시 프론트·백엔드 섹션) 을 생성. 같은 포맷 유지.'),
-          assignee: 'opus-4.7', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
+          assignee: 'o3', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
           systemPrompt: t('너는 스프린트를 이끄는 테크 리드다. 이전 스프린트 결과를 비판적으로 평가하고, 리스크를 식별하며, 다음 스프린트의 업무 분담을 명확히 작성한다.'),
         }},
         { id:'n-o',   type:'output',    x:1300, y:180, title:t('최종 결과'), data:{} },
@@ -8761,17 +8767,17 @@ const WF_TEMPLATES = [
         { id:'n-r', type:'subagent', x:260, y:180, title:t('리서치'), data:{
           subject: t('주제 심층 리서치'),
           description: t('웹·문서·기존 자료를 종합해 핵심 근거와 인용 정리.'),
-          assignee: 'sonnet-4.6', agentRole: 'researcher', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5-codex', agentRole: 'researcher', cwd: '~', inputsMode: 'first',
         }},
         { id:'n-w', type:'subagent', x:520, y:180, title:t('작가 초안'), data:{
           subject: t('초안 작성'),
           description: t('리서치 결과를 바탕으로 독자 친화적인 초안 작성. 톤·구조 명확히.'),
-          assignee: 'sonnet-4.6', agentRole: 'writer', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5-codex', agentRole: 'writer', cwd: '~', inputsMode: 'first',
         }},
         { id:'n-v', type:'subagent', x:780, y:180, title:t('리뷰'), data:{
           subject: t('편집 리뷰'),
           description: t('정확성·톤·가독성·중복을 체크하고 다듬은 최종본 반환.'),
-          assignee: 'opus-4.7', agentRole: 'reviewer', cwd: '~', inputsMode: 'first',
+          assignee: 'o3', agentRole: 'reviewer', cwd: '~', inputsMode: 'first',
         }},
         { id:'n-o', type:'output',   x:1040, y:180, title:t('최종 문서') },
       ],
@@ -8795,9 +8801,9 @@ const WF_TEMPLATES = [
       description: t('시작 → 3 개 병렬 세션 → 취합 → 결과.'),
       nodes: [
         { id:'n-s',  type:'start',     x:40,  y:220, title:t('시작') },
-        { id:'n-a',  type:'session',   x:260, y:60,  title:t('작업 A'), data:{ subject:t('작업 A'), description:'...', assignee:'sonnet-4.6', inputsMode:'first' }},
-        { id:'n-b',  type:'session',   x:260, y:220, title:t('작업 B'), data:{ subject:t('작업 B'), description:'...', assignee:'sonnet-4.6', inputsMode:'first' }},
-        { id:'n-c',  type:'session',   x:260, y:380, title:t('작업 C'), data:{ subject:t('작업 C'), description:'...', assignee:'sonnet-4.6', inputsMode:'first' }},
+        { id:'n-a',  type:'session',   x:260, y:60,  title:t('작업 A'), data:{ subject:t('작업 A'), description:'...', assignee:'gpt-5-codex', inputsMode:'first' }},
+        { id:'n-b',  type:'session',   x:260, y:220, title:t('작업 B'), data:{ subject:t('작업 B'), description:'...', assignee:'gpt-5-codex', inputsMode:'first' }},
+        { id:'n-c',  type:'session',   x:260, y:380, title:t('작업 C'), data:{ subject:t('작업 C'), description:'...', assignee:'gpt-5-codex', inputsMode:'first' }},
         { id:'n-ag', type:'aggregate', x:520, y:220, title:t('취합'),   data:{ mode:'concat' }},
         { id:'n-o',  type:'output',    x:780, y:220, title:t('결과') },
       ],
@@ -8932,7 +8938,7 @@ async function _wfUseTemplate(tplId) {
   closeModal();
   const body = tpl.build();
   // QQ238 — same substitution Quick Actions get; builtin client-side
-  // templates also assume codex:sonnet by default.
+  // templates also assume codex:gpt-5-codex by default.
   await _wfPatchTemplateAssignees(body.nodes);
   const r = await api('/api/workflows/save', {
     method: 'POST', headers: { 'Content-Type':'application/json' },
@@ -9126,7 +9132,7 @@ const WF_TUT_STEPS = [
     caption: '＋ 노드 추가 → 카테고리 선택 창에서 🗂️ 세션과 🤝 서브에이전트를 추가. subject(업무) · 모델 · 역할을 입력.',
     nodes: [
       { id:'s', type:'start',    x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',  x:260, y:40,  title:'리서치', sub:'@sonnet-4.6' },
+      { id:'a', type:'session',  x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
       { id:'b', type:'subagent', x:480, y:40,  title:'작성',  sub:'@writer' },
     ],
     edges: [],
@@ -9137,7 +9143,7 @@ const WF_TUT_STEPS = [
     caption: '🧩 취합 노드는 여러 입력을 concat/JSON 으로 합침. 🔀 분기 노드는 조건 문자열 일치 여부로 Y/N 포트를 활성화.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@sonnet-4.6' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9147,10 +9153,10 @@ const WF_TUT_STEPS = [
   },
   {
     title: '5. 포트 드래그로 화살표 연결',
-    caption: '주황 out-port 에서 보라 in-port 로 드래그하면 베지어 곡선 + 방향 화살표가 자동 생성. DAG 사이클은 즉시 거부.',
+    caption: '녹청 out-port 에서 보라 in-port 로 드래그하면 베지어 곡선 + 방향 화살표가 자동 생성. DAG 사이클은 즉시 거부.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@sonnet-4.6' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9166,7 +9172,7 @@ const WF_TUT_STEPS = [
     caption: '📤 결과 노드를 추가하고 분기 → 결과로 마무리. 이 노드가 워크플로우 종착지. exportTo 경로를 지정하면 파일로 저장.',
     nodes: [
       { id:'s', type:'start',     x:20,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@sonnet-4.6' },
+      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@gpt-5-codex' },
       { id:'b', type:'subagent',  x:440, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:230, y:220, title:'취합' },
       { id:'d', type:'branch',    x:440, y:220, title:'분기' },
@@ -9184,7 +9190,7 @@ const WF_TUT_STEPS = [
     caption: '캔버스 우하단 🎯 맞춤 버튼 → 모든 노드 bounding box 가 보이도록 pan/zoom 자동 조정. 복잡한 워크플로우도 한 번에 정렬.',
     nodes: [
       { id:'s', type:'start',     x:20,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@sonnet-4.6' },
+      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@gpt-5-codex' },
       { id:'b', type:'subagent',  x:440, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:230, y:220, title:'취합' },
       { id:'d', type:'branch',    x:440, y:220, title:'분기' },
@@ -9203,7 +9209,7 @@ const WF_TUT_STEPS = [
     caption: '상단 ▶ 실행 → DAG 토폴로지 순서로 각 노드가 보라색 펄스(실행 중) → 녹색(완료)로 전환. 세션 노드는 codex -p 로 subprocess 실행.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작',   status:'ok' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@sonnet-4.6', status:'ok' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex', status:'ok' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer', status:'running' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9221,7 +9227,7 @@ const WF_TUT_STEPS = [
     caption: '완료된 노드는 녹색 테두리. 결과 모달에 노드별 출력 미리보기. 세션 노드 🖥️ 아이콘으로 Terminal 새 창에서 대화형 세션도 시작 가능. 📜 이력 으로 과거 실행 재조회.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작',   status:'ok' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@sonnet-4.6', status:'ok' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex', status:'ok' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer', status:'ok' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합',   status:'ok' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기',   status:'ok' },
@@ -9239,7 +9245,7 @@ const WF_TUT_STEPS = [
     caption: '노드를 선택해 우측 패널을 열면 🎭 세션 하네스 섹션에서 시스템 프롬프트(페르소나) · 추가 지시 · 허용/차단 도구를 직접 설정. 각 세션이 고유 역할로 codex CLI 호출.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@sonnet-4.6' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9257,7 +9263,7 @@ const WF_TUT_STEPS = [
     caption: '세션 노드 우상단 🖥️ 아이콘 → Terminal 새 창에서 codex 실행. 노드에 설정된 페르소나·허용 도구·resume 모두 CLI 플래그로 전달되어 바로 대화형 세션 시작.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@sonnet-4.6' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9275,7 +9281,7 @@ const WF_TUT_STEPS = [
     caption: '실행 결과 모달의 session_id 를 📋 복사하거나 ↪ 이어쓰기 로 다른 노드 resume 필드에 적용. 다음 실행 시 codex --resume 으로 같은 컨텍스트에서 이어서 대화.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작',   status:'ok' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@sonnet-4.6', status:'ok' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex', status:'ok' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer', status:'running' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9327,10 +9333,10 @@ const WF_TUT_STEPS = [
   // ── 신기능 장면 ──
   {
     title: '15. 🧠 멀티 AI 프로바이더 — Codex · GPT · Ollama 동시 활용',
-    caption: '노드의 Assignee 를 codex:opus, openai:gpt-4.1, ollama:qwen2.5 등으로 지정하면 각 노드가 다른 AI 로 실행됩니다. 같은 프롬프트를 병렬로 3개 AI 에 보내고 결과를 합치는 멀티 AI 비교 워크플로우.',
+    caption: '노드의 Assignee 를 codex:o3, openai:gpt-4.1, ollama:qwen2.5 등으로 지정하면 각 노드가 다른 AI 로 실행됩니다. 같은 프롬프트를 병렬로 3개 AI 에 보내고 결과를 합치는 멀티 AI 비교 워크플로우.',
     nodes: [
       { id:'s',  type:'start',     x:40,  y:200, title:'시작',     status:'ok' },
-      { id:'c1', type:'session',   x:280, y:60,  title:'Codex',   sub:'codex:opus', status:'ok' },
+      { id:'c1', type:'session',   x:280, y:60,  title:'Codex',   sub:'codex:o3', status:'ok' },
       { id:'g1', type:'session',   x:280, y:200, title:'GPT',      sub:'openai:gpt-4.1', status:'running' },
       { id:'o1', type:'session',   x:280, y:340, title:'Ollama',   sub:'ollama:qwen2.5', status:'ok' },
       { id:'mg', type:'merge',     x:520, y:200, title:'합류',     status:'idle' },
@@ -9350,7 +9356,7 @@ const WF_TUT_STEPS = [
       { id:'s',  type:'start',     x:40,  y:180, title:'질문 입력', status:'ok' },
       { id:'em', type:'embedding', x:240, y:180, title:'임베딩',    sub:'bge-m3', status:'ok' },
       { id:'ht', type:'http',      x:440, y:180, title:'벡터 검색', sub:'POST /search', status:'ok' },
-      { id:'ai', type:'session',   x:640, y:180, title:'답변 생성', sub:'codex:sonnet', status:'running' },
+      { id:'ai', type:'session',   x:640, y:180, title:'답변 생성', sub:'codex:gpt-5-codex', status:'running' },
       { id:'o',  type:'output',    x:840, y:180, title:'최종 답변', status:'idle' },
     ],
     edges: [
@@ -9365,7 +9371,7 @@ const WF_TUT_STEPS = [
       { id:'s',  type:'start',       x:40,  y:180, title:'데이터',   status:'ok' },
       { id:'lp', type:'loop',        x:220, y:180, title:'분할 반복', sub:'for_each', status:'ok' },
       { id:'rt', type:'retry',       x:400, y:180, title:'재시도 ×3', sub:'backoff 2s', status:'ok' },
-      { id:'ai', type:'session',     x:580, y:120, title:'AI 처리',  sub:'codex:sonnet', status:'running' },
+      { id:'ai', type:'session',     x:580, y:120, title:'AI 처리',  sub:'codex:gpt-5-codex', status:'running' },
       { id:'eh', type:'error_handler',x:580, y:280, title:'에러 처리',sub:'기본값 반환', status:'idle' },
       { id:'o',  type:'output',      x:780, y:180, title:'결과',     status:'idle' },
     ],
@@ -9425,7 +9431,7 @@ function _wfShowTutorial() {
              style="width:100%;height:100%;display:block;">
           <defs>
             <marker id="wfTutArrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
-              <path d="M0,0 L0,6 L9,3 z" fill="#d97757"/>
+              <path d="M0,0 L0,6 L9,3 z" fill="#10a37f"/>
             </marker>
           </defs>
           <g id="wfTutViewport" transform="translate(0,0) scale(1)">
@@ -9653,13 +9659,13 @@ function _wfTutRender() {
     const x2 = toN.x,               y2 = toN.y + WF_NODE_H/2;
     const d = _wfBezier(x1, y1, x2, y2);
     return `<path class="wf-tut-edge" d="${d}"
-      stroke="#d97757" stroke-width="2" fill="none"
+      stroke="#10a37f" stroke-width="2" fill="none"
       marker-end="url(#wfTutArrow)"
       pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"
       style="animation: wfTutDraw 0.5s ease-out ${(i*0.12).toFixed(2)}s forwards;"></path>`;
   }).join('');
 
-  // 노드 (fade in + stagger) + 포트 2개 (in 보라, out 주황)
+  // 노드 (fade in + stagger) + 포트 2개 (in 보라, out 녹청)
   // 모든 SVG 텍스트는 t() 로 번역 적용 — EN/ZH 모드에서 한국어 잔존 방지
   nodesG.innerHTML = (step.nodes || []).map((n, i) => {
     const meta = WF_TYPE_MAP[n.type] || WF_TYPE_MAP.session;
@@ -9667,7 +9673,7 @@ function _wfTutRender() {
     const titleRaw = n.title || meta.label;
     const subRaw   = n.sub  || meta.label;
     const title = t(titleRaw);
-    const sub   = subRaw.startsWith('@') ? subRaw : t(subRaw);  // @sonnet-4.6 같은 값은 원문 유지
+    const sub   = subRaw.startsWith('@') ? subRaw : t(subRaw);  // @gpt-5-codex 같은 값은 원문 유지
     const portIn  = meta.portIn  ? `<circle class="wf-tut-port-in"  cx="0" cy="${WF_NODE_H/2}" r="5"></circle>` : '';
     const portOut = meta.portOut ? `<circle class="wf-tut-port-out" cx="${WF_NODE_W}" cy="${WF_NODE_H/2}" r="5"></circle>` : '';
     return `
@@ -9730,7 +9736,7 @@ async function _wfShowRuns() {
   }
   const statusIcon = { ok:'✅', err:'❌', running:'⏳' };
   // 프로바이더 색상 매핑
-  const _provColors = { codex:'#d97757', openai:'#10b981', anthropic:'#d97757', ollama:'#7dd3fc', google:'#fbbf24', gemini:'#fbbf24' };
+  const _provColors = { codex:'#10a37f', openai:'#10b981', ollama:'#7dd3fc', google:'#fbbf24', gemini:'#fbbf24' };
   function _provColor(name) {
     const n = (name||'').toLowerCase();
     for (const [k,v] of Object.entries(_provColors)) { if (n.includes(k)) return v; }
@@ -9843,12 +9849,12 @@ function _wfBuildRunsChart(runs) {
       <div class="flex items-center justify-between text-[10px] text-[var(--text-dim)] mb-1">
         <span>${t('최근')} ${n} ${t('실행')}</span>
         <span>
-          <span style="color:#d97757">●</span> ${t('지속시간')} max ${(maxDur/1000).toFixed(1)}s
+          <span style="color:#10a37f">●</span> ${t('지속시간')} max ${(maxDur/1000).toFixed(1)}s
           <span style="color:#7dd3fc;margin-left:8px">●</span> ${t('토큰')} max ${maxTok.toLocaleString()}
         </span>
       </div>
       <svg viewBox="0 0 ${W} ${H+6}" style="width:100%;height:${H+6}px;display:block;">
-        <path d="${durPath}" fill="none" stroke="#d97757" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <path d="${durPath}" fill="none" stroke="#10a37f" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
         <path d="${tokPath}" fill="none" stroke="#7dd3fc" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
         ${statusDots}
       </svg>
@@ -10052,9 +10058,65 @@ VIEWS.overview = async () => {
     </div>`).join('') || `<div class="text-sm text-[var(--text-dim)]">기록 없음</div>`;
 
   return `
-    ${viewHeader('대시보드', 'Codex 최적화 상태를 한눈에.', 'overview')}
+    ${viewHeader('LazyCodex', 'Codex 설정과 세션 운영을 한 곳에서 끝내는 로컬 셋업 콘솔.', 'overview')}
 
-    <div class="card p-7 mb-5 flex flex-col md:flex-row items-center gap-6" style="background: linear-gradient(135deg, rgba(217,119,87,0.08), rgba(217,119,87,0.02));">
+    <section class="lc-brand-hero mb-5">
+      <div class="flex items-start justify-between gap-5 flex-wrap">
+        <div class="flex items-start gap-4 min-w-0">
+          <div class="lc-brand-mark" aria-hidden="true">LC</div>
+          <div class="min-w-0">
+            <div class="text-xs uppercase tracking-widest text-[var(--text-dim)] mb-2">${t('로컬 우선 Codex 세팅 툴')}</div>
+            <h2 class="lc-hero-title font-bold">${t('Codex 설정을 게으르게 정리하세요')}</h2>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <span class="chip chip-accent">${t('설치 없이 실행')}</span>
+          <span class="chip">${t('~/.codex 읽기')}</span>
+          <span class="chip chip-ok">${t('로컬 저장')}</span>
+        </div>
+      </div>
+      <p class="lc-hero-copy mt-5">
+        ${t('LazyCodex는 settings.json, AGENTS.md, MCP, 플러그인, 스킬, 에이전트, 권한, 훅을 탭으로 풀어낸 설정 대시보드입니다. 한 줄로 서버를 켜고, 현재 상태를 보고, 필요한 세팅으로 바로 이동합니다.')}
+      </p>
+      <div class="flex gap-2 flex-wrap mt-5">
+        <button class="btn-primary btn text-xs" onclick="go('onboarding')">🚀 ${t('셋업 체크리스트')}</button>
+        <button class="btn text-xs" onclick="go('settings')">⚙️ ${t('Settings 편집')}</button>
+        <button class="btn text-xs" onclick="go('mcp')">🔗 ${t('MCP 연결')}</button>
+        <button class="btn text-xs" onclick="go('aiProviders')">🧠 ${t('AI 프로바이더')}</button>
+      </div>
+    </section>
+
+    <div class="lc-setup-rail mb-5">
+      ${[
+        { n:'01', title:'기본 경로 확인', copy:'CODEX_HOME 과 데이터 저장 위치를 확인합니다.', tab:'onboarding' },
+        { n:'02', title:'Codex 설정 정리', copy:'settings.json, 모델, 출력 스타일, 환경 변수를 조정합니다.', tab:'settings' },
+        { n:'03', title:'도구 연결', copy:'MCP, 플러그인, 훅, 권한을 안전하게 켭니다.', tab:'mcp' },
+        { n:'04', title:'워크플로우화', copy:'반복 작업을 세션 노드와 자동 실행 흐름으로 묶습니다.', tab:'workflows' },
+      ].map(s => `
+        <button class="lc-setup-step text-left" onclick="go('${s.tab}')">
+          <span class="lc-setup-step-index">${s.n}</span>
+          <span class="lc-setup-step-title">${t(s.title)}</span>
+          <span class="lc-setup-step-copy">${t(s.copy)}</span>
+        </button>
+      `).join('')}
+    </div>
+
+    <div class="lc-path-grid mb-5">
+      <div class="lc-path-card">
+        <strong>💤 ${t('쉽게 시작')}</strong>
+        <span>${t('설치 마법사 없이 python3 server.py 로 열고, 감지된 상태를 기준으로 다음 액션을 고릅니다.')}</span>
+      </div>
+      <div class="lc-path-card">
+        <strong>🔐 ${t('안전하게 조정')}</strong>
+        <span>${t('권한, 훅, MCP, API 키를 탭별로 나눠 위험한 설정을 먼저 보이게 합니다.')}</span>
+      </div>
+      <div class="lc-path-card">
+        <strong>🔀 ${t('반복을 자동화')}</strong>
+        <span>${t('Codex 세션과 서브 에이전트를 워크플로우로 연결해 같은 셋업 작업을 다시 쓰게 합니다.')}</span>
+      </div>
+    </div>
+
+    <div class="card p-7 mb-5 flex flex-col md:flex-row items-center gap-6" style="background: linear-gradient(135deg, rgba(16,163,127,0.08), rgba(16,163,127,0.02));">
       <div class="score-ring" style="--p:0" data-ring="${opt.overall}">
         <div class="text-center">
           <div class="text-5xl font-bold mono gradient-text" data-count="${opt.overall}">0</div>
@@ -10074,9 +10136,9 @@ VIEWS.overview = async () => {
       ${statCard('에이전트 위임', stats.totalAgentCalls, '#67e8f9')}
       ${statCard('활성 프로젝트', briefing.projectCount)}
       ${(briefing.autoResumeActiveCount || 0) > 0
-        ? `<a class="card p-4 cursor-pointer hover-lift" href="#/sessions" title="${t('Auto-Resume 활성 세션 — 클릭하여 세션 목록으로 이동')}" style="background: linear-gradient(135deg, rgba(217,119,87,0.10), rgba(217,119,87,0.02));">
+        ? `<a class="card p-4 cursor-pointer hover-lift" href="#/sessions" title="${t('Auto-Resume 활성 세션 — 클릭하여 세션 목록으로 이동')}" style="background: linear-gradient(135deg, rgba(16,163,127,0.10), rgba(16,163,127,0.02));">
              <div class="text-[10px] uppercase tracking-wider text-[var(--text-dim)] flex items-center gap-1">🔄 ${t('Auto-Resume')}</div>
-             <div class="text-2xl font-bold mono mt-1" style="color:#d97757">${briefing.autoResumeActiveCount}</div>
+             <div class="text-2xl font-bold mono mt-1" style="color:#10a37f">${briefing.autoResumeActiveCount}</div>
            </a>`
         : statCard('Auto-Resume', briefing.autoResumeActiveCount || 0)}
     </div>
@@ -10200,7 +10262,7 @@ VIEWS.aiEval = async () => {
         </div>
         <div class="text-[11px] text-[var(--text-mute)] mt-2">7축 평균 — 자원 보유 × 30일 활용도</div>
       </div>
-      <div class="card p-5" style="background: rgba(217,119,87,0.05);">
+      <div class="card p-5" style="background: rgba(16,163,127,0.05);">
         <div class="text-[11px] uppercase text-[var(--text-dim)] mb-2">🤖 AI 종합 점수</div>
         <div class="flex items-baseline gap-2">
           <div class="text-5xl font-bold mono" style="color:${scoreColor(ev.overall||0)}">${ev.overall||0}</div>
@@ -10228,7 +10290,7 @@ VIEWS.aiEval = async () => {
       ${(ev.priorities||[]).map(p => `
         <div class="card p-4 mb-2">
           <div class="flex items-start gap-3">
-            <div class="text-2xl font-bold mono" style="color:#d97757">#${p.rank||'?'}</div>
+            <div class="text-2xl font-bold mono" style="color:#10a37f">#${p.rank||'?'}</div>
             <div class="flex-1 min-w-0">
               <div class="font-semibold flex items-center gap-2 flex-wrap">
                 ${escapeHtml(p.title||'')}
@@ -10596,7 +10658,7 @@ function _sessRowHtml(s, arActiveIds) {
       <td class="text-right">${s.message_count}</td>
       <td class="text-right">${s.tool_use_count}</td>
       <td class="text-right">${s.agent_call_count ? `<span class="chip chip-accent">${s.agent_call_count}</span>` : '0'}</td>
-      <td class="text-right mono text-xs" style="color:#d97757">${fmtTokens(s.total_tokens||0)}</td>
+      <td class="text-right mono text-xs" style="color:#10a37f">${fmtTokens(s.total_tokens||0)}</td>
       <td class="text-right">${s.error_count ? `<span class="chip chip-err">${s.error_count}</span>` : '0'}</td>
       <td class="text-right mono text-xs">${fmtDur(s.duration_ms)}</td>
       <td class="text-right text-xs text-[var(--text-mute)]">${fmtRel(s.started_at)}</td>
@@ -10910,7 +10972,7 @@ function renderSessionDetail(d, tok, tl) {
       <!-- 1행: 토큰 요약 + 5축 점수 -->
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-3">
         ${[
-          ['전체 토큰', fmtTokens(tok.totals.total), '#d97757'],
+          ['전체 토큰', fmtTokens(tok.totals.total), '#10a37f'],
           ['입력', fmtTokens(tok.totals.input), '#86efac'],
           ['출력', fmtTokens(tok.totals.output), '#7dd3fc'],
           ['캐시 read', fmtTokens(tok.totals.cacheRead), '#a78bfa'],
@@ -10934,9 +10996,9 @@ function renderSessionDetail(d, tok, tl) {
               <div class="mb-2">
                 <div class="flex justify-between text-xs mb-1">
                   <span class="mono">${escapeHtml(r.tool)} <span class="text-[var(--text-dim)]">×${r.calls}</span></span>
-                  <span class="mono font-bold" style="color:#d97757">${fmtTokens(r.tokens||0)}</span>
+                  <span class="mono font-bold" style="color:#10a37f">${fmtTokens(r.tokens||0)}</span>
                 </div>
-                <div class="h-1.5 bg-white/5 rounded overflow-hidden"><div style="width:${pct}%; height:100%; background:#d97757;"></div></div>
+                <div class="h-1.5 bg-white/5 rounded overflow-hidden"><div style="width:${pct}%; height:100%; background:#10a37f;"></div></div>
               </div>`;
             }).join('') || '<div class="empty text-xs">데이터 없음</div>'}
           </div>
@@ -11370,7 +11432,7 @@ async function drawSessionTimeline(tl) {
   }
   if (typeof vis === 'undefined') return;
   const colorByKind = {
-    session: { background:'#d97757', border:'#fb923c', font:'#fff' },
+    session: { background:'#10a37f', border:'#fb923c', font:'#fff' },
     prompt:  { background:'#7dd3fc', border:'#38bdf8', font:'#0c4a6e' },
     agent:   { background:'#a78bfa', border:'#8b5cf6', font:'#fff' },
     tool:    { background:'#27272a', border:'#52525b', font:'#d4d4d8' },
@@ -11425,10 +11487,10 @@ VIEWS.agents = async () => {
 
   const modelBg = (m) => ({
     inherit: 'rgba(255,255,255,0.06)',
-    haiku: 'rgba(125,211,252,0.18)',
-    sonnet: 'rgba(217,119,87,0.18)',
-    opus: 'rgba(244,114,182,0.18)',
-  })[m] || 'rgba(217,119,87,0.14)';
+    'o4-mini': 'rgba(125,211,252,0.18)',
+    'gpt-5-codex': 'rgba(16,163,127,0.18)',
+    o3: 'rgba(244,114,182,0.18)',
+  })[m] || 'rgba(16,163,127,0.14)';
   const renderAgentCard = a => {
     const readOnly = a.scope === 'builtin';
     const selectorScope = a.scope;
@@ -11439,7 +11501,7 @@ VIEWS.agents = async () => {
       if (a.scope === 'global')  return '<span class="chip chip-ok text-[9px]">✓ 사용자 설정</span>';
       if (a.scope === 'builtin') return '<span class="chip text-[9px]">⚡ 빌트인</span>';
       if (a.scope === 'plugin') {
-        if (a.pluginEnabled) return '<span class="chip text-[9px]" style="background:rgba(217,119,87,0.12);">🔌 플러그인 제공</span>';
+        if (a.pluginEnabled) return '<span class="chip text-[9px]" style="background:rgba(16,163,127,0.12);">🔌 플러그인 제공</span>';
         return `<button class="chip chip-warn text-[9px] cursor-pointer hover:brightness-125"
                 onclick="event.stopPropagation();togglePluginFromAgent('${escapeHtml(a.pluginKey||'')}', true)">비활성 플러그인 ▶ 활성화</button>`;
       }
@@ -11944,7 +12006,7 @@ function openCreateAgent() {
           <div class="text-[11px] uppercase text-[var(--text-dim)] mb-1">model</div>
           <select id="nagModel" class="input">
             ${(window.__subModelChoices || [
-              {id:'inherit', label:'inherit'}, {id:'haiku', label:'Haiku'}, {id:'sonnet', label:'Sonnet'}, {id:'opus', label:'Opus'}
+              {id:'inherit', label:'inherit'}, {id:'gpt-5-codex', label:'gpt-5-codex'}, {id:'o3', label:'o3'}, {id:'o4-mini', label:'o4-mini'}
             ]).map(m => `<option value="${escapeHtml(m.id)}" ${m.id==='inherit'?'selected':''}>${escapeHtml(m.label)}</option>`).join('')}
           </select>
         </div>
@@ -12098,8 +12160,8 @@ function _hyperModalHTML(name, ag, history, cwd) {
         </label>
         <label class="block">
           <div class="text-xs font-semibold mb-1">${t('Refine 프로바이더')}</div>
-          <select id="hyperProvider" class="input w-full">${providerOpts}<option value="codex:opus" ${ag.refineProvider==='codex:opus'?'selected':''}>codex:opus</option></select>
-          <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('메타 LLM (Opus 권장)')}</div>
+          <select id="hyperProvider" class="input w-full">${providerOpts}<option value="codex:o3" ${ag.refineProvider==='codex:o3'?'selected':''}>codex:o3</option></select>
+          <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('메타 LLM (o3 권장)')}</div>
         </label>
       </div>
 
@@ -12322,10 +12384,11 @@ VIEWS.skills = async () => {
   let filtered = skills.filter(s => !q || (s.name+s.description+s.id+(_localDesc(s)||'')).toLowerCase().includes(q));
   if (onlyEnabled) filtered = filtered.filter(s => s.scope === 'user');
 
-  const groups = { user: [], plugin: [], project: [] };
+  const groups = { user: [], system: [], plugin: [], project: [] };
   filtered.forEach(s => { (groups[s.scope] || (groups[s.scope] = [])).push(s); });
 
   const userN = skills.filter(s => s.scope === 'user').length;
+  const systemN = skills.filter(s => s.scope === 'system').length;
   const pluginN = skills.filter(s => s.scope === 'plugin').length;
   const pluginEnabledN = skills.filter(s => s.scope === 'plugin' && s.pluginEnabled).length;
   const projectN = skills.filter(s => s.scope === 'project').length;
@@ -12333,11 +12396,13 @@ VIEWS.skills = async () => {
   const renderSkillCard = s => {
     const scopeBadge = s.scope === 'plugin'
       ? (s.pluginEnabled
-          ? '<span class="chip text-[9px]" style="background:rgba(217,119,87,0.12);">🔌 ' + t('플러그인 제공') + '</span>'
+          ? '<span class="chip text-[9px]" style="background:rgba(16,163,127,0.12);">🔌 ' + t('플러그인 제공') + '</span>'
           : `<button class="chip chip-warn text-[9px]" onclick="event.stopPropagation();togglePluginFromAgent('${escapeHtml(s.pluginKey||'')}', true)">${t('비활성 플러그인 ▶ 활성화')}</button>`)
-      : (s.scope === 'project'
+      : (s.scope === 'system'
+          ? '<span class="chip text-[9px]" style="background:rgba(125,211,252,0.18);">🧩 ' + t('시스템') + '</span>'
+          : (s.scope === 'project'
           ? '<span class="chip text-[9px]" style="background:rgba(125,211,252,0.18);">📁 ' + t('프로젝트') + '</span>'
-          : '<span class="chip chip-ok text-[9px]">✓ ' + t('사용자 설정') + '</span>');
+          : '<span class="chip chip-ok text-[9px]">✓ ' + t('사용자 설정') + '</span>'));
     const editFn = s.scope === 'project'
       ? `editProjectSkill('${escapeHtml(s.id)}')`
       : `editSkill('${escapeHtml(s.id)}')`;
@@ -12355,13 +12420,14 @@ VIEWS.skills = async () => {
 
   const groupLabel = {
     user: '🔧 ' + t('전역') + ' (~/.codex/skills)',
+    system: '🧩 ' + t('시스템') + ' (~/.codex/skills/.system)',
     plugin: '🔌 ' + t('플러그인'),
     project: '📁 ' + t('프로젝트') + ' (' + (cfgCwd ? cfgCwd + '/.codex/skills' : '') + ')',
   };
-  const groupOrder = inProject ? ['project'] : ['user', 'plugin'];
+  const groupOrder = inProject ? ['project'] : ['user', 'system', 'plugin'];
   const subtitle = inProject
     ? `<b>${t('프로젝트 스킬')} ${projectN}${t('개')}</b>`
-    : `<b>${t('활성(사용자 설정)')} ${userN}${t('개')}</b> · ${t('플러그인 제공')} ${pluginEnabledN}/${pluginN} (${t('별도')}) · ${_localizedDescStatusText(skills)}`;
+    : `<b>${t('사용자')} ${userN}${t('개')}</b> · ${t('시스템')} ${systemN}${t('개')} · ${t('플러그인 제공')} ${pluginEnabledN}/${pluginN} · ${_localizedDescStatusText(skills)}`;
 
   return `
     ${_renderConfigScopeToggle({scope: cfgScope, cwd: cfgCwd, projects, label: t('스킬 스코프')})}
@@ -12404,7 +12470,7 @@ async function editSkill(id) {
   if (s.error) { toast(t('스킬 로드 실패') + ': ' + s.error, 'err'); return; }
   const isReadOnly = !!s.readOnly;
   showEditModal({
-    title: (isReadOnly ? '🔒 ' + t('플러그인 스킬 (read-only)') + ' — ' : t('스킬 편집') + ' — ') + s.name,
+    title: (isReadOnly ? '🔒 ' + (s.scope === 'system' ? t('시스템 스킬 (read-only)') : t('플러그인 스킬 (read-only)')) + ' — ' : t('스킬 편집') + ' — ') + s.name,
     raw: s.raw,
     readOnly: isReadOnly,
     save: isReadOnly ? null : async (v) => api('/api/skills/' + encodeURIComponent(id), {
@@ -12590,7 +12656,7 @@ VIEWS.commands = async () => {
             <div class="card p-4 hover-lift ${isProj?'cursor-pointer':''}" ${isProj?`onclick="${editFn}"`:''}>
               <div class="flex items-center gap-2 mb-2 flex-wrap">
                 <span class="chip ${c.scope==='user'?'chip-ok':'chip-accent'}">${c.scope}</span>
-                ${isEcc ? '<span class="chip" style="background:rgba(217,119,87,0.18);border-color:rgba(217,119,87,0.45);color:var(--text);">ECC</span>' : ''}
+                ${isEcc ? '<span class="chip" style="background:rgba(16,163,127,0.18);border-color:rgba(16,163,127,0.45);color:var(--text);">ECC</span>' : ''}
                 <span class="font-semibold text-sm mono">/${escapeHtml(cmdName)}</span>
                 ${isProj
                   ? `<button class="btn text-[10px] ml-auto" onclick="event.stopPropagation();deleteProjectCommand('${escapeHtml(c.id)}')" style="color:#fca5a5;">${t('삭제')}</button>`
@@ -12645,11 +12711,11 @@ async function _cmdQuickRun(itemIdOrName, isEcc, cmdName) {
     toast(t('이 명령은 ECC가 아니라 즉시 실행 대신 워크플로우로 변환됩니다'), 'info');
     // Simulate the run-center "to-workflow" path with a 1-node session draft.
     // QQ237 — pick the first available provider:model rather than pinning
-    // codex:sonnet so the generated workflow runs out-of-the-box on
+    // codex:gpt-5-codex so the generated workflow runs out-of-the-box on
     // machines without the codex CLI installed.
     const _firstReal = (() => {
       const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
-      if (!provs.length) return 'codex:sonnet';
+      if (!provs.length) return 'codex:gpt-5-codex';
       const p0 = provs[0];
       const m0 = (p0.models || [])[0];
       return `${p0.id.replace('-cli', '').replace('-api', '')}:${m0.id || m0.name}`;
@@ -12807,7 +12873,7 @@ async function translateAll(kind) {
 
 // ────────────────────────────────────────────────────────────────
 // PROMPT CACHE LAB (v2.2.0)
-// Anthropic Messages API 의 cache_control 실험실 — 예시 원클릭, 토큰/비용 실측
+// OpenAI Codex Messages API 의 cache_control 실험실 — 예시 원클릭, 토큰/비용 실측
 // ────────────────────────────────────────────────────────────────
 VIEWS.promptCache = async () => {
   const [ex, hist] = await Promise.all([
@@ -12815,7 +12881,7 @@ VIEWS.promptCache = async () => {
     api('/api/prompt-cache/history'),
   ]);
   state.data.pc = state.data.pc || {
-    model: 'codex-sonnet-4-6',
+    model: 'gpt-5-codex',
     maxTokens: 1024,
     system: '[]',
     tools: '[]',
@@ -12869,7 +12935,7 @@ VIEWS.promptCache = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">🧊 ${t('프롬프트 캐시 실험실')}</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('Anthropic Messages API 의 cache_control 을 실측. cache_creation 은 캐시 쓰기, cache_read 는 캐시 히트 — 히트 비용은 1/10 수준입니다.')}
+        ${t('OpenAI Codex Messages API 의 cache_control 을 실측. cache_creation 은 캐시 쓰기, cache_read 는 캐시 히트 — 히트 비용은 1/10 수준입니다.')}
       </p>
     </div>
 
@@ -12883,9 +12949,9 @@ VIEWS.promptCache = async () => {
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="pcSet('model', this.value)">
-            <option value="codex-opus-4-7" ${pc.model==='codex-opus-4-7'?'selected':''}>Opus 4.7</option>
-            <option value="codex-sonnet-4-6" ${pc.model==='codex-sonnet-4-6'?'selected':''}>Sonnet 4.6</option>
-            <option value="codex-haiku-4-5" ${pc.model==='codex-haiku-4-5'?'selected':''}>Haiku 4.5</option>
+            <option value="o3" ${pc.model==='o3'?'selected':''}>o3</option>
+            <option value="gpt-5-codex" ${pc.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
+            <option value="o4-mini" ${pc.model==='o4-mini'?'selected':''}>o4-mini</option>
           </select>
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">${t('max_tokens')}</label>
           <input type="text" inputmode="numeric" class="input w-24" value="${pc.maxTokens}"
@@ -12999,7 +13065,7 @@ VIEWS.thinkingLab = async () => {
     api('/api/thinking-lab/models'),
   ]);
   state.data.tl = state.data.tl || {
-    model: 'codex-sonnet-4-6',
+    model: 'gpt-5-codex',
     budgetTokens: 4096,
     maxTokens: 2048,
     prompt: '',
@@ -13042,7 +13108,7 @@ VIEWS.thinkingLab = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">🧠 ${t('Extended Thinking 실험실')}</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('Opus 4.7 / Sonnet 4.6 의 thinking block 과 최종 응답을 분리 시각화. budget_tokens 로 추론 길이 조절.')}
+        ${t('o3 / GPT-5 Codex 의 thinking block 과 최종 응답을 분리 시각화. budget_tokens 로 추론 길이 조절.')}
       </p>
     </div>
 
@@ -13149,7 +13215,7 @@ async function tlRun() {
       return;
     }
     if (r.unsupported) {
-      toast(t('Extended Thinking 은 Haiku 에서 지원되지 않습니다'), 'err');
+      toast(t('Extended Thinking 은 o4-mini 에서 지원되지 않습니다'), 'err');
       if (st) st.textContent = '';
       return;
     }
@@ -13174,7 +13240,7 @@ VIEWS.toolUseLab = async () => {
     api('/api/tool-use-lab/history'),
   ]);
   state.data.tu = state.data.tu || {
-    model: 'codex-sonnet-4-6',
+    model: 'gpt-5-codex',
     maxTokens: 2048,
     tools: JSON.stringify((tpl.templates || []).slice(0, 1).map(x => x.tool), null, 2),
     messages: [],
@@ -13247,9 +13313,9 @@ VIEWS.toolUseLab = async () => {
         <div class="flex items-center gap-2 flex-wrap">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">${t('모델')}</label>
           <select class="input flex-1" onchange="tuSet('model', this.value)">
-            <option value="codex-opus-4-7" ${tu.model==='codex-opus-4-7'?'selected':''}>Opus 4.7</option>
-            <option value="codex-sonnet-4-6" ${tu.model==='codex-sonnet-4-6'?'selected':''}>Sonnet 4.6</option>
-            <option value="codex-haiku-4-5" ${tu.model==='codex-haiku-4-5'?'selected':''}>Haiku 4.5</option>
+            <option value="o3" ${tu.model==='o3'?'selected':''}>o3</option>
+            <option value="gpt-5-codex" ${tu.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
+            <option value="o4-mini" ${tu.model==='o4-mini'?'selected':''}>o4-mini</option>
           </select>
         </div>
 
@@ -13368,7 +13434,7 @@ VIEWS.batchJobs = async () => {
     api('/api/batch/budget'),
   ]);
   state.data.bj = state.data.bj || {
-    model: 'codex-haiku-4-5',
+    model: 'o4-mini',
     maxTokens: 256,
     promptsText: '',
     selectedBatchId: '',
@@ -13436,9 +13502,9 @@ VIEWS.batchJobs = async () => {
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="bjSet('model', this.value)">
-            <option value="codex-opus-4-7" ${bj.model==='codex-opus-4-7'?'selected':''}>Opus 4.7</option>
-            <option value="codex-sonnet-4-6" ${bj.model==='codex-sonnet-4-6'?'selected':''}>Sonnet 4.6</option>
-            <option value="codex-haiku-4-5" ${bj.model==='codex-haiku-4-5'?'selected':''}>Haiku 4.5</option>
+            <option value="o3" ${bj.model==='o3'?'selected':''}>o3</option>
+            <option value="gpt-5-codex" ${bj.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
+            <option value="o4-mini" ${bj.model==='o4-mini'?'selected':''}>o4-mini</option>
           </select>
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">max_tokens</label>
           <input type="text" inputmode="numeric" class="input w-24" value="${bj.maxTokens}"
@@ -13496,7 +13562,7 @@ async function bjSubmit() {
   if (prompts.length > 1000) { toast(t('최대 1000건'), 'err'); return; }
   const ok = await confirmModal({
     title: t('배치 제출 확인'),
-    message: t('총 {n} 건을 {model} 로 제출합니다. Anthropic API 요금이 발생할 수 있습니다. 계속할까요?').replace('{n}', prompts.length).replace('{model}', bj.model),
+    message: t('총 {n} 건을 {model} 로 제출합니다. OpenAI Codex API 요금이 발생할 수 있습니다. 계속할까요?').replace('{n}', prompts.length).replace('{model}', bj.model),
     confirmLabel: t('제출'),
   });
   if (!ok) return;
@@ -13548,7 +13614,7 @@ async function bjEditBudget() {
         <input type="text" inputmode="numeric" id="bjBudTokens" class="input" value="${cur.maxPerBatchTokens}">
       </div>
       <div class="text-[10px] text-[var(--text-dim)]">
-        ${t('활성화 시 제출 전에 예상 비용/토큰을 계산해 한도 초과면 거부합니다. Anthropic Message Batches 는 정가의 50% 이므로 예상은 이미 할인가입니다.')}
+        ${t('활성화 시 제출 전에 예상 비용/토큰을 계산해 한도 초과면 거부합니다. OpenAI Codex Message Batches 는 정가의 50% 이므로 예상은 이미 할인가입니다.')}
       </div>
     </div>
   `;
@@ -13594,13 +13660,13 @@ async function bjCancel(id) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// API FILES (v2.6.0) — Anthropic Files API 관리
+// API FILES (v2.6.0) — OpenAI Codex Files API 관리
 // 파일 업로드·목록·삭제 + 업로드한 파일을 메시지 document 로 reference
 // ────────────────────────────────────────────────────────────────
 VIEWS.apiFiles = async () => {
   const lst = await api('/api/api-files/list');
   state.data.af = state.data.af || {
-    model: 'codex-sonnet-4-6',
+    model: 'gpt-5-codex',
     prompt: '',
     selectedFileId: '',
     lastOutput: null,
@@ -13630,7 +13696,7 @@ VIEWS.apiFiles = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">📎 ${t('Files API')}</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('Anthropic 에 파일을 업로드하고, file_id 를 메시지에 document 로 reference 해서 질문을 던질 수 있습니다.')}
+        ${t('OpenAI Codex 에 파일을 업로드하고, file_id 를 메시지에 document 로 reference 해서 질문을 던질 수 있습니다.')}
       </p>
       ${needKey ? `<div class="mt-2 text-[11px] text-[var(--warn)]">⚠️ ${t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요')}</div>` : ''}
     </div>
@@ -13648,9 +13714,9 @@ VIEWS.apiFiles = async () => {
           <div class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider mb-2">${t('파일로 질문 테스트')}</div>
           <div class="text-[10px] text-[var(--text-dim)] mb-2">${t('선택된 파일')}: <span class="font-mono">${af.selectedFileId || '-'}</span></div>
           <select class="input mb-2" onchange="afSet('model', this.value)">
-            <option value="codex-opus-4-7" ${af.model==='codex-opus-4-7'?'selected':''}>Opus 4.7</option>
-            <option value="codex-sonnet-4-6" ${af.model==='codex-sonnet-4-6'?'selected':''}>Sonnet 4.6</option>
-            <option value="codex-haiku-4-5" ${af.model==='codex-haiku-4-5'?'selected':''}>Haiku 4.5</option>
+            <option value="o3" ${af.model==='o3'?'selected':''}>o3</option>
+            <option value="gpt-5-codex" ${af.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
+            <option value="o4-mini" ${af.model==='o4-mini'?'selected':''}>o4-mini</option>
           </select>
           <textarea class="input text-[12px]" rows="3" oninput="afSet('prompt', this.value)" placeholder="${t('이 문서의 핵심을 3줄로 요약해줘')}">${escapeHtml(af.prompt || '')}</textarea>
           <div class="mt-2 flex items-center gap-2">
@@ -13746,7 +13812,7 @@ async function afAsk() {
 
 // ────────────────────────────────────────────────────────────────
 // VISION / PDF LAB (v2.7.0)
-// 이미지/PDF 업로드 → Opus / Sonnet / Haiku 3 모델 병렬 비교
+// 이미지/PDF 업로드 → o3 / GPT-5 Codex / o4-mini 3 모델 병렬 비교
 // ────────────────────────────────────────────────────────────────
 VIEWS.visionLab = async () => {
   state.data.vl = state.data.vl || {
@@ -13783,7 +13849,7 @@ VIEWS.visionLab = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">👁️ ${t('Vision / PDF 실험실')}</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('이미지(PNG/JPG/WebP/GIF) 또는 PDF 를 올리고 같은 질문을 Opus / Sonnet / Haiku 3 모델에 병렬 전송 → 응답을 나란히 비교합니다.')}
+        ${t('이미지(PNG/JPG/WebP/GIF) 또는 PDF 를 올리고 같은 질문을 o3 / GPT-5 Codex / o4-mini 3 모델에 병렬 전송 → 응답을 나란히 비교합니다.')}
       </p>
     </div>
 
@@ -13886,7 +13952,7 @@ VIEWS.modelBench = async () => {
   const data = await api('/api/model-bench/sets');
   state.data.mb = state.data.mb || {
     setId: 'basic-qa',
-    modelIds: ['codex-haiku-4-5', 'codex-sonnet-4-6'],
+    modelIds: ['o4-mini', 'gpt-5-codex'],
     maxTokens: 512,
     results: null,
     running: false,
@@ -14107,9 +14173,9 @@ VIEWS.promptLibrary = async () => {
       <div class="flex gap-2 items-center">
         <select class="input" onchange="plSetEdit('model', this.value)">
           <option value="">${t('모델 미지정')}</option>
-          <option value="codex-opus-4-7" ${editing.model==='codex-opus-4-7'?'selected':''}>Opus 4.7</option>
-          <option value="codex-sonnet-4-6" ${editing.model==='codex-sonnet-4-6'?'selected':''}>Sonnet 4.6</option>
-          <option value="codex-haiku-4-5" ${editing.model==='codex-haiku-4-5'?'selected':''}>Haiku 4.5</option>
+          <option value="o3" ${editing.model==='o3'?'selected':''}>o3</option>
+          <option value="gpt-5-codex" ${editing.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
+          <option value="o4-mini" ${editing.model==='o4-mini'?'selected':''}>o4-mini</option>
         </select>
         <button class="btn btn-primary" onclick="plSave()">💾 ${t('저장')}</button>
         <button class="btn" onclick="plSet('editing', null); renderView()">${t('취소')}</button>
@@ -14134,7 +14200,7 @@ VIEWS.promptLibrary = async () => {
       <pre class="text-[11px] whitespace-pre-wrap max-h-32 overflow-auto text-[var(--text-mute)]">${escapeHtml(it.body||'').slice(0,800)}${(it.body||'').length>800?'…':''}</pre>
       <div class="flex items-center gap-1 flex-wrap">
         ${(it.tags||[]).map(tg => `<span class="chip" style="font-size:10px;">#${escapeHtml(tg)}</span>`).join('')}
-        ${it.model ? `<span class="chip chip-sm" style="font-size:10px; background:rgba(217,119,87,0.1);">${escapeHtml(it.model)}</span>` : ''}
+        ${it.model ? `<span class="chip chip-sm" style="font-size:10px; background:rgba(16,163,127,0.1);">${escapeHtml(it.model)}</span>` : ''}
       </div>
     </div>
   `).join('') : `<div class="card p-6 text-center text-[11px] text-[var(--text-dim)]">${t('일치하는 프롬프트 없음')}</div>`;
@@ -14275,7 +14341,7 @@ VIEWS.embeddingLab = async () => {
   const providerCards = providers.map(p => {
     const sel = el.selections.find(s => s.providerId === p.id);
     const checked = !!sel;
-    return `<label class="card p-2 flex items-start gap-2 cursor-pointer text-[11px]" style="${checked?'border-color:rgba(217,119,87,0.5);background:rgba(217,119,87,0.06);':''} ${p.available?'':'opacity-60'}">
+    return `<label class="card p-2 flex items-start gap-2 cursor-pointer text-[11px]" style="${checked?'border-color:rgba(16,163,127,0.5);background:rgba(16,163,127,0.06);':''} ${p.available?'':'opacity-60'}">
       <input type="checkbox" ${checked?'checked':''} onchange="elToggleProvider('${p.id}')" style="margin-top:2px;">
       <div style="flex:1;">
         <div class="font-semibold">${p.icon} ${escapeHtml(p.label)}</div>
@@ -14522,7 +14588,7 @@ VIEWS.agentSdkScaffold = async () => {
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider mb-1 block">${t('템플릿')}</label>
           <div class="space-y-2">
             ${templates.map(tp => `
-              <label class="card p-2 flex items-start gap-2 cursor-pointer text-[11px]" style="${sc.template===tp.id?'border-color:rgba(217,119,87,0.5);background:rgba(217,119,87,0.06);':''}">
+              <label class="card p-2 flex items-start gap-2 cursor-pointer text-[11px]" style="${sc.template===tp.id?'border-color:rgba(16,163,127,0.5);background:rgba(16,163,127,0.06);':''}">
                 <input type="radio" name="scTpl" ${sc.template===tp.id?'checked':''} onchange="scSet('template','${tp.id}'); renderView()" style="margin-top:2px;">
                 <div style="flex:1;">
                   <div class="font-semibold">${t(tp.label)}</div>
@@ -14628,7 +14694,7 @@ VIEWS.citationsLab = async () => {
     api('/api/citations-lab/history'),
   ]);
   state.data.ci = state.data.ci || {
-    model: 'codex-sonnet-4-6',
+    model: 'gpt-5-codex',
     maxTokens: 1024,
     title: '',
     document: '',
@@ -14676,7 +14742,7 @@ VIEWS.citationsLab = async () => {
     const e = c.end != null ? c.end : (s + (c.cited_text||'').length);
     const safe = (x) => escapeHtml(x).replace(/\n/g,'<br>');
     docHtml = safe(doc.slice(0, s)) +
-      `<mark style="background:rgba(217,119,87,0.4);border-radius:3px;padding:1px 2px;">${safe(doc.slice(s, e))}</mark>` +
+      `<mark style="background:rgba(16,163,127,0.4);border-radius:3px;padding:1px 2px;">${safe(doc.slice(s, e))}</mark>` +
       safe(doc.slice(e));
   } else {
     docHtml = escapeHtml(doc).replace(/\n/g,'<br>');
@@ -14708,8 +14774,8 @@ VIEWS.citationsLab = async () => {
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="ciSet('model', this.value)">
-            <option value="codex-opus-4-7" ${ci.model==='codex-opus-4-7'?'selected':''}>Opus 4.7</option>
-            <option value="codex-sonnet-4-6" ${ci.model==='codex-sonnet-4-6'?'selected':''}>Sonnet 4.6</option>
+            <option value="o3" ${ci.model==='o3'?'selected':''}>o3</option>
+            <option value="gpt-5-codex" ${ci.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
           </select>
         </div>
         <div>
@@ -14791,7 +14857,7 @@ async function ciRun() {
 }
 
 // ────────────────────────────────────────────────────────────────
-// CLAUDE DOCS HUB (v2.12.0) — docs.anthropic.com 색인 + 검색
+// CODEX DOCS HUB — official OpenAI Codex docs index + search
 // ────────────────────────────────────────────────────────────────
 // v2.33.7 — codexDocs 북마크 (localStorage 저장)
 function _cdLoadBookmarks() {
@@ -14852,7 +14918,7 @@ VIEWS.codexDocs = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">📖 Codex Docs Hub</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('Anthropic 공식 문서 주요 페이지를 카테고리별로 색인. 검색어로 필터링하고 관련 대시보드 탭으로 바로 이동할 수 있습니다.')}
+        ${t('OpenAI Codex 공식 문서 주요 페이지를 카테고리별로 색인. 검색어로 필터링하고 관련 대시보드 탭으로 바로 이동할 수 있습니다.')}
       </p>
     </div>
 
@@ -14882,7 +14948,7 @@ function cdRender() {
 
 // ────────────────────────────────────────────────────────────────
 // SERVER-SIDE TOOLS (v2.11.0)
-// Anthropic hosted tools: web_search + code_execution
+// OpenAI Codex hosted tools: web_search + code_execution
 // ────────────────────────────────────────────────────────────────
 VIEWS.serverTools = async () => {
   const [cat, hist] = await Promise.all([
@@ -14890,7 +14956,7 @@ VIEWS.serverTools = async () => {
     api('/api/server-tools/history'),
   ]);
   state.data.st = state.data.st || {
-    model: 'codex-sonnet-4-6',
+    model: 'gpt-5-codex',
     maxTokens: 2048,
     prompt: '',
     enabled: ['web_search'],
@@ -14907,7 +14973,7 @@ VIEWS.serverTools = async () => {
   const toolChecks = tools.map(tool => {
     const checked = st.enabled.includes(tool.id);
     const modelSupported = tool.supportedModels.includes(st.model);
-    return `<label class="flex items-start gap-2 text-[11px] cursor-pointer select-none p-2 rounded border border-[var(--border)] ${modelSupported?'':'opacity-50'}" style="${checked?'background:rgba(217,119,87,0.08);border-color:rgba(217,119,87,0.4);':''}">
+    return `<label class="flex items-start gap-2 text-[11px] cursor-pointer select-none p-2 rounded border border-[var(--border)] ${modelSupported?'':'opacity-50'}" style="${checked?'background:rgba(16,163,127,0.08);border-color:rgba(16,163,127,0.4);':''}">
       <input type="checkbox" ${checked?'checked':''} ${modelSupported?'':'disabled'} onchange="stToggleTool('${tool.id}')" style="margin-top:2px;">
       <div style="flex:1;">
         <div class="font-semibold" style="font-size:12px;">${t(tool.label)}</div>
@@ -14933,7 +14999,7 @@ VIEWS.serverTools = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">🧰 ${t('Codex 공식 내장 Tools')}</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('Anthropic 서버가 직접 실행하는 hosted tool (web_search / code_execution) 을 활성화하고 응답 블록을 분류 시각화합니다.')}
+        ${t('OpenAI Codex 서버가 직접 실행하는 hosted tool (web_search / code_execution) 을 활성화하고 응답 블록을 분류 시각화합니다.')}
       </p>
     </div>
 
@@ -14947,8 +15013,8 @@ VIEWS.serverTools = async () => {
         <div class="flex items-center gap-2 flex-wrap">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="stSet('model', this.value); renderView()">
-            <option value="codex-opus-4-7" ${st.model==='codex-opus-4-7'?'selected':''}>Opus 4.7</option>
-            <option value="codex-sonnet-4-6" ${st.model==='codex-sonnet-4-6'?'selected':''}>Sonnet 4.6</option>
+            <option value="o3" ${st.model==='o3'?'selected':''}>o3</option>
+            <option value="gpt-5-codex" ${st.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
           </select>
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">max_tokens</label>
           <input type="text" inputmode="numeric" class="input w-24" value="${st.maxTokens}"
@@ -15237,12 +15303,12 @@ VIEWS.hooks = async () => {
 
   const renderPluginCard = (x) => {
     const badge = x.pluginEnabled
-      ? '<span class="chip text-[9px]" style="background:rgba(217,119,87,0.12); white-space:nowrap;">🔌 플러그인 제공</span>'
+      ? '<span class="chip text-[9px]" style="background:rgba(16,163,127,0.12); white-space:nowrap;">🔌 플러그인 제공</span>'
       : `<button class="chip chip-warn text-[9px]" style="white-space:nowrap;" onclick="togglePluginFromAgent('${escapeHtml(x.pluginKey||'')}', true)">비활성 플러그인 ▶ 활성화</button>`;
     const editPayload = jsonAttr({scope:"plugin", pluginKey:x.pluginKey, event:x.event, groupIdx:x.groupIdx, subIdx:x.subIdx, matcher:x.matcher||"", type:x.type||"command", command:x.command||"", timeout:x.timeout});
     const delPayload = jsonAttr({scope:"plugin", pluginKey:x.pluginKey, event:x.event, groupIdx:x.groupIdx, subIdx:x.subIdx});
     return `
-    <div class="rounded-lg p-3 text-xs border border-[var(--border)]" style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(217,119,87,0.06); min-width:0; max-width:100%; overflow:hidden;">
+    <div class="rounded-lg p-3 text-xs border border-[var(--border)]" style="display:flex; align-items:flex-start; gap:0.75rem; background:rgba(16,163,127,0.06); min-width:0; max-width:100%; overflow:hidden;">
       <div style="flex:1 1 0; min-width:0; max-width:100%; overflow:hidden;">
         <div class="font-semibold text-sm mb-1 mono" style="overflow-wrap:anywhere;">${escapeHtml(_hookDisplayName(x))}</div>
         <div class="flex items-center gap-2 mb-1 flex-wrap">
@@ -16027,6 +16093,40 @@ VIEWS.mcp = async () => {
   const filteredCat = cat.catalog.filter(x =>
     !q || (x.name+' '+x.description+' '+x.id+' '+(x.category||'')).toLowerCase().includes(q)
   );
+  const starterCards = [
+    {
+      title: '문서/라이브러리 기본 세트',
+      desc: 'Context7을 붙여 라이브러리 문서와 예제를 Codex가 바로 조회하게 합니다.',
+      chips: ['Context7', 'docs'],
+      action: "mcpQuickInstall('context7')",
+      cta: '바로 설치',
+    },
+    {
+      title: '브라우저 테스트 세트',
+      desc: 'Playwright MCP로 로컬 화면 확인, 클릭, 스냅샷 점검 흐름을 준비합니다.',
+      chips: ['Playwright', 'test'],
+      action: "mcpQuickInstall('playwright')",
+      cta: '바로 설치',
+    },
+    {
+      title: '로컬 파일 접근 세트',
+      desc: '허용할 폴더를 직접 지정해서 filesystem MCP를 안전하게 추가합니다.',
+      chips: ['Filesystem', 'requires path'],
+      action: "installMcp('filesystem')",
+      cta: '폴더 지정',
+    },
+  ].map(card => `
+    <div class="card p-4 hover-lift">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="font-semibold text-sm">${escapeHtml(t(card.title))}</div>
+          <div class="text-[11px] mt-1" style="color:var(--text-mute);line-height:1.45;">${escapeHtml(t(card.desc))}</div>
+          <div class="flex flex-wrap gap-1 mt-3">${card.chips.map(c => `<span class="chip text-[10px]">${escapeHtml(c)}</span>`).join('')}</div>
+        </div>
+        <button class="btn-primary btn text-[11px] flex-shrink-0" onclick="${card.action}">${escapeHtml(t(card.cta))}</button>
+      </div>
+    </div>
+  `).join('');
   return `
     <div class="mb-4 flex items-start justify-between gap-3 flex-wrap">
       <div>
@@ -16037,6 +16137,17 @@ VIEWS.mcp = async () => {
         <button class="btn-primary btn text-xs" onclick="aiRecommendList('mcp')">🤖 AI 추천</button>
         <a class="btn text-xs" href="${DOCS_BASE}mcp" target="_blank" rel="noopener noreferrer">📖</a>
       </div>
+    </div>
+
+    <div class="card p-5 mb-4" style="border-left:3px solid var(--accent);">
+      <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <div>
+          <h3 class="font-semibold text-sm">빠른 시작</h3>
+          <p class="text-[11px] mt-1" style="color:var(--text-mute)">처음에는 하나만 붙여도 충분합니다. 설치 후 새 Codex 세션에서 /mcp 로 확인하세요.</p>
+        </div>
+        <button class="btn text-[11px]" onclick="go('codexHarness')">config.toml 보기</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2">${starterCards}</div>
     </div>
 
     ${selfMcp.path ? `
@@ -16094,7 +16205,7 @@ VIEWS.mcp = async () => {
       </div>
     </div>
 
-    ${renderConnectorGroup('🖥 Codex CLI 로컬 MCP (~/.codex.json)', conn.local || [], true)}
+    ${renderConnectorGroup('🖥 Codex CLI 로컬 MCP (~/.codex/config.toml)', conn.local || [], true)}
     ${renderConnectorGroup('📁 프로젝트 MCP (.mcp.json)', conn.project || [], false)}
     ${renderConnectorGroup('🌐 플랫폼 MCP (codex.ai 연결)', conn.platform || [], false)}
     ${renderConnectorGroup('🔌 플러그인 제공 MCP', conn.plugin || [], false)}
@@ -16110,6 +16221,29 @@ AFTER.mcp = () => {
     d = setTimeout(() => { state.data.mcpFilter = e.target.value; renderView(); }, 200);
   });
 };
+
+async function mcpQuickInstall(id) {
+  const prep = await api('/api/mcp/install/prepare', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id })
+  });
+  if (prep.error) { toast(errMsg(prep), 'err'); return; }
+  if ((prep.placeholders || []).length) {
+    installMcp(id);
+    return;
+  }
+  const r = await api('/api/mcp/install', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ id, as: id, values: {} }),
+  });
+  if (r.ok) {
+    toast(`'${r.name}' 설치됨`, 'ok');
+    renderView();
+  } else if (r.error_key === 'err_mcp_already_registered') {
+    toast('이미 설치되어 있습니다', 'ok');
+  } else {
+    toast(errMsg(r), 'err');
+  }
+}
 
 async function installMcp(id) {
   // 1) prepare — 필요한 env/값 조회
@@ -16191,7 +16325,7 @@ async function installMcp(id) {
 async function removeMcp(name) {
   const ok = await confirmModal({
     title: t('MCP 서버 제거'),
-    message: `'${name}' — ~/.codex.json ` + t('에서 제거됩니다.'),
+    message: `'${name}' — ~/.codex/config.toml ` + t('에서 제거됩니다.'),
     confirmLabel: t('제거'), danger: true,
   });
   if (!ok) return;
@@ -16216,6 +16350,14 @@ async function removeProjectMcp(cwd, name) {
 }
 
 AFTER.mcp = () => {
+  const el = document.getElementById('mcpQ');
+  if (el) {
+    let d;
+    el.addEventListener('input', e => {
+      clearTimeout(d);
+      d = setTimeout(() => { state.data.mcpFilter = e.target.value; renderView(); }, 200);
+    });
+  }
   // v2.33.7 — 커넥터 health probe (비동기)
   api('/api/mcp/health').then(r => {
     if (!r || !r.ok) return;
@@ -16407,13 +16549,13 @@ VIEWS.settings = async () => {
     ` : ''}
     <div class="mb-4 flex items-center justify-between gap-2 flex-wrap">
       <div>
-        <h1 class="text-2xl font-bold">${t('Settings 편집')}</h1>
-        <p class="text-sm text-[var(--text-mute)] mt-1">${escapeHtml(pathLabel)} — ${t("편집 후 '저장' 하면 파일에 즉시 반영됩니다.")}</p>
+        <h1 class="text-2xl font-bold flex items-center gap-2 flex-wrap">${t('Legacy settings.json')}${supportBadge(NAV.find(n=>n.id==='settings'))}</h1>
+        <p class="text-sm text-[var(--text-mute)] mt-1">${escapeHtml(pathLabel)} — ${t('최신 OpenAI Codex 공식 런타임 설정은 config.toml 입니다. 이 화면은 LazyCodex/legacy 플러그인 호환용입니다.')}</p>
       </div>
       <div class="flex gap-2">
         <button class="btn" onclick="copySettings()">📋 ${t('복사')}</button>
         <button class="btn-primary btn" onclick="saveSettings()">💾 ${t('저장')}</button>
-        <a class="btn text-xs" href="${DOCS_BASE}settings" target="_blank" rel="noopener noreferrer">📖 ${t('공식 문서')} ↗</a>
+        <button class="btn text-xs" onclick="go('codexHarness')">🧷 ${t('공식 config.toml 로 이동')}</button>
       </div>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -16496,6 +16638,412 @@ function applyProfile(i) {
   } catch {
     cur.value = JSON.stringify(prof.settings, null, 2);
   }
+}
+
+// ────────────────────────────────────────────────────────────────
+// CODEX HARNESS — OpenAI Codex CLI config.toml
+// ────────────────────────────────────────────────────────────────
+VIEWS.codexHarness = async () => {
+  const d = await api('/api/codex-harness/config');
+  state.data.codexHarness = d;
+  const parsedKeys = Object.keys(d.parsed || {});
+  const analysis = d.analysis || {};
+  const stats = d.stats || {};
+  const goalEnabled = !!(((d.parsed || {}).features || {}).goals);
+  const featureFlags = d.featureFlags || [];
+  const controls = d.controls || [];
+  const enabledFeatureCount = featureFlags.filter(f => f.effective === true || (typeof f.effective === 'string' && f.effective && f.effective !== 'disabled')).length;
+  const coverageCards = (analysis.coverage || []).map(c => {
+    const pct = c.total ? Math.round((c.count / c.total) * 100) : 0;
+    return `<div class="lc-harness-metric">
+      <div class="flex items-center justify-between gap-2">
+        <span>${escapeHtml(t(c.name))}</span><b>${pct}%</b>
+      </div>
+      <div class="lc-harness-bar"><i style="width:${pct}%"></i></div>
+      <div class="mono text-[10px] mt-2">${escapeHtml((c.keys || []).join(', ') || t('미설정'))}</div>
+    </div>`;
+  }).join('');
+  const riskCards = (analysis.risks || []).map(r => `
+    <div class="lc-harness-risk lc-harness-risk-${escapeHtml(r.level || 'ok')}">
+      <b>${escapeHtml(t(r.title))}</b>
+      <span>${escapeHtml(t(r.detail))}</span>
+    </div>`).join('');
+  const techniqueCards = (d.techniques || []).map((it, idx) => `
+    <article class="lc-harness-tech">
+      <div class="lc-harness-tech-index">${String(idx + 1).padStart(2, '0')}</div>
+      <div>
+        <h4>${escapeHtml(t(it.title))}</h4>
+        <p>${escapeHtml(t(it.why))}</p>
+        <div class="flex flex-wrap gap-1 mt-3">${(it.keys || []).map(k => `<code>${escapeHtml(k)}</code>`).join('')}</div>
+        <pre>${escapeHtml(it.snippet || '')}</pre>
+        ${it.docs ? `<a class="text-[11px] text-[var(--accent)]" href="${escapeHtml(it.docs)}" target="_blank" rel="noopener noreferrer">${t('관련 문서')} ↗</a>` : ''}
+      </div>
+    </article>`).join('');
+  const playbookCards = (d.playbooks || []).map(pb => `
+    <div class="lc-harness-playbook">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h4>${escapeHtml(t(pb.name))}</h4>
+          <ol>${(pb.steps || []).map(s => `<li>${escapeHtml(t(s))}</li>`).join('')}</ol>
+        </div>
+        <button class="btn text-[11px]" onclick="_codexHarnessApplyMany(${JSON.stringify(pb.presetIds || []).replace(/"/g, '&quot;')})">${t('순차 적용')}</button>
+      </div>
+      <div class="flex flex-wrap gap-1 mt-3">${(pb.presetIds || []).map(id => `<span class="chip text-[10px]">${escapeHtml(id)}</span>`).join('')}</div>
+    </div>`).join('');
+  const commandCards = (analysis.commands || []).map(cmd => `<button class="lc-harness-command" onclick="_copyText(${JSON.stringify(cmd).replace(/"/g, '&quot;')})"><code>${escapeHtml(cmd)}</code></button>`).join('');
+  const featureCards = featureFlags.map(f => {
+    const on = f.effective === true || (typeof f.effective === 'string' && f.effective && f.effective !== 'disabled');
+    const source = f.source === 'config' ? t('config') : t('기본값');
+    const effective = typeof f.effective === 'boolean' ? (f.effective ? 'true' : 'false') : String(f.effective ?? 'unset');
+    return `
+      <div class="card p-3 hover-lift">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <div class="font-semibold text-sm truncate">${escapeHtml(t(f.label || f.key))}</div>
+            <div class="text-[10px] mono mt-1" style="color:var(--text-dim)">${escapeHtml(f.key || '')}</div>
+          </div>
+          <span class="chip ${on ? 'chip-ok' : ''} text-[10px] flex-shrink-0">${on ? t('ON') : t('OFF')}</span>
+        </div>
+        <p class="text-[11px] mt-2" style="color:var(--text-mute);line-height:1.45;">${escapeHtml(t(f.desc || ''))}</p>
+        <div class="flex flex-wrap gap-1 mt-3">
+          <span class="chip text-[10px]">${escapeHtml(f.maturity || '')}</span>
+          <span class="chip text-[10px]">${escapeHtml(source)}: ${escapeHtml(effective)}</span>
+        </div>
+        <div class="flex gap-1 mt-3">
+          ${f.presetId ? `<button class="btn-primary btn text-[10px]" onclick="_codexHarnessApply('${escapeHtml(f.presetId)}')">${on ? t('다시 적용') : t('켜기')}</button>` : ''}
+          ${f.command ? `<button class="btn text-[10px]" onclick="_copyText(${JSON.stringify(f.command).replace(/"/g, '&quot;')})">${t('명령 복사')}</button>` : ''}
+          ${f.doc ? `<a class="btn text-[10px]" href="${escapeHtml(f.doc)}" target="_blank" rel="noopener noreferrer">Docs</a>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  const controlCards = controls.map(c => {
+    const configured = c.active;
+    const value = c.configured === undefined || c.configured === null
+      ? t('미설정')
+      : (typeof c.configured === 'object' ? JSON.stringify(c.configured) : String(c.configured));
+    return `
+      <div class="card p-3 hover-lift">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-[10px] uppercase tracking-widest" style="color:var(--text-dim)">${escapeHtml(t(c.area || 'Config'))}</div>
+            <div class="font-semibold text-sm mt-1">${escapeHtml(t(c.label || c.key))}</div>
+            <div class="text-[10px] mono mt-1" style="color:var(--text-dim)">${escapeHtml(c.key || '')}</div>
+          </div>
+          <span class="chip ${configured ? 'chip-ok' : ''} text-[10px] flex-shrink-0">${configured ? t('설정됨') : t('추천')}</span>
+        </div>
+        <p class="text-[11px] mt-2" style="color:var(--text-mute);line-height:1.45;">${escapeHtml(t(c.desc || ''))}</p>
+        <div class="chip text-[10px] mono mt-3 max-w-full overflow-hidden text-ellipsis">${escapeHtml(value)}</div>
+        <div class="flex gap-1 mt-3">
+          ${c.presetId ? `<button class="btn-primary btn text-[10px]" onclick="_codexHarnessApply('${escapeHtml(c.presetId)}')">${t('적용')}</button>` : ''}
+          ${c.doc ? `<a class="btn text-[10px]" href="${escapeHtml(c.doc)}" target="_blank" rel="noopener noreferrer">Docs</a>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  const easyCards = [
+    {
+      title: '처음 세팅',
+      desc: '읽기 중심 안전값, /goal 명령, 목표 유지 설정을 같이 적용합니다.',
+      ids: ['safe-local', 'goal-command', 'goal-harness'],
+      chips: ['read-only', '/goal'],
+    },
+    {
+      title: '프로젝트 작업',
+      desc: '프로젝트 내부 쓰기와 문맥 보존을 켜고 네트워크는 닫아둡니다.',
+      ids: ['goal-harness', 'workspace-builder'],
+      chips: ['workspace-write', 'on-request'],
+    },
+    {
+      title: '긴 작업 자동화',
+      desc: '작업 프로파일, 에이전트, 기록 보존을 한 번에 준비합니다.',
+      ids: ['profiles-pack', 'context-injection-pack', 'agent-fleet', 'tool-output-budget', 'telemetry-audit'],
+      chips: ['profiles', 'context', 'subagents'],
+    },
+    {
+      title: '코드 수정 루프',
+      desc: 'patch event, 파일 citation opener, /review 전용 모델을 같이 적용합니다.',
+      ids: ['patch-workbench', 'citation-opener-vscode', 'review-harness'],
+      chips: ['patch', 'review', 'opener'],
+    },
+    {
+      title: '도구 탐색',
+      desc: 'tool_search, tool_suggest, Apps prompt 승인으로 연결 도구 후보를 관리합니다.',
+      ids: ['tool-discovery-pack', 'apps-prompt-tools', 'mcp-strict-tools'],
+      chips: ['tool_search', 'suggest', 'apps'],
+    },
+    {
+      title: '보안 강화',
+      desc: '권한 프로파일, shell 환경변수 하드닝, MCP 승인 흐름을 같이 묶습니다.',
+      ids: ['permission-profile', 'shell-env-hardened', 'auth-permission-flow', 'mcp-strict-tools'],
+      chips: ['permissions', 'auth', 'env'],
+    },
+    {
+      title: '리서치 작업',
+      desc: '공식 문서 중심 live search, 이미지 보기, 제한형 네트워크 프록시를 켭니다.',
+      ids: ['feature-web-search-research', 'tool-discovery-pack', 'feature-image-tool', 'feature-network-proxy-limited'],
+      chips: ['search', 'tools', 'network'],
+    },
+    {
+      title: '프라이버시 모드',
+      desc: 'analytics/feedback/OTel 전송을 끄고 memory와 shell 환경을 보수적으로 맞춥니다.',
+      ids: ['privacy-quiet-pack', 'memory-privacy-safe', 'shell-env-hardened'],
+      chips: ['privacy', 'memory', 'otel'],
+    },
+    {
+      title: '편한 터미널',
+      desc: '스크롤백 보존, 알림, raw output 등 TUI 운영 설정을 적용합니다.',
+      ids: ['tui-operator', 'quiet-terminal'],
+      chips: ['tui', 'notifications'],
+    },
+  ].map(card => `
+    <div class="card p-4 hover-lift">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="font-semibold text-sm">${escapeHtml(t(card.title))}</div>
+          <div class="text-[11px] mt-1" style="color:var(--text-mute);line-height:1.45;">${escapeHtml(t(card.desc))}</div>
+          <div class="flex flex-wrap gap-1 mt-3">${card.chips.map(c => `<span class="chip text-[10px]">${escapeHtml(c)}</span>`).join('')}</div>
+        </div>
+        <button class="btn-primary btn text-[11px] flex-shrink-0" onclick="_codexHarnessApplyMany(${JSON.stringify(card.ids).replace(/"/g, '&quot;')})">${t('적용')}</button>
+      </div>
+    </div>
+  `).join('');
+  const surfaceRows = (d.officialSurfaces || []).map(s => `
+    <tr>
+      <td class="text-xs">${escapeHtml(t(s.area))}</td>
+      <td class="font-semibold text-xs">${escapeHtml(t(s.name))}</td>
+      <td>${supportBadge({ support: s.status })}</td>
+      <td class="text-xs text-[var(--text-mute)]">${escapeHtml(t(s.basis))}</td>
+      <td class="text-right">
+        ${s.tab ? `<button class="btn text-[10px]" onclick="go('${escapeHtml(s.tab)}')">${t('열기')}</button>` : ''}
+        ${s.doc ? `<a class="btn text-[10px]" href="${escapeHtml(s.doc)}" target="_blank" rel="noopener noreferrer">Docs</a>` : ''}
+      </td>
+    </tr>`).join('');
+  const presetCards = (d.presets || []).map(p => `
+    <div class="lc-harness-preset">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <div class="font-semibold text-sm">${escapeHtml(t(p.title))}</div>
+          <div class="text-[11px] mt-1" style="color:var(--text-mute);line-height:1.45;">${escapeHtml(t(p.desc))}</div>
+        </div>
+        <button class="btn-primary btn text-[11px]" onclick="_codexHarnessApply('${escapeHtml(p.id)}')">${t('적용')}</button>
+      </div>
+      <pre class="mono text-[10px] mt-3">${escapeHtml(_codexHarnessTomlPreview(p.patch || {}))}</pre>
+    </div>`).join('');
+  const catalog = (d.catalog || []).map(group => `
+    <details class="lc-harness-group" ${group.category === 'runtime' || group.category === 'safety' ? 'open' : ''}>
+      <summary>
+        <span>${escapeHtml(t(group.title))}</span>
+        <span class="chip text-[10px]">${(group.keys || []).length}</span>
+      </summary>
+      <div class="lc-harness-keygrid">
+        ${(group.keys || []).map(([key, desc]) => `
+          <div class="lc-harness-key">
+            <code>${escapeHtml(key)}</code>
+            <span>${escapeHtml(t(desc))}</span>
+          </div>`).join('')}
+      </div>
+    </details>`).join('');
+  return `
+    ${viewHeader('🧷 Codex 하네스', 'OpenAI Codex CLI 의 ~/.codex/config.toml 을 기준으로 모델, 승인, 샌드박스, 목표 지시, 에이전트, MCP, 터미널 동작을 한 곳에서 조정합니다.', 'codexHarness')}
+    <div class="lc-harness-hero mb-4">
+      <div>
+        <div class="text-xs uppercase tracking-widest text-[var(--text-dim)] mb-2">${t('공식 schema 기반')}</div>
+        <h2>${t('config.toml 로 Codex 실행 하네스를 제어합니다')}</h2>
+        <p>${t('settings.json 은 기존 LazyCodex 호환 설정이고, 최신 OpenAI Codex CLI 런타임 제어는 config.toml 이 중심입니다. 아래 프리셋은 현재 파일을 TOML 로 파싱한 뒤 필요한 키만 병합합니다.')}</p>
+      </div>
+      <div class="lc-harness-status">
+        <div><span>${t('파일')}</span><code>${escapeHtml(d.path || '~/.codex/config.toml')}</code></div>
+        <div><span>${t('상태')}</span><b style="color:${d.parseError ? 'var(--err)' : 'var(--ok)'}">${d.parseError ? t('TOML 오류') : (d.exists ? t('정상') : t('새 파일'))}</b></div>
+        <div><span>${t('감지된 키')}</span><b>${parsedKeys.length}</b></div>
+        <div><span>${t('프로파일')}</span><b>${(analysis.profileNames || []).length || 0}</b></div>
+        <div><span>${t('프리셋')}</span><b>${stats.presetCount || 0}</b></div>
+        <div><span>${t('하네스 키')}</span><b>${stats.catalogKeys || 0}</b></div>
+      </div>
+    </div>
+    ${d.parseError ? `<div class="lc-error mb-4">${t('현재 config.toml 파싱 오류')}: ${escapeHtml(d.parseError)}</div>` : ''}
+    <div class="card p-4 mb-4" style="border-left:3px solid ${goalEnabled ? 'var(--ok)' : 'var(--accent)'};">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <h3 class="font-semibold text-sm">${t('기능 하네스')}</h3>
+            <span class="chip text-[10px]">${enabledFeatureCount}/${featureFlags.length}</span>
+          </div>
+          <p class="text-[11px]" style="color:var(--text-mute);line-height:1.5;">${t('/goal, /memories, /apps, /hooks, /fast, /personality, undo, subagents 같은 config 기반 기능을 한 곳에서 켜고 상태를 확인합니다.')}</p>
+          <div class="flex flex-wrap gap-1 mt-3">
+            <code class="chip text-[10px]">[features] goals = true</code>
+            <code class="chip text-[10px]">[features] memories = true</code>
+            <code class="chip text-[10px]">web_search = "cached"</code>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap justify-end">
+          <button class="btn-primary btn text-[11px]" onclick="_codexHarnessApply('feature-pack-safe')">${t('안전 기능 팩')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('feature-pack-experimental')">${t('실험 기능 팩')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('patch-workbench')">${t('Patch 워크벤치')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('tool-discovery-pack')">${t('Tool discovery')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('goal-command')">${goalEnabled ? t('/goal 다시 적용') : t('/goal 활성화')}</button>
+          <button class="btn text-[11px]" onclick="_copyText('/goal Finish the migration and keep tests green')">${t('예시 복사')}</button>
+          <a class="btn text-[11px]" href="https://developers.openai.com/codex/config-basic#supported-features" target="_blank" rel="noopener noreferrer">Docs</a>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">${featureCards}</div>
+    </div>
+    <div class="card p-4 mb-4">
+      <div class="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h3 class="font-semibold text-sm">${t('세부 하네스')}</h3>
+          <p class="text-[11px] mt-1" style="color:var(--text-mute);line-height:1.5;">${t('공식 config.toml reference에서 추가로 하네스할 수 있는 보안, 네트워크, 검색, MCP, Apps, Memory, TUI, History 설정입니다.')}</p>
+        </div>
+        <div class="flex gap-2 flex-wrap justify-end">
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('shell-env-hardened')">${t('Shell 하드닝')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('context-injection-pack')">${t('Context 주입')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('feature-network-proxy-limited')">${t('제한형 네트워크')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('privacy-quiet-pack')">${t('Privacy quiet')}</button>
+          <button class="btn text-[11px]" onclick="_codexHarnessApply('tui-operator')">${t('TUI 운영자')}</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">${controlCards}</div>
+    </div>
+    <div class="card p-4 mb-4" style="border-left:3px solid var(--accent);">
+      <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <div>
+          <h3 class="font-semibold text-sm">${t('간편 설정')}</h3>
+          <p class="text-[11px] mt-1" style="color:var(--text-mute)">${t('TOML을 직접 몰라도 목적별 프리셋을 순서대로 병합합니다. 세부 값은 아래 Raw config.toml에서 바로 확인할 수 있습니다.')}</p>
+        </div>
+        <button class="btn text-[11px]" onclick="document.getElementById('codexHarnessEditor')?.scrollIntoView({behavior:'smooth',block:'center'})">${t('Raw 보기')}</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2">${easyCards}</div>
+    </div>
+    <div class="card p-4 mb-4">
+      <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <h3 class="font-semibold text-sm">✅ ${t('공식 Codex 표면 감사')}</h3>
+        <span class="text-[11px] text-[var(--text-dim)]">${t('OpenAI Codex 공식 문서 기준으로 빌드/구성 탭을 재분류했습니다.')}</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="data">
+          <thead><tr><th>${t('영역')}</th><th>${t('기능')}</th><th>${t('상태')}</th><th>${t('근거')}</th><th class="text-right">${t('이동')}</th></tr></thead>
+          <tbody>${surfaceRows}</tbody>
+        </table>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
+      <div class="xl:col-span-2 card p-4">
+        <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+          <h3 class="font-semibold text-sm">🧭 ${t('하네스 커버리지')}</h3>
+          <span class="text-[11px] text-[var(--text-dim)]">${t('현재 config.toml 에서 감지한 설정 축')}</span>
+        </div>
+        <div class="lc-harness-metrics">${coverageCards}</div>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-semibold text-sm mb-3">🛡️ ${t('위험 조합 진단')}</h3>
+        <div class="space-y-2">${riskCards}</div>
+      </div>
+    </div>
+    <div class="card p-4 mb-4">
+      <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+        <h3 class="font-semibold text-sm">🧠 ${t('Codex 하네스 기법')}</h3>
+        <div class="flex gap-2">
+          <a class="btn text-[11px]" href="https://developers.openai.com/codex/config-basic" target="_blank" rel="noopener noreferrer">${t('Config basics')} ↗</a>
+          <a class="btn text-[11px]" href="https://developers.openai.com/codex/config-advanced" target="_blank" rel="noopener noreferrer">${t('Advanced config')} ↗</a>
+        </div>
+      </div>
+      <div class="lc-harness-techgrid">${techniqueCards}</div>
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-4">
+      <div class="xl:col-span-2 card p-4">
+        <h3 class="font-semibold text-sm mb-3">🧪 ${t('운영 플레이북')}</h3>
+        <div class="lc-harness-playbooks">${playbookCards}</div>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-semibold text-sm mb-3">⌘ ${t('CLI override 예시')}</h3>
+        <div class="space-y-2">${commandCards}</div>
+        <div class="text-[11px] text-[var(--text-dim)] mt-3">${t('클릭하면 명령을 복사합니다. -c override 는 가장 높은 우선순위의 일회성 하네스로 쓰기 좋습니다.')}</div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div class="xl:col-span-2">
+        <div class="card p-4 mb-4">
+          <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <h3 class="font-semibold text-sm">🧩 ${t('하네스 프리셋')}</h3>
+            <div class="flex gap-2">
+              <a class="btn text-[11px]" href="${escapeHtml(d.docsUrl || 'https://developers.openai.com/codex/config-reference')}" target="_blank" rel="noopener noreferrer">📖 ${t('공식 문서')}</a>
+              <a class="btn text-[11px]" href="${escapeHtml(d.schemaUrl || 'https://github.com/openai/codex/blob/main/codex-rs/core/config.schema.json')}" target="_blank" rel="noopener noreferrer">{} ${t('Schema')}</a>
+            </div>
+          </div>
+          <div class="lc-harness-presets">${presetCards}</div>
+        </div>
+        <div class="card p-4">
+          <div class="flex items-center justify-between gap-2 mb-3 flex-wrap">
+            <h3 class="font-semibold text-sm">✍️ ${t('Raw config.toml')}</h3>
+            <div class="flex gap-2">
+              <button class="btn text-[11px]" onclick="_codexHarnessCopy()">📋 ${t('복사')}</button>
+              <button class="btn-primary btn text-[11px]" onclick="_codexHarnessSave()">💾 ${t('저장')}</button>
+            </div>
+          </div>
+          <textarea id="codexHarnessEditor" class="input mono" style="min-height:520px;font-size:12px;">${escapeHtml(d.raw || '# ~/.codex/config.toml\n')}</textarea>
+          <div class="text-[11px] text-[var(--text-dim)] mt-2">${t('저장 전 TOML 파싱을 검증합니다. 프리셋 적용은 기존 주석을 보존하지 않습니다.')}</div>
+        </div>
+      </div>
+      <div class="space-y-4">
+        <div class="card p-4">
+          <h3 class="font-semibold text-sm mb-3">📚 ${t('설정 가능한 하네스 항목')}</h3>
+          <div class="space-y-2">${catalog}</div>
+        </div>
+        <div class="card p-4 text-xs" style="color:var(--text-mute);line-height:1.55;">
+          <div class="font-semibold text-[var(--text)] mb-2">⚠️ ${t('운영 메모')}</div>
+          <div>${t('danger-full-access 와 approval_policy=never 조합은 신뢰한 로컬 프로젝트에서만 사용하세요. 기본 추천은 workspace-write + on-request 입니다.')}</div>
+        </div>
+      </div>
+    </div>`;
+};
+
+function _codexHarnessTomlPreview(obj, prefix='') {
+  const lines = [];
+  Object.entries(obj || {}).forEach(([k, v]) => {
+    if (v && typeof v === 'object' && !Array.isArray(v)) {
+      lines.push(`[${prefix ? prefix + '.' : ''}${k}]`);
+      lines.push(_codexHarnessTomlPreview(v, prefix ? prefix + '.' + k : k));
+    } else {
+      lines.push(`${k} = ${JSON.stringify(v)}`);
+    }
+  });
+  return lines.filter(Boolean).join('\n').slice(0, 900);
+}
+async function _codexHarnessApply(presetId) {
+  const ok = await confirmModal(t('이 프리셋을 ~/.codex/config.toml 에 병합합니다. 기존 주석은 보존되지 않습니다. 계속할까요?'));
+  if (!ok) return;
+  const r = await api('/api/codex-harness/apply', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ presetId }) });
+  if (r.ok) {
+    toast(t('config.toml 업데이트됨'), 'ok');
+    renderView();
+  } else {
+    toast(t('적용 실패') + ': ' + (r.error || 'error'), 'err');
+  }
+}
+async function _codexHarnessSave() {
+  const raw = document.getElementById('codexHarnessEditor')?.value || '';
+  const r = await api('/api/codex-harness/config', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ raw }) });
+  toast(r.ok ? t('저장됨') : (t('저장 실패') + ': ' + (r.error || 'error')), r.ok ? 'ok' : 'err');
+  if (r.ok) renderView();
+}
+function _codexHarnessCopy() {
+  const raw = document.getElementById('codexHarnessEditor')?.value || '';
+  navigator.clipboard.writeText(raw).then(() => toast(t('복사됨'), 'ok'));
+}
+function _copyText(text) {
+  navigator.clipboard.writeText(String(text || '')).then(() => toast(t('복사됨'), 'ok'));
+}
+async function _codexHarnessApplyMany(ids) {
+  if (!Array.isArray(ids) || !ids.length) return;
+  const ok = await confirmModal(t('선택한 플레이북의 프리셋을 순서대로 config.toml 에 병합합니다. 기존 주석은 보존되지 않습니다. 계속할까요?'));
+  if (!ok) return;
+  for (const presetId of ids) {
+    const r = await api('/api/codex-harness/apply', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ presetId }) });
+    if (!r.ok) {
+      toast(t('적용 실패') + ': ' + presetId + ' · ' + (r.error || 'error'), 'err');
+      return;
+    }
+  }
+  toast(t('플레이북 적용 완료'), 'ok');
+  renderView();
 }
 
 // ── 추천 프로파일 3단계 적용 플로우 ──
@@ -16686,7 +17234,7 @@ VIEWS.codexmd = async () => {
       </div>
     </div>
     ${isEmpty ? `
-      <div class="card p-5 mb-4" style="background: linear-gradient(135deg, rgba(217,119,87,0.08), transparent);">
+      <div class="card p-5 mb-4" style="background: linear-gradient(135deg, rgba(16,163,127,0.08), transparent);">
         <div class="font-semibold text-sm mb-1">${isProject ? t('아직 프로젝트 AGENTS.md 가 없습니다') : t('아직 글로벌 AGENTS.md 가 없습니다')}</div>
         <div class="text-xs text-[var(--text-mute)]">${isProject ? t('이 프로젝트에서 작업할 때만 로드되는 지침을 작성하세요. 저장하면 즉시 ' + cwd + '/AGENTS.md 로 기록됩니다.') : t('여기에 적은 지침(기억·규칙·선호)은 모든 세션 시작 시 자동 로드됩니다. 직접 쓰거나, 위의 "AI 에게 추천 받기"로 현재 작업 패턴 기반 초안을 받아보세요.')}</div>
       </div>` : ''}
@@ -16878,7 +17426,7 @@ function renderProjectAgentsSection(tb, cwd) {
     </div>` : '';
   if (!subs.length) {
     slot.innerHTML = `
-      <div class="card p-4 mb-4" style="background: rgba(217,119,87,0.03);">
+      <div class="card p-4 mb-4" style="background: rgba(16,163,127,0.03);">
         ${definedHtml}
         <div class="flex items-center justify-between mb-1">
           <div class="font-semibold text-sm">🤝 세션에서 위임된 서브에이전트 (Agent 도구 호출)</div>
@@ -17362,7 +17910,7 @@ function openDiffApplyModal({ title, relpath, reason, cwd, currentRaw, proposedR
         </div>
         <textarea id="diffLeftText" spellcheck="false" class="mono" style="flex:1 1 0; min-height:0; width:100%; padding:16px; border-radius:0; border:none; background:transparent; resize:none; color:var(--text); font-size:13px; line-height:1.55; outline:none;">${escapeHtml(currentRaw||'')}</textarea>
       </div>
-      <div class="flex flex-col" style="background: rgba(217,119,87,0.04); min-height:0; overflow:hidden;">
+      <div class="flex flex-col" style="background: rgba(16,163,127,0.04); min-height:0; overflow:hidden;">
         <div class="px-4 py-2 border-b border-[var(--border)] flex items-center justify-between flex-shrink-0">
           <div class="text-[11px] uppercase tracking-widest text-[var(--text-dim)]">제안 (오른쪽) · AI</div>
           <span class="chip chip-accent text-[10px]">${(proposedRaw||'').length}자</span>
@@ -17520,10 +18068,10 @@ VIEWS.projectAgents = async () => {
 
   const modelBadgeColor = (m) => ({
     inherit: 'rgba(255,255,255,0.08)',
-    haiku: 'rgba(125,211,252,0.18)',
-    sonnet: 'rgba(217,119,87,0.18)',
-    opus: 'rgba(244,114,182,0.18)',
-  })[m] || 'rgba(217,119,87,0.14)';
+    'o4-mini': 'rgba(125,211,252,0.18)',
+    'gpt-5-codex': 'rgba(16,163,127,0.18)',
+    o3: 'rgba(244,114,182,0.18)',
+  })[m] || 'rgba(16,163,127,0.14)';
   const existingGrid = existingAgents.length ? existingAgents.map(a => {
     const hyperOn = (window.__paHyperMap || {})[a.id];
     const hyperBtn = `<button class="btn text-[10px]"
@@ -17628,19 +18176,19 @@ async function paRefreshViz() {
   const nodes = new vis.DataSet([
     {
       id: '__codex', label: 'Codex', shape: 'hexagon', size: 34,
-      color: { background: '#d97757', border: '#c96442', highlight: { background: '#c96442', border: '#f5b997' } },
+      color: { background: '#10a37f', border: '#0e8f72', highlight: { background: '#0e8f72', border: '#f5b997' } },
       font: { color: '#000', size: 13, bold: true },
     },
     ...agents.map(a => ({
       id: a.id, label: a.name, shape: 'dot', size: 22,
-      color: { background: 'rgba(217,119,87,0.18)', border: '#d97757', highlight: { background: '#d97757', border: '#ffffff' } },
+      color: { background: 'rgba(16,163,127,0.18)', border: '#10a37f', highlight: { background: '#10a37f', border: '#ffffff' } },
       font: { color: '#f5f5f5', size: 11 },
       title: (a.description || '').slice(0, 120),
     })),
   ]);
   const edges = new vis.DataSet(agents.map(a => ({
     from: '__codex', to: a.id,
-    color: { color: 'rgba(217,119,87,0.35)', highlight: '#d97757', opacity: 0.7 },
+    color: { color: 'rgba(16,163,127,0.35)', highlight: '#10a37f', opacity: 0.7 },
     arrows: 'to', smooth: { type: 'continuous' },
   })));
   const net = new vis.Network(container, { nodes, edges }, {
@@ -18186,7 +18734,7 @@ VIEWS.aiProviders = async () => {
             <div class="card p-4 text-center cursor-pointer hover-lift" onclick="_wizardSelectProvider('codex')" data-wiz-provider="codex">
               <div style="font-size:2rem;">🟠</div>
               <div class="text-sm font-semibold mt-2" style="color:var(--text)">Codex</div>
-              <div class="text-[10px]" style="color:var(--text-dim)">Anthropic CLI</div>
+              <div class="text-[10px]" style="color:var(--text-dim)">OpenAI Codex CLI</div>
             </div>
             <div class="card p-4 text-center cursor-pointer hover-lift" onclick="_wizardSelectProvider('openai')" data-wiz-provider="openai">
               <div style="font-size:2rem;">🟢</div>
@@ -18698,23 +19246,6 @@ window._wizardSelectProvider = (provider) => {
   step3.style.display = '';
 
   const providerConfigs = {
-    codex: `
-      <div class="flex items-center gap-3 mb-3">
-        <span style="font-size:1.5rem;">🟠</span>
-        <div>
-          <div class="text-sm font-semibold" style="color:var(--text)">Codex</div>
-          <div class="text-xs" style="color:var(--text-mute)">${t('Anthropic Codex CLI CLI')}</div>
-        </div>
-      </div>
-      <div class="p-3 rounded-lg" style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);">
-        <div class="text-xs" style="color:var(--ok)">
-          ${t('이미 Codex CLI CLI 가 설치되어 있으면 자동 감지됩니다.')}
-        </div>
-        <div class="text-[10px] mt-1" style="color:var(--text-dim)">
-          ${t('설치 확인')}: <code style="background:var(--code-bg);padding:2px 6px;border-radius:4px;">codex --version</code>
-        </div>
-      </div>
-    `,
     openai: `
       <div class="flex items-center gap-3 mb-3">
         <span style="font-size:1.5rem;">🟢</span>
@@ -18761,7 +19292,7 @@ window._wizardSelectProvider = (provider) => {
     `,
     codex: `
       <div class="flex items-center gap-3 mb-3">
-        <span style="font-size:1.5rem;">🧬</span>
+        <span style="font-size:1.5rem;">🤖</span>
         <div>
           <div class="text-sm font-semibold" style="color:var(--text)">Codex</div>
           <div class="text-xs" style="color:var(--text-mute)">${t('OpenAI Codex CLI')}</div>
@@ -19564,12 +20095,12 @@ window.initCostCharts = async () => {
           datasets: [{
             label: t('비용 (USD)'),
             data: daily.map(d => d.cost || 0),
-            borderColor: '#d97757',
-            backgroundColor: 'rgba(217,119,87,0.15)',
+            borderColor: '#10a37f',
+            backgroundColor: 'rgba(16,163,127,0.15)',
             fill: true,
             tension: 0.35,
             pointRadius: 3,
-            pointBackgroundColor: '#d97757',
+            pointBackgroundColor: '#10a37f',
           }]
         },
         options: {
@@ -19589,7 +20120,7 @@ window.initCostCharts = async () => {
     // 프로바이더별 비용 비교 (도넛 차트)
     const ctxProvider = document.getElementById('costByProvider');
     if (ctxProvider) {
-      const providerColors = ['#d97757','#7dd3fc','#4ade80','#c084fc','#fbbf24','#f87171','#a78bfa','#38bdf8'];
+      const providerColors = ['#10a37f','#7dd3fc','#4ade80','#c084fc','#fbbf24','#f87171','#a78bfa','#38bdf8'];
       _renderChart(ctxProvider, {
         type: 'doughnut',
         data: {
@@ -19681,29 +20212,38 @@ window.runMultiCompare = async () => {
 // ENV CONFIG
 // ────────────────────────────────────────────────────────────────
 VIEWS.envConfig = async () => {
-  const d = await api('/api/env/config');
+  const d = await api('/api/codex-harness/config');
+  const cfg = d.parsed || {};
+  const pol = cfg.shell_environment_policy || {};
+  const rows = [
+    ['inherit', 'none/core/all 중 subprocess 환경 상속 범위', pol.inherit],
+    ['include_only', '허용할 환경변수 glob whitelist', pol.include_only],
+    ['exclude', '제외할 환경변수 glob', pol.exclude],
+    ['set', '항상 주입할 env override', pol.set],
+    ['ignore_default_excludes', 'KEY/SECRET/TOKEN 기본 차단 필터 무시 여부', pol.ignore_default_excludes],
+    ['experimental_use_profile', '사용자 shell profile 을 subprocess 생성에 사용', pol.experimental_use_profile],
+  ];
   return `
-    ${viewHeader('환경 변수', 'Codex CLI 가 읽는 환경변수들. settings.json.env 값과 현재 프로세스 실제 값 비교', 'envConfig')}
+    ${viewHeader('Shell env policy', '공식 OpenAI Codex config.toml 의 shell_environment_policy 를 기준으로 subprocess 환경 변수 상속을 점검합니다.', 'envConfig')}
     <div class="card p-5 mb-4">
-      <h3 class="font-semibold text-sm mb-3">🌿 Codex CLI 환경 변수 카탈로그</h3>
+      <h3 class="font-semibold text-sm mb-3">🌿 config.toml [shell_environment_policy]</h3>
       <table class="data">
-        <thead><tr><th>변수</th><th>설명</th><th>settings.json.env</th><th>실행 프로세스 값</th></tr></thead>
+        <thead><tr><th>키</th><th>공식 의미</th><th>현재 값</th></tr></thead>
         <tbody>
-          ${d.vars.map(v => `
+          ${rows.map(([k, doc, val]) => `
             <tr>
-              <td class="mono text-xs">${escapeHtml(v.key)}</td>
-              <td class="text-xs text-[var(--text-mute)]">${escapeHtml(v.doc)}</td>
-              <td class="mono text-xs">${v.inSettings ? escapeHtml(v.settingsValue) : '<span class="text-[var(--text-dim)]">—</span>'}</td>
-              <td class="mono text-xs">${v.inProcess ? `<span style="color:var(--ok)">${escapeHtml(v.processValue)}</span>` : '<span class="text-[var(--text-dim)]">—</span>'}</td>
+              <td class="mono text-xs">${escapeHtml(k)}</td>
+              <td class="text-xs text-[var(--text-mute)]">${escapeHtml(t(doc))}</td>
+              <td class="mono text-xs">${val === undefined ? '<span class="text-[var(--text-dim)]">—</span>' : escapeHtml(typeof val === 'string' ? val : JSON.stringify(val))}</td>
             </tr>`).join('')}
         </tbody>
       </table>
       <div class="text-[11px] text-[var(--text-dim)] mt-3">
-        💡 시크릿 형태(토큰/키) 값은 일부 마스킹됩니다. <code class="mono">settings.json.env</code> 에서 설정하면 모든 세션에 적용. 프로세스 값은 이 대시보드 서버가 실행 중인 쉘의 현재 값.
+        ${t('공식 문서는 shell_environment_policy 가 Codex가 실행하는 subprocess 에 전달할 환경 변수를 제어한다고 설명합니다. 시크릿 유출을 줄이려면 inherit=none 또는 core 에서 필요한 값만 set/include 하세요.')}
       </div>
     </div>
     <div class="card p-4 text-xs text-[var(--text-mute)]">
-      <b>편집 방법:</b> "Settings 편집" 탭에서 JSON 루트에 <code class="mono">"env": { "ANTHROPIC_MODEL": "codex-opus-4-7" }</code> 처럼 추가.
+      <b>${t('편집 방법')}:</b> <button class="btn text-[11px]" onclick="go('codexHarness')">${t('Codex 하네스에서 config.toml 편집')}</button>
     </div>`;
 };
 
@@ -19711,34 +20251,30 @@ VIEWS.envConfig = async () => {
 // MODEL CONFIG
 // ────────────────────────────────────────────────────────────────
 VIEWS.modelConfig = async () => {
-  const d = await api('/api/model/config');
-  const cur = d.settings || {};
+  const d = await api('/api/codex-harness/config');
+  const cur = d.parsed || {};
+  const modelKeys = ['model','model_provider','model_reasoning_effort','model_reasoning_summary','model_verbosity','review_model','plan_mode_reasoning_effort','service_tier','model_context_window','model_auto_compact_token_limit'];
+  const profileRows = Object.entries(cur.profiles || {}).map(([name, p]) => ({ name, model: p.model, effort: p.model_reasoning_effort || p.plan_mode_reasoning_effort, web: p.web_search }));
   return `
-    ${viewHeader('모델 설정', 'settings.json 의 모델 / 인증 / 자동업데이트 옵션', 'modelConfig')}
+    ${viewHeader('모델 설정', '공식 OpenAI Codex config.toml 의 model/provider/reasoning/profile 설정 요약', 'modelConfig')}
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
       <div class="card p-5">
-        <h3 class="font-semibold text-sm mb-3">🧬 현재 Settings 키</h3>
-        ${Object.keys(cur).length ? `<table class="data"><tbody>
-          ${Object.entries(cur).map(([k,v]) => `<tr><td class="text-[var(--text-mute)] text-xs w-[180px]">${escapeHtml(k)}</td><td class="mono text-xs break-all">${escapeHtml(typeof v==='string'?v:JSON.stringify(v))}</td></tr>`).join('')}
-        </tbody></table>` : '<div class="text-xs text-[var(--text-dim)]">설정된 모델 관련 키 없음 — 기본값 사용 중</div>'}
-        <button class="btn mt-3 text-xs" onclick="go('settings')">Settings 편집으로 이동 →</button>
+        <h3 class="font-semibold text-sm mb-3">🧬 현재 config.toml 모델 키</h3>
+        <table class="data"><tbody>
+          ${modelKeys.map(k => `<tr><td class="text-[var(--text-mute)] text-xs w-[220px] mono">${escapeHtml(k)}</td><td class="mono text-xs break-all">${cur[k] === undefined ? '<span class="text-[var(--text-dim)]">—</span>' : escapeHtml(typeof cur[k] === 'string' ? cur[k] : JSON.stringify(cur[k]))}</td></tr>`).join('')}
+        </tbody></table>
+        <button class="btn mt-3 text-xs" onclick="go('codexHarness')">${t('config.toml 편집으로 이동')} →</button>
       </div>
       <div class="card p-5">
-        <h3 class="font-semibold text-sm mb-3">📋 사용 가능 모델</h3>
-        <div class="space-y-2">
-          ${d.models.map(m => `
-            <div class="p-2 rounded border border-[var(--border)] bg-white/3">
-              <div class="flex items-center justify-between">
-                <div class="font-semibold text-sm">${escapeHtml(m.label)}</div>
-                <code class="mono text-[10px] text-[var(--text-dim)]">${escapeHtml(m.id)}</code>
-              </div>
-              <div class="text-xs text-[var(--text-mute)] mt-1">${escapeHtml(t(m.note))}</div>
-            </div>`).join('')}
-        </div>
+        <h3 class="font-semibold text-sm mb-3">📋 profiles.* 모델 오버라이드</h3>
+        ${profileRows.length ? `<table class="data">
+          <thead><tr><th>profile</th><th>model</th><th>reasoning</th><th>web</th></tr></thead>
+          <tbody>${profileRows.map(p => `<tr><td class="mono text-xs">${escapeHtml(p.name)}</td><td class="mono text-xs">${escapeHtml(p.model || '—')}</td><td class="mono text-xs">${escapeHtml(p.effort || '—')}</td><td class="mono text-xs">${escapeHtml(p.web || '—')}</td></tr>`).join('')}</tbody>
+        </table>` : `<div class="text-xs text-[var(--text-dim)]">${t('profiles.<name> 모델 오버라이드 없음')}</div>`}
       </div>
     </div>
     <div class="card p-4 text-xs text-[var(--text-mute)]">
-      💡 <code class="mono">settings.json</code> 의 <code class="mono">"model": "codex-opus-4-7"</code> 으로 기본 모델 변경. 세션 내에서는 <code class="mono">/model</code> 로 임시 전환.
+      💡 ${t('공식 문서 기준 기본 모델은 config.toml 의 model 로 설정하고, 세션별 임시 변경은 CLI/IDE 의 /model 또는 --profile/-c override 를 사용합니다.')}
     </div>`;
 };
 
@@ -19805,7 +20341,7 @@ VIEWS.marketplaces = async () => {
   const list = d.marketplaces || [];
   return `
     ${viewHeader('플러그인 마켓플레이스', `알려진 ${list.length}개 마켓플레이스 · git URL 로 추가`, 'marketplaces')}
-    <div class="card p-4 mb-4" style="background: linear-gradient(135deg, rgba(217,119,87,0.06), transparent);">
+    <div class="card p-4 mb-4" style="background: linear-gradient(135deg, rgba(16,163,127,0.06), transparent);">
       <div class="font-semibold text-sm mb-2">＋ 새 마켓플레이스 추가</div>
       <div class="flex gap-2 flex-wrap">
         <input id="mpName" class="input text-xs max-w-[200px]" placeholder="이름 (예: my-marketplace)" />
@@ -20013,10 +20549,10 @@ VIEWS.outputStyles = async () => {
       </div>
       <div class="flex gap-2">
         <button class="btn text-xs" onclick="startFeatureRecommend('output-styles')">🤖 AI 추천</button>
-        <a class="btn text-xs" href="${DOCS_BASE}output-styles" target="_blank" rel="noopener noreferrer">📖</a>
+        <button class="btn text-xs" onclick="go('codexHarness')">🧷 ${t('공식 config.toml')}</button>
       </div>
     </div>
-    <div class="card p-4 mb-4" style="background: linear-gradient(135deg, rgba(217,119,87,0.06), transparent);">
+    <div class="card p-4 mb-4" style="background: linear-gradient(135deg, rgba(16,163,127,0.06), transparent);">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <div class="font-semibold text-sm">＋ 새 출력 스타일</div>
@@ -20103,7 +20639,7 @@ VIEWS.statusline = async () => {
       </div>
       <div class="flex gap-2">
         <button class="btn text-xs" onclick="startFeatureRecommend('statusline')">🤖 AI 추천</button>
-        <a class="btn text-xs" href="${DOCS_BASE}statusline" target="_blank" rel="noopener noreferrer">📖</a>
+        <button class="btn text-xs" onclick="go('codexHarness')">🧷 ${t('공식 config.toml')}</button>
       </div>
     </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -20111,7 +20647,7 @@ VIEWS.statusline = async () => {
         <h3 class="font-semibold text-sm mb-3">📡 statusLine (settings.json)</h3>
         <p class="text-xs text-[var(--text-mute)] mb-3">Codex CLI 하단에 표시되는 상태라인 스크립트 설정. <code class="mono">statusLine.type = command</code> 이면 매 렌더마다 해당 쉘 명령을 실행.</p>
         <pre class="mono text-[10px] whitespace-pre-wrap bg-[var(--code-bg)] p-3 rounded max-h-[300px] overflow-y-auto">${escapeHtml(JSON.stringify(d.statusLine || { _hint: 'settings.json 에 statusLine 키 추가' }, null, 2))}</pre>
-        <button class="btn mt-3 text-xs" onclick="go('settings')">Settings 편집에서 수정 →</button>
+        <button class="btn mt-3 text-xs" onclick="go('settings')">${t('Legacy settings.json 에서 수정')} →</button>
       </div>
       <div class="card p-5">
         <h3 class="font-semibold text-sm mb-3">⌨️ 키바인딩 (~/.codex/keybindings.json)</h3>
@@ -20173,7 +20709,7 @@ VIEWS.metrics = async () => {
 
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
       ${[
-        ['전체 토큰', fmtTokens(t.total||0), '#d97757'],
+        ['전체 토큰', fmtTokens(t.total||0), '#10a37f'],
         ['입력', fmtTokens(t.in||0), '#86efac'],
         ['출력', fmtTokens(t.out||0), '#7dd3fc'],
         ['캐시 read', fmtTokens(t.cacheRead||0), '#a78bfa'],
@@ -20188,7 +20724,7 @@ VIEWS.metrics = async () => {
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
       ${statCard('추정 비용 ($)', (t.cost||0).toFixed(2), '#4ade80', '2025 공식 요금표 기준 추정')}
       ${statCard('세션 수', t.n, '', '토큰 있는 세션만')}
-      ${statCard('평균 세션 토큰', fmtTokens(Math.round((t.total||0)/Math.max(1,t.n||1))), '#d97757')}
+      ${statCard('평균 세션 토큰', fmtTokens(Math.round((t.total||0)/Math.max(1,t.n||1))), '#10a37f')}
     </div>
 
     <div class="card p-5 mb-4">
@@ -20218,7 +20754,7 @@ VIEWS.metrics = async () => {
               <td class="text-right mono text-xs">${fmtTokens(m.in)}</td>
               <td class="text-right mono text-xs">${fmtTokens(m.out)}</td>
               <td class="text-right mono text-xs">${fmtTokens(m.cacheRead)}</td>
-              <td class="text-right mono" style="color:#d97757">${fmtTokens(m.total)}</td>
+              <td class="text-right mono" style="color:#10a37f">${fmtTokens(m.total)}</td>
               <td class="text-right mono" style="color:#4ade80">${(m.cost||0).toFixed(2)}</td>
             </tr>`).join('') || `<tr><td colspan="7" class="empty">데이터 없음</td></tr>`}
         </tbody>
@@ -20237,7 +20773,7 @@ AFTER.metrics = () => {
         { label: '입력', data: d.timeline.map(x=>x.in), borderColor: '#86efac', backgroundColor: 'rgba(134,239,172,0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
         { label: '출력', data: d.timeline.map(x=>x.out), borderColor: '#7dd3fc', backgroundColor: 'rgba(125,211,252,0.1)', fill: true, tension: 0.4, yAxisID: 'y' },
         { label: '캐시 read', data: d.timeline.map(x=>x.cacheRead||0), borderColor: '#a78bfa', tension: 0.4, yAxisID: 'y' },
-        { label: '전체', data: d.timeline.map(x=>x.total||0), borderColor: '#d97757', tension: 0.4, yAxisID: 'y', borderWidth: 2 },
+        { label: '전체', data: d.timeline.map(x=>x.total||0), borderColor: '#10a37f', tension: 0.4, yAxisID: 'y', borderWidth: 2 },
         { label: '비용 ($)', data: d.timeline.map(x=>x.cost), borderColor: '#4ade80', tension: 0.4, yAxisID: 'y1', borderDash: [4,3] },
       ],
     },
@@ -20325,7 +20861,7 @@ VIEWS.backups = async () => {
               const isPicked = sel.includes(x.path);
               const canPick = compareable && !x.isDir;
               return `
-              <tr ${canPick ? `class="link-row" onclick="_bkToggleSel(${JSON.stringify(x.path).replace(/"/g,'&quot;')})"` : ''} style="${isPicked?'background:rgba(217,119,87,0.12);':''}">
+              <tr ${canPick ? `class="link-row" onclick="_bkToggleSel(${JSON.stringify(x.path).replace(/"/g,'&quot;')})"` : ''} style="${isPicked?'background:rgba(16,163,127,0.12);':''}">
                 ${compareable ? `<td style="width:30px;">${canPick ? (isPicked ? '✓' : '○') : ''}</td>` : ''}
                 <td class="mono text-xs truncate" style="max-width:420px;">${x.isDir?'📁 ':'📄 '}${escapeHtml(x.name)}</td>
                 <td class="text-right text-xs">${formatBytes(x.size)}</td>
@@ -20471,7 +21007,7 @@ VIEWS.orchestrator = async () => {
   // Provider-alias short names so the option labels stay readable
   const _provAlias = {
     'codex-cli': 'codex',     'codex': 'codex',
-    'anthropic-api': 'codex-api', 'openai-api': 'openai',
+    'openai-api': 'openai',
     'gemini-cli': 'gemini',     'gemini-api': 'gemini-api',
     'ollama': 'ollama',         'ollama-api': 'ollama-api',
     'codex': 'codex',           'groq-api': 'groq',
@@ -20495,8 +21031,8 @@ VIEWS.orchestrator = async () => {
       if (!chatModels.length) return '';
       const opts = chatModels.map(m => {
         // Canonical assignee value is alias:<model-id>. The backend's
-        // resolve_assignee normalises common Codex aliases (opus/sonnet/
-        // haiku) but leaves arbitrary ids untouched, so passing the raw
+        // resolve_assignee normalises common Codex aliases while leaving
+        // arbitrary ids untouched, so passing the raw
         // model id is the safe default for every other provider.
         const value = `${alias}:${m.id}`;
         const ctx = m.contextWindow ? ` · ${Math.round(m.contextWindow / 1000)}k` : '';
@@ -20611,7 +21147,7 @@ VIEWS.orchestrator = async () => {
             </div>
             <div>
               <label class="text-[10px] block">${t('Assignees (csv)')}</label>
-              <input id="orchOvrAssignees" class="input text-xs w-full" placeholder="codex:sonnet, openai:gpt-4.1">
+              <input id="orchOvrAssignees" class="input text-xs w-full" placeholder="codex:gpt-5-codex, openai:gpt-4.1">
             </div>
           </div>
         </details>
@@ -20935,7 +21471,7 @@ VIEWS.ralph = async () => {
           <textarea id="ralphPrompt" rows="6" class="input text-xs" placeholder="Fix every failing test. Output <promise>DONE</promise> when green."></textarea>
         </label>
         <label class="text-[11px] block mb-1">${t('Assignee')}
-          <input id="ralphAssignee" class="input text-xs" placeholder="codex:sonnet">
+          <input id="ralphAssignee" class="input text-xs" placeholder="codex:gpt-5-codex">
         </label>
         <label class="text-[11px] block mb-1">${t('Completion 표식')}
           <input id="ralphCompletion" class="input text-xs" value="<promise>DONE</promise>">
@@ -21311,7 +21847,7 @@ function _learnerToPromptLib(action) {
 }
 
 // ────────────────────────────────────────────────────────────────
-// v2.42.0 — Four new Anthropic API labs:
+// v2.42.0 — Four new OpenAI Codex API labs:
 //   computerUseLab · memoryLab · advisorLab · routines
 // Compact viewers — single prompt + Run + history. Each uses its own
 // /api/<feature>/* endpoints registered in routes.py.
@@ -21325,7 +21861,7 @@ VIEWS.computerUseLab = async () => {
     `<button class="chip text-[10px] cursor-pointer" onclick="document.getElementById('cuPrompt').value=${jsonAttr(e.prompt)};document.getElementById('cuW').value=${e.screenSize.width};document.getElementById('cuH').value=${e.screenSize.height};">${escapeHtml(e.title)}</button>`).join(' ');
   return `
     <h1 class="text-2xl font-bold mb-1">🖱️ ${t('Computer Use Lab')}</h1>
-    <p class="text-sm text-[var(--text-mute)] mb-4">${t('Anthropic computer-use-2025-01-24 beta · plan-only (실행하지 않음)')}</p>
+    <p class="text-sm text-[var(--text-mute)] mb-4">${t('OpenAI Codex computer-use-2025-01-24 beta · plan-only (실행하지 않음)')}</p>
     <div class="card p-4 mb-3" style="background:rgba(251,191,36,0.06);border-color:rgba(251,191,36,0.3);">
       <div class="text-[11px] mb-2" style="color:#fcd34d;">⚠ ${t('대시보드는 모델의 tool plan만 표시 — 실제 마우스/키보드 제어는 하지 않습니다.')}</div>
     </div>
@@ -21396,7 +21932,7 @@ VIEWS.memoryLab = async () => {
     `<button class="chip text-[10px] cursor-pointer" onclick="document.getElementById('mlPrompt').value=${jsonAttr(e.prompt)};">${escapeHtml(e.title)}</button>`).join(' ');
   return `
     <h1 class="text-2xl font-bold mb-1">🧩 ${t('Memory Lab')}</h1>
-    <p class="text-sm text-[var(--text-mute)] mb-4">${t('Anthropic memory-2025-08-18 beta · 서버측 memory blocks 라운드트립')}</p>
+    <p class="text-sm text-[var(--text-mute)] mb-4">${t('OpenAI Codex memory-2025-08-18 beta · 서버측 memory blocks 라운드트립')}</p>
     <div class="card p-4 mb-3">
       <div class="flex flex-wrap gap-1 mb-2">${examples}</div>
       <textarea id="mlPrompt" class="input w-full" rows="3" placeholder="${t('예: 내 이름은 Alex 이고 간결한 답변 선호. 기억해줘.')}"></textarea>
@@ -21467,7 +22003,7 @@ VIEWS.advisorLab = async () => {
       <textarea id="alPrompt" class="input w-full" rows="3" placeholder="${t('동일 프롬프트가 두 모델에 보내지고 결과가 비교됩니다.')}"></textarea>
       <div class="flex items-center gap-2 mt-2 flex-wrap">
         <label class="text-xs">${t('Executor')}: <select id="alExec" class="input">${(ex.executors||[]).map(m => `<option>${m}</option>`).join('')}</select></label>
-        <label class="text-xs">${t('Advisor')}: <select id="alAdv" class="input">${(ex.advisors||[]).map(m => `<option ${m==='codex-opus-4-7'?'selected':''}>${m}</option>`).join('')}</select></label>
+        <label class="text-xs">${t('Advisor')}: <select id="alAdv" class="input">${(ex.advisors||[]).map(m => `<option ${m==='o3'?'selected':''}>${m}</option>`).join('')}</select></label>
         <button class="btn-primary btn" onclick="_alRun()">▶ ${t('실행')}</button>
       </div>
     </div>
@@ -22036,14 +22572,14 @@ function _costsBucket(days, mode) {
 // Render the cost-savings recommendations card.
 // Hidden when there are 0 recommendations. All strings via t('...').
 // i18n strings added: '비용 절감 추천', '최근 N일 총', '예상 절감', '추천 새로고침',
-//   '데이터 부족', 'Haiku 전환', '캐싱', '로컬 모델', '모델 업그레이드'.
+//   '데이터 부족', 'o4-mini 전환', '캐싱', '로컬 모델', '모델 업그레이드'.
 function _renderCostRecommendations(rec) {
   if (!rec || !rec.ok) return '';
   const recs = rec.recommendations || [];
   if (!recs.length) return '';
   const fmtUsd = (v) => '$' + (Number(v)||0).toFixed(2);
   const ruleLabel = (id) => ({
-    haiku_for_short_prompts: t('Haiku 전환'),
+    haiku_for_short_prompts: t('o4-mini 전환'),
     enable_prompt_caching: t('프롬프트 캐싱'),
     local_model_for_batch: t('로컬 모델'),
     stale_model_upgrade: t('모델 업그레이드'),
@@ -22114,7 +22650,7 @@ VIEWS.costsTimeline = async () => {
     promptCache: '#a78bfa', thinkingLab: '#818cf8', toolUseLab: '#f472b6',
     batchJobs: '#60a5fa', apiFiles: '#fbbf24', visionLab: '#4ade80',
     modelBench: '#fb7185', serverTools: '#22d3ee', citationsLab: '#f97316',
-    workflows: '#d97757',
+    workflows: '#10a37f',
   };
   const sourceLabel = (s) => ({
     promptCache: 'Prompt Cache', thinkingLab: 'Extended Thinking',
@@ -22293,7 +22829,7 @@ VIEWS.usage = async () => {
     <!-- 토큰 요약 -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
       ${[
-        ['전체 토큰', fmtTokens(all.total||0), '#d97757'],
+        ['전체 토큰', fmtTokens(all.total||0), '#10a37f'],
         ['입력', fmtTokens(all.input||0), '#86efac'],
         ['출력', fmtTokens(all.output||0), '#7dd3fc'],
         ['캐시 read', fmtTokens(all.cacheRead||0), '#a78bfa'],
@@ -22307,7 +22843,7 @@ VIEWS.usage = async () => {
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
       ${statCard('전체 세션', all.sessions||0)}
-      ${statCard('최근 30일', `${fmtTokens(last30.total||0)} (${last30.sessions||0}세션)`, '#d97757')}
+      ${statCard('최근 30일', `${fmtTokens(last30.total||0)} (${last30.sessions||0}세션)`, '#10a37f')}
       ${statCard('도구 호출 (전체)', (tk.byTool||[]).reduce((a,b)=>a+(b.calls||0),0))}
       ${statCard('에이전트 위임', (tk.byAgent||[]).reduce((a,b)=>a+(b.calls||0),0), '#a78bfa')}
     </div>
@@ -22332,9 +22868,9 @@ VIEWS.usage = async () => {
               <div class="mb-2">
                 <div class="flex justify-between text-xs mb-1">
                   <span class="mono">${escapeHtml(r.tool)} <span class="text-[var(--text-dim)]">×${r.calls}</span></span>
-                  <span class="mono font-bold" style="color:#d97757">${fmtTokens(r.tokens||0)}</span>
+                  <span class="mono font-bold" style="color:#10a37f">${fmtTokens(r.tokens||0)}</span>
                 </div>
-                <div class="h-1.5 bg-white/5 rounded overflow-hidden"><div style="width:${pct}%; height:100%; background:#d97757;"></div></div>
+                <div class="h-1.5 bg-white/5 rounded overflow-hidden"><div style="width:${pct}%; height:100%; background:#10a37f;"></div></div>
               </div>`;
           }).join('') || '<div class="empty text-xs">데이터 없음</div>'}
         </div>
@@ -22376,7 +22912,7 @@ VIEWS.usage = async () => {
                   <div class="mono text-[10px] text-[var(--text-dim)] truncate" style="max-width:520px;">${escapeHtml(cwd)}</div>
                 </td>
                 <td class="text-right mono text-xs">${p.sessions}</td>
-                <td class="text-right mono" style="color:#d97757">${fmtTokens(p.tokens||0)}</td>
+                <td class="text-right mono" style="color:#10a37f">${fmtTokens(p.tokens||0)}</td>
                 <td class="text-right text-xs text-[var(--text-dim)]">▶</td>
               </tr>`;
             }).join('') || `<tr><td colspan="4" class="empty">${t('데이터 없음')}</td></tr>`}
@@ -22395,7 +22931,7 @@ VIEWS.usage = async () => {
             <tr class="link-row" onclick="openSessionDetail('${s.session_id}')">
               <td class="text-xs max-w-[340px] truncate">${escapeHtml((s.first_user_prompt||'(요청 없음)').slice(0,120))}</td>
               <td class="text-xs">${escapeHtml(s.project||'—')}</td>
-              <td class="text-right mono" style="color:#d97757">${fmtTokens(s.total_tokens||0)}</td>
+              <td class="text-right mono" style="color:#10a37f">${fmtTokens(s.total_tokens||0)}</td>
               <td class="text-right text-xs text-[var(--text-mute)]">${fmtRel(s.started_at)}</td>
             </tr>`).join('') || `<tr><td colspan="4" class="empty">데이터 없음</td></tr>`}
         </tbody>
@@ -22431,7 +22967,7 @@ AFTER.usage = () => {
       data: {
         labels: tl.map(x => x.date.slice(5)),
         datasets: [{ label: '토큰', data: tl.map(x => x.tokens),
-          backgroundColor: 'rgba(217,119,87,0.55)', borderColor: '#d97757', borderWidth: 1, borderRadius: 4 }]
+          backgroundColor: 'rgba(16,163,127,0.55)', borderColor: '#10a37f', borderWidth: 1, borderRadius: 4 }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
@@ -22474,7 +23010,7 @@ async function openProjectUsage(cwd) {
   const sumCard = (label, value, color) => `
     <div class="card p-3">
       <div class="text-[10px] uppercase text-[var(--text-dim)]">${escapeHtml(label)}</div>
-      <div class="text-xl font-bold mono mt-1" style="color:${color || '#d97757'}">${value}</div>
+      <div class="text-xl font-bold mono mt-1" style="color:${color || '#10a37f'}">${value}</div>
     </div>`;
 
   const distRows = (rows, color) => rows.length ? rows.map(x => {
@@ -22503,7 +23039,7 @@ async function openProjectUsage(cwd) {
         <td class="text-xs mono text-[var(--text-dim)]">${escapeHtml(s.model || '')}</td>
         <td class="text-right mono text-xs">${s.message_count || 0}</td>
         <td class="text-right mono text-xs">${s.tool_use_count || 0}</td>
-        <td class="text-right mono" style="color:#d97757">${fmtTokens(s.total_tokens || 0)}</td>
+        <td class="text-right mono" style="color:#10a37f">${fmtTokens(s.total_tokens || 0)}</td>
         <td class="text-right text-[10px] text-[var(--text-dim)]">${escapeHtml(startedStr)}</td>
       </tr>`;
   }).join('') : `<tr><td colspan="6" class="empty">${t('세션 없음')}</td></tr>`;
@@ -22519,7 +23055,7 @@ async function openProjectUsage(cwd) {
     </div>
     <div class="p-5 flex-1 overflow-y-auto space-y-4">
       <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-        ${sumCard(t('전체 토큰'), fmtTokens(totals.total || 0), '#d97757')}
+        ${sumCard(t('전체 토큰'), fmtTokens(totals.total || 0), '#10a37f')}
         ${sumCard(t('입력'), fmtTokens(totals.input || 0), '#86efac')}
         ${sumCard(t('출력'), fmtTokens(totals.output || 0), '#7dd3fc')}
         ${sumCard(t('캐시 read'), fmtTokens(totals.cacheRead || 0), '#a78bfa')}
@@ -22530,7 +23066,7 @@ async function openProjectUsage(cwd) {
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="card p-4">
           <h3 class="font-semibold text-sm mb-3">🛠 ${t('도구별 토큰')}</h3>
-          <div class="max-h-[260px] overflow-y-auto">${distRows(byTool, '#d97757')}</div>
+          <div class="max-h-[260px] overflow-y-auto">${distRows(byTool, '#10a37f')}</div>
         </div>
         <div class="card p-4">
           <h3 class="font-semibold text-sm mb-3">🤝 ${t('에이전트별 토큰')}</h3>
@@ -22546,7 +23082,7 @@ async function openProjectUsage(cwd) {
               const maxV = Math.max(1, ...timeline.map(x => x.tokens || 0));
               return timeline.map(x => {
                 const h = Math.max(2, Math.round((x.tokens || 0) / maxV * 78));
-                return `<div title="${escapeHtml(x.date)} · ${fmtTokens(x.tokens || 0)}" style="flex:1;background:#d97757;height:${h}px;border-radius:2px 2px 0 0;opacity:0.75;"></div>`;
+                return `<div title="${escapeHtml(x.date)} · ${fmtTokens(x.tokens || 0)}" style="flex:1;background:#10a37f;height:${h}px;border-radius:2px 2px 0 0;opacity:0.75;"></div>`;
               }).join('');
             })()}
           </div>
@@ -22672,7 +23208,7 @@ VIEWS.tasks = async () => {
 
   return `
     ${viewHeader('태스크 / TODO', '세션별 TaskCreate 저장소. 수동 태스크는 dashboard-manual 세션에 누적.', 'tasks')}
-    <div class="mb-4 card p-4" style="background: linear-gradient(135deg, rgba(217,119,87,0.06), transparent);">
+    <div class="mb-4 card p-4" style="background: linear-gradient(135deg, rgba(16,163,127,0.06), transparent);">
       <div class="flex items-center justify-between gap-2 flex-wrap">
         <div>
           <div class="font-semibold text-sm">＋ 수동 TODO 추가</div>
@@ -22685,7 +23221,7 @@ VIEWS.tasks = async () => {
       const pct = s.taskCount ? Math.round((s.completed / s.taskCount) * 100) : 0;
       const isManual = s.id === 'dashboard-manual';
       return `
-      <div class="card p-4 mb-3" ${isManual?'style="border-color: rgba(217,119,87,0.35);"':''}>
+      <div class="card p-4 mb-3" ${isManual?'style="border-color: rgba(16,163,127,0.35);"':''}>
         <div class="flex items-center justify-between mb-3">
           <div>
             <div class="font-semibold text-sm mono">${isManual ? '<span class="chip chip-accent">수동</span> dashboard-manual' : escapeHtml(s.id.slice(0,8))+'…'}</div>
@@ -24458,7 +24994,7 @@ function _showRefreshBanner(oldVer, newVer, isVersionBump) {
   banner.style.cssText = `
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
     z-index: 9999; padding: 12px 18px; border-radius: 12px;
-    background: linear-gradient(135deg, rgba(217,119,87,0.95), rgba(167,139,250,0.95));
+    background: linear-gradient(135deg, rgba(16,163,127,0.95), rgba(167,139,250,0.95));
     color: #fff; box-shadow: 0 8px 28px rgba(0,0,0,0.5);
     display: flex; align-items: center; gap: 14px; font-size: 13px;
     max-width: calc(100vw - 32px);
@@ -24697,7 +25233,7 @@ async function openCliStatusModal() {
         </tbody></table>
         ${!auth.connected ? '<div class="text-xs text-[var(--text-mute)] mt-2">터미널에서 <code class="mono">codex login</code> 실행 후 새로고침.</div>' : ''}
       </div>
-      <div class="card p-4" style="background: linear-gradient(135deg, rgba(217,119,87,0.06), transparent);">
+      <div class="card p-4" style="background: linear-gradient(135deg, rgba(16,163,127,0.06), transparent);">
         <div class="text-[11px] uppercase tracking-widest text-[var(--text-dim)] mb-2">내 플랜</div>
         <div class="text-xs text-[var(--text-mute)] mb-2">
           Codex CLI 는 로컬에 <b>구독 세부 플랜(Pro·Max·Team)을 저장하지 않습니다</b>. 정확한 표시를 원하면 여기서 직접 지정하세요.
@@ -25107,7 +25643,7 @@ document.getElementById('globalSearch').addEventListener('keydown', e => {
   .qs-tab:hover { background: rgba(255,255,255,0.04); color: var(--text); }
   body.theme-light .qs-tab:hover { background: rgba(0,0,0,0.04); }
   .qs-tab.active {
-    background: rgba(217,119,87,0.15); border-color: rgba(217,119,87,0.3);
+    background: rgba(16,163,127,0.15); border-color: rgba(16,163,127,0.3);
     color: var(--text);
   }
   #qsBody { flex: 1; overflow-y: auto; padding: 16px 18px; }
@@ -25274,7 +25810,7 @@ const _QS_LABELS = {
   'ui.mascotEnabled':    ['마스코트 표시', '우하단 점프 캐릭터'],
   'ui.compactSidebar':   ['컴팩트 사이드바', '카테고리 라벨 숨김'],
 
-  'ai.defaultProvider':  ['기본 프로바이더', '예: codex:sonnet, openai:gpt-4.1, ollama:llama3.1'],
+  'ai.defaultProvider':  ['기본 프로바이더', '예: codex:gpt-5-codex, openai:gpt-4.1, ollama:llama3.1'],
   'ai.effort':           ['Effort', 'low / medium / high — 추론 깊이'],
   'ai.temperature':      ['Temperature', '0.0 결정적 ↔ 2.0 다양'],
   'ai.topP':             ['Top-p', '핵 샘플링 누적 확률'],
@@ -25443,7 +25979,7 @@ function _qsRenderRow(section, key, def, value) {
       <span class="qs-num-readout" id="qs-readout-${section}-${key}">${value}</span>
     `;
   } else if (def.kind === 'str') {
-    control = `<input type="text" maxlength="${def.maxLen || 120}" value="${_qsEscape(value || '')}" data-section="${section}" data-key="${key}" placeholder="codex:sonnet" />`;
+    control = `<input type="text" maxlength="${def.maxLen || 120}" value="${_qsEscape(value || '')}" data-section="${section}" data-key="${key}" placeholder="codex:gpt-5-codex" />`;
   }
   return `
     <div class="qs-row">
@@ -25996,115 +26532,27 @@ try { _bindMascotErrorFeed(); } catch {}
 // 화면 여기저기 자유 이동
 function _startMascotWander() {
   _stopMascotWander();
-  _mascotWanderTimer = setInterval(_mascotWanderStep, 6000 + Math.random() * 4000);
+  // Static mascot mode: disable autonomous roaming.
+  _mascotWanderTimer = null;
 }
 function _stopMascotWander() {
   if (_mascotWanderTimer) { clearInterval(_mascotWanderTimer); _mascotWanderTimer = null; }
 }
 function _mascotWanderStep() {
-  if (_mascotDragging || _mascotOnChat) return;
-  // Skip work when the user has hidden the mascot via Quick Settings.
-  if (document.body.dataset.mascotHidden === 'true') return;
-  // QQ232 — pause mascot animation while the tab is backgrounded so the
-  // 6–10s timer doesn't waste CPU/GPU when the user can't see anything.
-  if (document.hidden) return;
-  const el = document.getElementById('codexMascot');
-  if (!el || el.style.display === 'none') return;
-
-  // 10% 확률로 멈추고 speaking 모드
-  if (Math.random() < 0.10) {
-    _mascotSetMode('speaking');
-    // 3초 후 다시 jumping 으로
-    setTimeout(() => _mascotSetMode('jumping'), 3000);
-    return;
-  }
-
-  _mascotSetMode('jumping');
-  const maxX = window.innerWidth - 80;
-  const maxY = window.innerHeight - 80;
-  const targetX = 60 + Math.random() * (maxX - 60);
-  const targetY = 100 + Math.random() * (maxY - 100);
-  const curR = el.getBoundingClientRect();
-
-  // 방향 결정
-  if (targetX < curR.left) el.classList.add('facing-left');
-  else el.classList.remove('facing-left');
-
-  el.style.transition = 'left 2.5s cubic-bezier(0.25,1,0.5,1), top 2.5s cubic-bezier(0.25,1,0.5,1)';
-  el.style.left = targetX + 'px';
-  el.style.top = targetY + 'px';
-  el.style.right = 'auto'; el.style.bottom = 'auto';
-  setTimeout(() => { el.style.transition = ''; }, 2600);
+  return;
 }
 
-// v3.99.26 — sprite + state machine for the Codex mascot (Codex
-// Design handoff v0.1). The old `jumping` / `speaking` modes are kept
-// as alias shims so existing call sites keep working: speaking → done
-// pose for a brief moment, then back to idle.
-// v3.99.29 — 8-bit crab mascot. A red crab carapace worn like a hood,
-// short eye-stalks poking up top (white sclera + black pupil), an
-// orange face peeking out below with two black dot-eyes, tiny yellow
-// legs. State → expression map (see the Codex Design crab sheet):
-//   idle    → 기본 (neutral)
-//   working → 화남(연기): focused squint + smoke puffs
-//   done    → 미소 (smile arc + sparkle)
-//   error   → 경고/놀람 (wide shocked eyes + alert marks)
-const _MASCOT_W = 16;
-const _MASCOT_BASE = [
-  '...WW......WW...', '...We......eW...', '...rR......Rr...', '....RRRRRRRR....',
-  '...RRRRRRRRRR...', '..RrRRRRRRRRrR..', '.RRRRRRRRRRRRRR.', '.RRRRRRRRRRRRRR.',
-  '.Rr.OOOOOOOO.rR.', '....OoOOOOoO....', '....OeOOOOeO....', '....OOOOOOOO....',
-  '....OooooooO....', '...rROOOOOORr...', '...L..L..L..L...', '..LL........LL..',
-];
-const _MASCOT_FACES = {
-  idle: {},
-  working: {
-    0:  's..WW......WW..s',
-    3:  '.s..RRRRRRRR..s.',
-    10: '....OeeOOeeO....',
-    12: '....OeeeeeeO....',
-  },
-  done: {
-    0:  'S..WW......WW..S',
-    12: '....OOOOOOOO....',
-    13: '...rReeeeeeRr...',
-  },
-  error: {
-    0:  '.S.WW......WW.S.',
-    1:  '.S.We......eW.S.',
-    10: '....OWeeeeWO....',
-    12: '....OOeeeeOO....',
-  },
-};
-const _MASCOT_PALETTE = {
-  R: '#db3b2b', r: '#9c2417',
-  O: '#ef8330', o: '#c5611c',
-  e: '#1a1410', W: '#fff5e8', L: '#f2a93b',
-  s: '#cdbfac', S: '#ffd27a',
-};
-function _mascotSpriteRows(state) {
-  const ovr = _MASCOT_FACES[state] || _MASCOT_FACES.idle;
-  return _MASCOT_BASE.map((row, i) => (ovr[i] !== undefined ? ovr[i] : row));
-}
+// The mascot now reuses the generated PWA icon so the README, favicon,
+// and floating dashboard mascot all share the same art direction.
 function _mascotBuildSvg(state, animate) {
-  const rows = _mascotSpriteRows(state);
-  const cells = [];
-  for (let y = 0; y < rows.length; y++) {
-    const row = rows[y];
-    for (let x = 0; x < row.length; x++) {
-      const ch = row[x];
-      if (ch === '.') continue;
-      const fill = _MASCOT_PALETTE[ch] || '#db3b2b';
-      cells.push(`<rect x="${x}" y="${y}" width="1.02" height="1.02" fill="${fill}"/>`);
-    }
-  }
-  const animStyle = animate ? `
-    <style>
-      .lc-mb{animation:lc-mb-bob .8s ease-in-out infinite;transform-origin:8px 16px}
-      @keyframes lc-mb-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-0.6px)}}
-    </style>` : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" shape-rendering="crispEdges" style="width:100%;height:100%;image-rendering:pixelated;">
-    ${animStyle}<g class="${animate ? 'lc-mb' : ''}">${cells.join('')}</g></svg>`;
+  const stateStyle = state === 'working'
+    ? 'animation:lc-mascot-bob 1.15s ease-in-out infinite;'
+    : state === 'done'
+      ? 'filter:drop-shadow(0 0 10px rgba(74,222,128,0.5));'
+      : state === 'error'
+        ? 'filter:drop-shadow(0 0 10px rgba(248,113,113,0.55)) saturate(1.08);'
+        : '';
+  return `<img src="/favicon.svg" alt="LazyCodex mascot" data-state="${state}" style="width:100%;height:100%;object-fit:contain;display:block;${stateStyle}" ${animate ? '' : 'aria-hidden="true"'}/>`;
 }
 let _mascotState = 'idle';
 let _mascotDoneTimer = null;
@@ -26150,33 +26598,6 @@ function _mascotSetMode(mode) {
 function _mascotJumpOnChat() {
   _mascotOnChat = true;
   _stopMascotWander();
-  const el = document.getElementById('codexMascot');
-  const win = document.getElementById('chatWin');
-  if (!el || !win) return;
-
-  function _bounce() {
-    if (!_chatOpen || !_mascotOnChat) return;
-    const wr = win.getBoundingClientRect();
-    const minX = wr.left + 10;
-    const maxX = wr.right - 70;
-    const topY = wr.top - 50;
-    const tx = minX + Math.random() * (maxX - minX);
-    if (tx < parseFloat(el.style.left || 0)) el.classList.add('facing-left');
-    else el.classList.remove('facing-left');
-    el.style.transition = 'left 1s cubic-bezier(0.34,1.56,0.64,1), top 0.5s cubic-bezier(0.34,1.56,0.64,1)';
-    el.style.left = tx + 'px';
-    el.style.top = topY + 'px';
-    el.style.right = 'auto'; el.style.bottom = 'auto';
-    setTimeout(() => { el.style.transition = ''; }, 1100);
-  }
-  // 즉시 챗창 위로 점프
-  const wr = win.getBoundingClientRect();
-  el.style.transition = 'left 0.4s cubic-bezier(0.34,1.56,0.64,1), top 0.4s cubic-bezier(0.34,1.56,0.64,1)';
-  el.style.left = (wr.left + wr.width / 2 - 35) + 'px';
-  el.style.top = (wr.top - 50) + 'px';
-  el.style.right = 'auto'; el.style.bottom = 'auto';
-  setTimeout(() => { el.style.transition = ''; }, 500);
-  _mascotChatBounceTimer = setInterval(_bounce, 2500);
 }
 
 function _mascotLeaveChat() {
@@ -26202,59 +26623,9 @@ function _mascotShowCheer() {
   setTimeout(() => { bubble.style.display = 'none'; }, 2500);
 }
 function _mascotJumpOnModal() {
-  if (_mascotOnModal) return;  // 이미 진행 중
   _mascotOnModal = true;
   _stopMascotWander();
   if (_mascotChatBounceTimer) { clearInterval(_mascotChatBounceTimer); _mascotChatBounceTimer = null; }
-  const el = document.getElementById('codexMascot');
-  if (!el) return;
-  if (el.style.display === 'none') el.style.display = '';
-  el.style.pointerEvents = 'none';  // 모달 클릭 막지 않도록
-  el.style.zIndex = '60';            // modal-backdrop(50) 위, 시스템 모달 아래
-
-  function _bounce() {
-    if (!_mascotOnModal) return;
-    const modal = document.querySelector('#modal-root .modal');
-    if (!modal) { _mascotLeaveModal(); return; }
-    const rect = modal.getBoundingClientRect();
-    // 모달 **내부** 로 제한 — 바깥으로 나가면 backdrop click 으로 모달 닫힘.
-    // 또한 우측 상단 70×60px (닫기 ✕ 버튼 영역) 는 피함.
-    const INSET = 16;   // 모달 안쪽 여유
-    const MASCOT_W = 70;
-    const MASCOT_H = 63;
-    const TOP_RIGHT_AVOID_W = 80;
-    const TOP_RIGHT_AVOID_H = 60;
-    const minX = rect.left + INSET;
-    const maxX = rect.right - MASCOT_W - INSET;
-    const minY = rect.top + INSET;
-    const maxY = rect.bottom - MASCOT_H - INSET;
-    if (maxX <= minX || maxY <= minY) { return; }  // 모달이 너무 작음
-    let tx, ty, tries = 0;
-    do {
-      tx = minX + Math.random() * (maxX - minX);
-      ty = minY + Math.random() * (maxY - minY);
-      tries++;
-      // 우측 상단 ✕ 영역 회피
-      const inAvoid = tx > (rect.right - TOP_RIGHT_AVOID_W) && ty < (rect.top + TOP_RIGHT_AVOID_H);
-      if (!inAvoid) break;
-    } while (tries < 8);
-    if (tx < parseFloat(el.style.left || 0)) el.classList.add('facing-left');
-    else el.classList.remove('facing-left');
-    el.style.transition = 'left 1.4s cubic-bezier(0.34,1.56,0.64,1), top 1.4s cubic-bezier(0.34,1.56,0.64,1)';
-    el.style.left = tx + 'px';
-    el.style.top = ty + 'px';
-    el.style.right = 'auto'; el.style.bottom = 'auto';
-    setTimeout(() => { el.style.transition = ''; }, 1500);
-
-    // 30% 확률로 speaking + 응원 메시지
-    if (Math.random() < 0.30) {
-      _mascotSetMode('speaking');
-      _mascotShowCheer();
-      setTimeout(() => _mascotSetMode('jumping'), 2000);
-    }
-  }
-  setTimeout(_bounce, 100);
-  _mascotModalBounceTimer = setInterval(_bounce, 1800);
 }
 function _mascotLeaveModal() {
   if (!_mascotOnModal) return;
@@ -26415,7 +26786,7 @@ function _chatStopWaitBubble() {
 }
 
 // v3.99.25 — chat panel can run in two modes:
-//   "help"  — the legacy navigation help-bot (haiku → JSON {answer,
+//   "help"  — the legacy navigation help-bot (light model → JSON {answer,
 //             navigate}). Cheap + fast; can route to a tab.
 //   "orch"  — orchestrator multi-agent dispatch. Slower (plan → parallel
 //             sub-agents → synthesis) but answers free-form work.
@@ -26729,7 +27100,7 @@ function closeSpotlight() {
 
 // 탭 연관 키워드 — 검색어와 탭을 연결
 const _NAV_KEYWORDS = {
-  features: ['신기능','design','디자인','artifact','아티팩트','mcp','tool use','vision','비전','web search','웹검색','extended thinking','코드 실행','batch','배치','citation','인용','prompt caching','캐싱','streaming','스트리밍','computer use','컴퓨터','pdf','파일','업로드','image','이미지','model context protocol','agent','에이전트','sub-agent','서브에이전트','hooks','훅','skills','스킬','max','opus','sonnet','haiku','codex 4','glasswing','routines'],
+  features: ['신기능','design','디자인','artifact','아티팩트','mcp','tool use','vision','비전','web search','웹검색','extended thinking','코드 실행','batch','배치','citation','인용','prompt caching','캐싱','streaming','스트리밍','pdf','파일','업로드','image','이미지','model context protocol','agent','에이전트','sub-agent','서브에이전트','hooks','훅','skills','스킬','gpt-5-codex','o3','o4-mini','routines'],
   overview: ['개요','대시보드','점수','스코어','최적화','score','optimization','홈','home'],
   projects: ['프로젝트','project','AGENTS.md','설정','세팅','폴더'],
   analytics: ['통계','analytics','그래프','chart','타임라인','timeline','도구 분포'],
@@ -27181,7 +27552,7 @@ window.initCostCharts = async function() {
     const byProvider = costs.byProvider || [];
     const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-mute').trim() || '#a0a0a8';
     const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || 'rgba(255,255,255,0.07)';
-    const providerColors = ['#d97757','#7dd3fc','#4ade80','#c084fc','#fbbf24','#f87171','#a78bfa','#38bdf8'];
+    const providerColors = ['#10a37f','#7dd3fc','#4ade80','#c084fc','#fbbf24','#f87171','#a78bfa','#38bdf8'];
     const providerNames = byProvider.map(p => p.provider);
     const ctxStacked = document.getElementById('costStackedBar');
     if (!ctxStacked || !providerNames.length || !daily.length) return;

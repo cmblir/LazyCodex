@@ -2,27 +2,40 @@
 
 # 💤 LazyCodex
 
-<img src="./docs/logo/mascot.svg" alt="LazyCodex mascot — pixel character napping with closed eyes" width="200" height="171" />
+<img src="./docs/logo/mascot.svg" alt="LazyCodex mascot — sleepy terminal robot" width="200" height="200" />
 
-**The lazy, elegant dashboard for everything Codex.**
+**The local setup console for Codex.**
 
-_Don't memorize 50+ CLI commands. Just click._
+_Stop hand-editing every config file. Open one dashboard and wire Codex from there._
 
 [![한국어](https://img.shields.io/badge/🇰🇷_한국어-blue)](./README.ko.md)
 [![中文](https://img.shields.io/badge/🇨🇳_中文-red)](./README.zh.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v3.91.0-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v3.99.33-green.svg)](./CHANGELOG.md)
 
 </div>
 
-LazyCodex is a **local-first command center** for your `~/.codex/` directory (agents, skills, hooks, plugins, MCP, sessions, projects) plus an n8n-style workflow engine. Everything ships behind one `python3 server.py` — Python stdlib, single-file HTML, no install step.
+LazyCodex is a **local-first setup and operations dashboard** for Codex. It turns the scattered files under `~/.codex/` into clickable screens for agents, skills, hooks, plugins, MCP connectors, permissions, sessions, projects, models, and workflows. Everything ships behind one `python3 server.py` — Python stdlib, single-file HTML, no runtime build step.
 
 > ℹ️ The standalone terminal CLI `lazyclaw` now lives in its own repository: <https://github.com/cmblir/lazyclaw> (`npm i -g lazyclaw`).
 
 **No cloud. No telemetry. No package to install.**
 
 ---
+
+## What LazyCodex helps you set up
+
+| Area | What you get |
+|---|---|
+| First run | Detect Python, Codex CLI, `CODEX_HOME`, data stores, and missing setup steps |
+| Codex config | Edit official `~/.codex/config.toml` settings: model, provider, reasoning, approvals, sandbox, profiles, shell environment policy, MCP, plugins, skills, and subagents |
+| Safety | Manage official Codex rules, hooks, sandbox combinations, permission profiles, backups, and static security scans |
+| Extensions | Configure MCP servers, plugins, marketplaces, skills, agents, slash commands, and project agents |
+| Operations | Reindex sessions, inspect costs and token metrics, replay sessions, watch active CLI processes |
+| Automation | Use LazyCodex local automation separately: DAG workflows, Crew Wizard flows, Auto-Resume bindings, legacy routines, and notification paths |
+
+The product style is intentionally "lazy": show the current state, suggest the next useful action, and keep the underlying files local and readable.
 
 ## 🚀 Quick start
 
@@ -33,7 +46,7 @@ python3 server.py
 # → http://127.0.0.1:19500
 ```
 
-Requires Python 3.10+ and Anthropic's `codex` CLI on `$PATH` (optional — the dashboard works without it; only Codex-bound features need it).
+Requires Python 3.10+ and OpenAI's `codex` CLI on `$PATH` (optional — the dashboard works without it; only Codex-bound features need it).
 
 ```bash
 # Optional environment overrides
@@ -41,6 +54,8 @@ PORT=19500 python3 server.py
 LOG_LEVEL=DEBUG python3 server.py
 CODEX_HOME=/path/to/.codex python3 server.py
 ```
+
+Open **Start Here** for the setup checklist, then move through **Settings**, **MCP Connectors**, **Permissions**, **Plugins**, and **Workflows** as needed.
 
 ---
 
@@ -104,7 +119,7 @@ Korean is the source language. Every user-visible string passes through `t('한�
 
 **"Open in app" launches some other application** — Chrome PWAs are scoped per-origin (`http://127.0.0.1:<port>`) so any PWA you previously installed on the same port hijacks the launch. Visit `chrome://apps`, remove any non-LazyCodex entry pointing at that port, then `chrome://settings/content/all` → search the port → "Delete data" to wipe the cached install state. The v3.99 manifest also sets an explicit `id` so Chrome treats this dashboard as its own app even when you have other localhost PWAs installed at the same origin.
 
-**"command not found: codex"** — install [Codex CLI](https://codex.com/codex-code). The dashboard's tabs that don't depend on `codex` (workflow editor, AI providers, MCP, etc.) work without it.
+**"command not found: codex"** — install [Codex CLI](https://developers.openai.com/codex/cli). The dashboard's tabs that don't depend on `codex` (workflow editor, AI providers, MCP, etc.) work without it.
 
 **Auto-Resume live injection silently failing** — on macOS, grant Accessibility permission to `python3` in System Settings → Privacy & Security → Accessibility. The dashboard surfaces error code `1002 / -1719` with a hint when it's missing.
 
@@ -147,7 +162,7 @@ See [CHANGELOG.md](./CHANGELOG.md) for the full per-release log.
 
 ## 🙏 Acknowledgements
 
-- [Anthropic Codex CLI](https://codex.com/codex-code) — the CLI this dashboard is built around
+- [OpenAI Codex CLI](https://developers.openai.com/codex/cli) — the official CLI this dashboard integrates with
 - [n8n](https://n8n.io) — workflow editor inspiration
 - [lazygit](https://github.com/jesseduffield/lazygit) / [lazydocker](https://github.com/jesseduffield/lazydocker) — the "lazy" spirit
 

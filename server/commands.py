@@ -18,6 +18,52 @@ from .translations import _load_translation_cache, _save_translation_cache
 from .utils import _parse_frontmatter, _safe_read, _strip_frontmatter
 
 
+_BUILTIN_COMMANDS: list[tuple[str, str, str]] = [
+    ("permissions", "Set what Codex can do without asking first.", "Relax or tighten approval requirements mid-session."),
+    ("ide", "Include open files, current selection, and other IDE context.", "Pull editor context into the next prompt."),
+    ("keymap", "Remap TUI keyboard shortcuts.", "Inspect and persist custom shortcut bindings in config.toml."),
+    ("vim", "Toggle Vim mode for the composer.", "Switch between Vim normal/insert behavior and default editing mode."),
+    ("sandbox-add-read-dir", "Grant sandbox read access to an extra directory.", "Windows-only helper for absolute directories outside readable roots."),
+    ("agent", "Switch the active agent thread.", "Inspect or continue work in a spawned subagent thread."),
+    ("apps", "Browse apps and connectors.", "Attach an app before asking Codex to use it."),
+    ("plugins", "Browse installed and discoverable plugins.", "Inspect plugin tools, install suggested plugins, or manage availability."),
+    ("hooks", "Review lifecycle hooks.", "Inspect configured hooks, trust changed hooks, or disable non-managed hooks."),
+    ("clear", "Clear the terminal and start a fresh chat.", "Reset visible UI and conversation together."),
+    ("compact", "Summarize the visible conversation to free tokens.", "Retain key points after long runs."),
+    ("copy", "Copy the latest completed Codex output.", "Grab the latest finished response or plan text."),
+    ("diff", "Show the Git diff.", "Review edits before committing or testing."),
+    ("exit", "Exit the CLI.", "Same as /quit."),
+    ("experimental", "Toggle experimental features.", "Enable optional features from the CLI."),
+    ("approve", "Approve one retry of a recent auto review denial.", "Retry an action the auto reviewer denied."),
+    ("memories", "Configure memory use and generation.", "Turn memory injection or generation on or off."),
+    ("skills", "Browse and use skills.", "Select a relevant local skill for task-specific behavior."),
+    ("feedback", "Send logs to Codex maintainers.", "Report issues or share diagnostics."),
+    ("init", "Generate an AGENTS.md scaffold.", "Capture persistent instructions for the repository or subdirectory."),
+    ("logout", "Sign out of Codex.", "Clear local credentials on a shared machine."),
+    ("mcp", "List configured MCP tools.", "Check which external tools Codex can call."),
+    ("mention", "Attach a file to the conversation.", "Point Codex at files or folders to inspect next."),
+    ("model", "Choose the active model.", "Switch model and reasoning effort when available."),
+    ("fast", "Toggle a Fast service tier.", "Use when the model catalog exposes Fast mode."),
+    ("plan", "Switch to plan mode.", "Ask Codex to propose a plan before implementation."),
+    ("goal", "Set, pause, resume, view, or clear a task goal.", "Requires features.goals."),
+    ("personality", "Choose a communication style.", "Adjust response style without changing instructions."),
+    ("ps", "Show experimental background terminals.", "Check long-running commands."),
+    ("stop", "Stop all background terminals.", "Cancel background terminal work."),
+    ("fork", "Fork the current conversation.", "Branch the active session to explore another approach."),
+    ("side", "Start an ephemeral side conversation.", "Ask a focused follow-up without disrupting the main thread."),
+    ("raw", "Toggle raw scrollback mode.", "Make terminal selection and copying less formatted."),
+    ("resume", "Resume a saved conversation.", "Continue previous CLI work."),
+    ("new", "Start a new conversation.", "Reset chat context without leaving the CLI."),
+    ("quit", "Exit the CLI.", "Same as /exit."),
+    ("review", "Ask Codex to review your working tree.", "Run after changes or before handoff."),
+    ("status", "Display session configuration and token usage.", "Confirm model, approval policy, writable roots, and context."),
+    ("debug-config", "Print config layer and requirements diagnostics.", "Debug precedence and policy requirements."),
+    ("statusline", "Configure TUI status-line fields.", "Pick and reorder footer items and persist in config.toml."),
+    ("title", "Configure terminal title fields.", "Pick title items such as project, branch, model, and task progress."),
+    ("theme", "Choose a syntax-highlighting theme.", "Preview and persist a terminal theme."),
+]
+
+
 # ───────── 카테고리 휴리스틱 (키워드 → 카테고리 id) ─────────
 
 CMD_CATEGORIES = [
@@ -122,6 +168,16 @@ def list_commands(force_refresh: bool = False) -> list:
 
 def _list_commands_uncached() -> list:
     out: list = []
+    for name, description, content in _BUILTIN_COMMANDS:
+        out.append({
+            "id": name,
+            "name": name,
+            "description": description,
+            "scope": "builtin",
+            "path": "",
+            "content": content,
+            "doc": "https://developers.openai.com/codex/cli/slash-commands#built-in-slash-commands",
+        })
     # user global commands
     if COMMANDS_DIR.exists():
         for p in sorted(COMMANDS_DIR.rglob("*.md")):

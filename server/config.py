@@ -45,6 +45,7 @@ def _cwd_to_slug(cwd: Path) -> str:
 
 # ───────── ~/.codex 자원 경로 ─────────
 CODEX_HOME = _env_path("CODEX_HOME", Path.home() / ".codex")
+CODEX_CONFIG_TOML = _env_path("CODEX_CONFIG_TOML", CODEX_HOME / "config.toml")
 AGENTS_MD = CODEX_HOME / "AGENTS.md"
 SETTINGS_JSON = CODEX_HOME / "settings.json"
 SKILLS_DIR = CODEX_HOME / "skills"
@@ -63,6 +64,7 @@ HISTORY_JSONL = CODEX_HOME / "history.jsonl"
 
 # ───────── Codex 전역 JSON ─────────
 CODEX_JSON = _env_path("CODEX_JSON", Path.home() / ".codex.json")
+CODEX_AUTH_JSON = _env_path("CODEX_AUTH_JSON", CODEX_HOME / "auth.json")
 CODEX_DESKTOP_CONFIG = _env_path(
     "CODEX_DESKTOP_CONFIG",
     Path.home() / "Library" / "Application Support" / "Codex" / "codex_desktop_config.json",

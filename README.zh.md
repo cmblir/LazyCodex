@@ -2,27 +2,40 @@
 
 # 💤 LazyCodex
 
-<img src="./docs/logo/mascot.svg" alt="LazyCodex 吉祥物 — 闭眼小憩的像素角色" width="200" height="171" />
+<img src="./docs/logo/mascot.svg" alt="LazyCodex 吉祥物 — 睡意朦胧的终端机器人" width="200" height="200" />
 
-**所有 Codex 工作，懒洋洋又优雅。**
+**用于配置和运营 Codex 的本地控制台。**
 
-_别再死记 50+ 个 CLI 命令。点一下就好。_
+_不用逐个手改配置文件。打开一个仪表盘，把 Codex 连接好。_
 
 [![English](https://img.shields.io/badge/🇺🇸_English-blue)](./README.md)
 [![한국어](https://img.shields.io/badge/🇰🇷_한국어-blue)](./README.ko.md)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/version-v3.91.0-green.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v3.99.33-green.svg)](./CHANGELOG.md)
 
 </div>
 
-LazyCodex 是一个**本地优先的指挥中心**，管理你的 `~/.codex/` 目录（agents、skills、hooks、plugins、MCP、sessions、projects），附带 n8n 风格的工作流引擎。所有功能通过一行 `python3 server.py` 启动 — Python 标准库、单文件 HTML、无安装步骤。
+LazyCodex 是面向 Codex 的**本地优先配置与运营仪表盘**。它把 `~/.codex/` 下分散的 agents、skills、hooks、plugins、MCP connectors、permissions、sessions、projects、models 和 workflows 变成可点击的管理界面。启动只需一行 `python3 server.py` — Python 标准库、单文件 HTML、无运行时构建步骤。
 
 > ℹ️ 独立终端 CLI `lazyclaw` 现已迁移到独立仓库：<https://github.com/cmblir/lazyclaw>（`npm i -g lazyclaw`）。
 
 **无云端上传。无遥测。无依赖。**
 
 ---
+
+## LazyCodex 帮你配置什么
+
+| 范围 | 能做什么 |
+|---|---|
+| 首次运行 | 检测 Python、Codex CLI、`CODEX_HOME`、数据存储与剩余设置步骤 |
+| Codex 配置 | 编辑官方 `~/.codex/config.toml` 设置：model、provider、reasoning、approvals、sandbox、profiles、shell environment policy、MCP、plugins、skills 与 subagents |
+| 安全 | 管理 allow/deny 权限、hook 行为、备份与静态安全扫描 |
+| 扩展 | 配置 MCP servers、plugins、marketplaces、skills、agents、slash commands 与 project agents |
+| 运营 | 重建 session 索引、查看成本和 token 指标、回放 session、监控活动 CLI 进程 |
+| 自动化 | 构建 n8n 风格 Codex workflows、Crew Wizard、Auto-Resume、routines 与通知路径 |
+
+LazyCodex 的产品风格就是 "lazy"：先显示当前状态，再建议下一步，把真实文件保留在本地且可读。
 
 ## 🚀 快速开始
 
@@ -33,7 +46,7 @@ python3 server.py
 # → http://127.0.0.1:19500
 ```
 
-需要 Python 3.10+ 与 Anthropic 的 `codex` CLI（可选 — 仅 Codex 相关功能需要）。
+需要 Python 3.10+ 与 OpenAI 的 `codex` CLI（可选 — 仅 Codex 相关功能需要）。
 
 ```bash
 # 可选环境变量
@@ -41,6 +54,8 @@ PORT=19500 python3 server.py
 LOG_LEVEL=DEBUG python3 server.py
 CODEX_HOME=/path/to/.codex python3 server.py
 ```
+
+首次使用先打开 **Start Here** 查看清单，然后按需进入 **Settings**、**MCP Connectors**、**Permissions**、**Plugins** 和 **Workflows**。
 
 ---
 
@@ -104,7 +119,7 @@ LazyCodex/
 
 **"Open in app" 启动了别的应用** — Chrome PWA 按 origin (`http://127.0.0.1:<port>`) 注册，同一端口下你之前安装的其他 PWA 会拦截启动。打开 `chrome://apps`，移除指向该端口的非 LazyCodex 条目；再到 `chrome://settings/content/all` 搜索端口 → "Delete data" 清空缓存的安装状态。v3.99 的 manifest 设置了显式的 `id`，即使同 origin 还有其他 PWA，Chrome 也会把仪表板视作独立应用。
 
-**"command not found: codex"** — 安装 [Codex CLI](https://codex.com/codex-code)。不依赖 `codex` 的标签（工作流编辑器、AI Providers、MCP 等）仍然可用。
+**"command not found: codex"** — 安装 [Codex CLI](https://developers.openai.com/codex/cli)。不依赖 `codex` 的标签（工作流编辑器、AI Providers、MCP 等）仍然可用。
 
 **Auto-Resume 实时注入无响应** — macOS 系统设置 → 隐私与安全 → 辅助功能中为 `python3` 授权。权限缺失时会显示错误码 `1002 / -1719` 与提示。
 
@@ -147,7 +162,7 @@ node scripts/e2e-dashboard-qa.mjs   # 完整仪表板 probe
 
 ## 🙏 致谢
 
-- [Anthropic Codex CLI](https://codex.com/codex-code) — 本仪表板基于的 CLI
+- [OpenAI Codex CLI](https://developers.openai.com/codex/cli) — 本仪表板基于的 CLI
 - [n8n](https://n8n.io) — 工作流编辑器的灵感
 - [lazygit](https://github.com/jesseduffield/lazygit) / [lazydocker](https://github.com/jesseduffield/lazydocker) — 项目命名的灵感
 

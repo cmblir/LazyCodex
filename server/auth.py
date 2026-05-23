@@ -1,16 +1,17 @@
 """인증 / 계정 정보 — Codex CLI 연동 상태, 플랜, 로그인/로그아웃.
 
-~/.codex.json 의 oauthAccount 를 읽어 UI 에 노출하고,
+~/.codex.json 의 oauthAccount 또는 ~/.codex/auth.json 을 읽어 UI 에 노출하고,
 `codex auth login` / `logout` 을 감싸 로컬 훅을 제공한다.
 """
 from __future__ import annotations
 
+import base64
 import json
 import platform
 import shutil
 import subprocess
 
-from .config import CODEX_JSON
+from .config import CODEX_AUTH_JSON, CODEX_JSON
 from .translations import _load_dash_config, _save_dash_config
 from .utils import _safe_read
 
@@ -26,27 +27,82 @@ CODEX_PLANS = [
 ]
 
 
-def api_team_info() -> dict:
-    """조직/워크스페이스/팀 정보 (codex.ai team 기능용)."""
+def _read_legacy_codex_json() -> dict:
     if not CODEX_JSON.exists():
-        return {"connected": False}
+        return {}
     try:
         data = json.loads(_safe_read(CODEX_JSON, 500000))
-    except Exception as e:
-        return {"connected": False, "error": str(e)}
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _decode_jwt_payload(token: str) -> dict:
+    if not token or token.count(".") < 2:
+        return {}
+    try:
+        payload = token.split(".")[1]
+        payload += "=" * (-len(payload) % 4)
+        data = json.loads(base64.urlsafe_b64decode(payload.encode("utf-8")))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _read_codex_auth_json() -> dict:
+    """Read modern Codex CLI auth state without exposing token values."""
+    if not CODEX_AUTH_JSON.exists():
+        return {}
+    try:
+        data = json.loads(_safe_read(CODEX_AUTH_JSON, 500000))
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    tokens = data.get("tokens") if isinstance(data.get("tokens"), dict) else {}
+    id_payload = _decode_jwt_payload(tokens.get("id_token") or "")
+    return {
+        "authMode": data.get("auth_mode") or "",
+        "accountId": tokens.get("account_id") or id_payload.get("sub") or "",
+        "email": id_payload.get("email") or "",
+        "displayName": id_payload.get("name") or id_payload.get("nickname") or "",
+        "emailVerified": bool(id_payload.get("email_verified", False)),
+        "lastRefresh": data.get("last_refresh") or "",
+        "hasAccessToken": bool(tokens.get("access_token")),
+        "hasRefreshToken": bool(tokens.get("refresh_token")),
+    }
+
+
+def _auth_file_mtime() -> float:
+    mtimes = []
+    for p in (CODEX_JSON, CODEX_AUTH_JSON):
+        try:
+            if p.exists():
+                mtimes.append(p.stat().st_mtime)
+        except Exception:
+            pass
+    return max(mtimes) if mtimes else 0.0
+
+
+def api_team_info() -> dict:
+    """조직/워크스페이스/팀 정보 (codex.ai team 기능용)."""
+    data = _read_legacy_codex_json()
     oauth = data.get("oauthAccount") or {}
+    modern = _read_codex_auth_json()
+    if not oauth and not modern:
+        return {"connected": False}
     cfg = _load_dash_config()
     claimed = cfg.get("claimedPlan") or ""
     return {
-        "connected": bool(oauth),
-        "displayName": oauth.get("displayName", ""),
-        "email": oauth.get("emailAddress", ""),
+        "connected": bool(oauth or modern),
+        "displayName": oauth.get("displayName", "") or modern.get("displayName", ""),
+        "email": oauth.get("emailAddress", "") or modern.get("email", ""),
         "organizationUuid": oauth.get("organizationUuid", ""),
         "organizationName": oauth.get("organizationName", ""),
         "organizationRole": oauth.get("organizationRole", ""),
         "workspaceRole": oauth.get("workspaceRole"),
-        "accountUuid": oauth.get("accountUuid", ""),
-        "billingType": oauth.get("billingType", ""),
+        "accountUuid": oauth.get("accountUuid", "") or modern.get("accountId", ""),
+        "billingType": oauth.get("billingType", "") or modern.get("authMode", ""),
         "hasExtraUsageEnabled": bool(oauth.get("hasExtraUsageEnabled", False)),
         "claimedPlan": claimed,
         "note": "상세 멤버 리스트/사용량은 codex.ai/settings/organization 에서 관리됩니다. 로컬에는 조직 식별자만 저장됨.",
@@ -64,18 +120,13 @@ _AUTH_STATUS_TTL_S = 30.0
 
 
 def api_auth_status() -> dict:
-    """~/.codex.json 에서 oauth 정보 읽어 연결 상태 반환 + codex CLI 설치 여부.
+    """Codex auth files에서 연결 상태 반환 + codex CLI 설치 여부.
 
     QQ136 — Memoised for up to 30s; auto-invalidates when ~/.codex.json
     mtime changes (covers `codex auth login` / refresh).
     """
     import time as _time
-    cur_mtime = 0.0
-    try:
-        if CODEX_JSON.exists():
-            cur_mtime = CODEX_JSON.stat().st_mtime
-    except Exception:
-        pass
+    cur_mtime = _auth_file_mtime()
     cached = _AUTH_STATUS_CACHE.get("data")
     if (
         cached is not None
@@ -94,27 +145,25 @@ def api_auth_status() -> dict:
         except Exception:
             cli_version = ""
 
-    if not CODEX_JSON.exists():
+    data = _read_legacy_codex_json()
+    modern_auth = _read_codex_auth_json()
+    if not data and not modern_auth:
         return {
             "connected": False,
-            "reason": "~/.codex.json 이 없습니다 — Codex CLI에 로그인하세요.",
+            "reason": "~/.codex/auth.json 또는 ~/.codex.json 이 없습니다 — Codex CLI에 로그인하세요.",
             "cliInstalled": bool(cli_path),
             "cliPath": cli_path,
             "cliVersion": cli_version,
         }
-    try:
-        data = json.loads(_safe_read(CODEX_JSON, 200000))
-    except Exception as e:
-        return {"connected": False, "reason": f"~/.codex.json 파싱 실패: {e}"}
 
     oauth = data.get("oauthAccount") or {}
-    if not oauth:
+    if not oauth and not modern_auth:
         return {
             "connected": False, "reason": "OAuth 계정 없음 — `codex auth login` 실행 필요.",
             "cliInstalled": bool(cli_path), "cliPath": cli_path, "cliVersion": cli_version,
         }
 
-    billing = oauth.get("billingType") or ""
+    billing = oauth.get("billingType") or modern_auth.get("authMode", "")
     # 로컬에는 세부 플랜(Pro/Max/Team)이 저장되지 않음.
     # 사용자가 대시보드에서 직접 선택한 값이 있으면 우선.
     cfg = _load_dash_config()
@@ -130,12 +179,13 @@ def api_auth_status() -> dict:
     else:
         plan_label = "무료 / 미확인"
 
-    # `codex auth status` 에서 실시간 구독 타입 가져오기
+    # Older Codex CLIs exposed `codex auth status`; newer ones do not. Treat
+    # this subprocess as best-effort only and rely on auth.json as canonical.
     cli_auth: dict = {}
     if cli_path:
         try:
             raw = subprocess.check_output(
-                [cli_path, "auth", "status"], text=True, timeout=5,
+                [cli_path, "auth", "status"], text=True, timeout=5, stderr=subprocess.DEVNULL,
             ).strip()
             cli_auth = json.loads(raw) if raw.startswith("{") else {}
         except Exception:
@@ -150,9 +200,9 @@ def api_auth_status() -> dict:
     projects_count = len(data.get("projects", {}) or {})
     result = {
         "connected": True,
-        "email": cli_auth.get("email") or oauth.get("emailAddress", ""),
-        "displayName": oauth.get("displayName", ""),
-        "accountUuid": oauth.get("accountUuid", ""),
+        "email": cli_auth.get("email") or oauth.get("emailAddress", "") or modern_auth.get("email", ""),
+        "displayName": oauth.get("displayName", "") or modern_auth.get("displayName", ""),
+        "accountUuid": oauth.get("accountUuid", "") or modern_auth.get("accountId", ""),
         "organizationUuid": cli_auth.get("orgId") or oauth.get("organizationUuid", ""),
         "organizationName": cli_auth.get("orgName") or "",
         "organizationRole": oauth.get("organizationRole", ""),
@@ -172,6 +222,9 @@ def api_auth_status() -> dict:
         "cliInstalled": bool(cli_path),
         "cliPath": cli_path,
         "cliVersion": cli_version,
+        "authFile": str(CODEX_AUTH_JSON if modern_auth else CODEX_JSON),
+        "authMode": modern_auth.get("authMode", ""),
+        "authLastRefresh": modern_auth.get("lastRefresh", ""),
     }
     _AUTH_STATUS_CACHE["data"] = result
     _AUTH_STATUS_CACHE["ts"] = _time.time()
@@ -228,5 +281,3 @@ def api_auth_logout(body: dict) -> dict:
         return {"ok": True, "message": "로그아웃 되었습니다.", "output": r.stdout.strip()}
     except Exception as e:
         return {"ok": False, "error": str(e)}
-
-

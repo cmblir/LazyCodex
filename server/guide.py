@@ -448,28 +448,13 @@ def _codex_md_substantial() -> bool:
 
 
 def _mcp_count() -> int:
-    """~/.codex.json 의 mcpServers 수를 합산 (프로젝트 스코프 포함)."""
-    from .config import CODEX_JSON
-    if not CODEX_JSON.exists():
-        return 0
+    """user/project MCP 연결 수를 합산."""
     try:
-        data = json.loads(_safe_read(CODEX_JSON) or "{}")
+        from .mcp import list_connectors
+        conns = list_connectors()
+        return len(conns.get("local", [])) + len(conns.get("project", []))
     except Exception:
         return 0
-    if not isinstance(data, dict):
-        return 0
-    total = 0
-    servers = data.get("mcpServers")
-    if isinstance(servers, dict):
-        total += len(servers)
-    projects = data.get("projects")
-    if isinstance(projects, dict):
-        for p in projects.values():
-            if isinstance(p, dict):
-                ps = p.get("mcpServers")
-                if isinstance(ps, dict):
-                    total += len(ps)
-    return total
 
 
 def api_guide_toolkit() -> dict[str, Any]:
@@ -502,9 +487,9 @@ def api_guide_onboarding() -> dict[str, Any]:
             "title": "Codex CLI CLI 설치",
             "desc": "`~/.codex` 디렉토리가 존재해야 모든 기능이 동작합니다.",
             "done": CODEX_HOME.exists(),
-            "hint": "npm i -g @anthropic-ai/codex-code 또는 공식 설치 스크립트.",
+            "hint": "공식 설치 문서 기준으로 Codex CLI 를 설치하세요.",
             "navigate": "system",
-            "doc": "https://docs.codex.com/en/docs/codex-code/overview",
+            "doc": "https://developers.openai.com/codex/overview",
         },
         {
             "id": "codex-md",
@@ -513,7 +498,7 @@ def api_guide_onboarding() -> dict[str, Any]:
             "done": _codex_md_substantial(),
             "hint": "AGENTS.md 탭에서 편집 · `/init` 으로 자동 생성 가능.",
             "navigate": "codexmd",
-            "doc": "https://docs.codex.com/en/docs/codex-code/memory",
+            "doc": "https://developers.openai.com/codex/agents-md",
         },
         {
             "id": "permissions",
@@ -522,7 +507,7 @@ def api_guide_onboarding() -> dict[str, Any]:
             "done": _settings_has_permissions(),
             "hint": "권한 탭에서 추천 프로파일 클릭 — rm -rf /, curl | sh 등 기본 차단.",
             "navigate": "permissions",
-            "doc": "https://docs.codex.com/en/docs/codex-code/iam",
+            "doc": "https://developers.openai.com/codex/rules",
         },
         {
             "id": "hooks",
@@ -531,17 +516,17 @@ def api_guide_onboarding() -> dict[str, Any]:
             "done": _settings_has_hooks(),
             "hint": "훅 탭 · PreToolUse 에 시크릿 감지 스크립트 추천.",
             "navigate": "hooks",
-            "doc": "https://docs.codex.com/en/docs/codex-code/hooks",
+            "doc": "https://developers.openai.com/codex/hooks",
         },
         {
             "id": "skills",
             "title": "스킬 1개 이상 보유",
-            "desc": "스킬은 클로드가 자동으로 적재하는 지식 모듈입니다.",
+            "desc": "스킬은 Codex가 작업 문맥에서 재사용하는 지식/워크플로 모듈입니다.",
             "done": skills_n >= 1,
             "detail": f"{skills_n} 개 감지",
-            "hint": "Everything Codex CLI 설치 시 183개가 한 번에 추가됩니다.",
+            "hint": "반복 작업은 SKILL.md 기반 스킬로 표준화하세요.",
             "navigate": "skills",
-            "doc": "https://docs.codex.com/en/docs/codex-code/skills",
+            "doc": "https://developers.openai.com/codex/skills",
         },
         {
             "id": "agents",
@@ -551,7 +536,7 @@ def api_guide_onboarding() -> dict[str, Any]:
             "detail": f"{agents_n} 개 감지",
             "hint": "에이전트 탭 · planner / code-reviewer 먼저 만들어보세요.",
             "navigate": "agents",
-            "doc": "https://docs.codex.com/en/docs/codex-code/sub-agents",
+            "doc": "https://developers.openai.com/codex/subagents",
         },
         {
             "id": "commands",
@@ -561,7 +546,7 @@ def api_guide_onboarding() -> dict[str, Any]:
             "detail": f"{commands_n} 개 감지",
             "hint": "슬래시 명령어 탭에서 /tdd, /plan, /code-review 등 추가.",
             "navigate": "commands",
-            "doc": "https://docs.codex.com/en/docs/codex-code/slash-commands",
+            "doc": "https://developers.openai.com/codex/cli/slash-commands",
         },
         {
             "id": "mcp",
@@ -571,7 +556,7 @@ def api_guide_onboarding() -> dict[str, Any]:
             "detail": f"{mcp_n} 개 감지",
             "hint": "MCP 탭에서 원클릭 설치 · 처음엔 context7 + github 조합 추천.",
             "navigate": "mcp",
-            "doc": "https://docs.codex.com/en/docs/codex-code/mcp",
+            "doc": "https://developers.openai.com/codex/mcp",
         },
         {
             "id": "plugins",
@@ -581,7 +566,7 @@ def api_guide_onboarding() -> dict[str, Any]:
             "detail": f"{plugins_n} 개 설치",
             "hint": "플러그인 탭 → 마켓 추가 → everything-codex-code 설치.",
             "navigate": "plugins",
-            "doc": "https://docs.codex.com/en/docs/codex-code/plugins",
+            "doc": "https://developers.openai.com/codex/plugins",
         },
         {
             "id": "output-style",
@@ -590,7 +575,7 @@ def api_guide_onboarding() -> dict[str, Any]:
             "done": _count_dir(CODEX_HOME / "output-styles", "*") >= 1,
             "hint": "출력 스타일 탭에서 커스텀 스타일을 만들거나 기본값 확인.",
             "navigate": "outputStyles",
-            "doc": "https://docs.codex.com/en/docs/codex-code/output-styles",
+            "doc": "https://developers.openai.com/codex/config-reference",
         },
     ]
 

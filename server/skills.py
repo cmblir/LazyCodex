@@ -14,13 +14,61 @@ from typing import Optional
 
 from .codex_md import get_settings
 from .config import PLUGINS_DIR, SKILLS_DIR
+from .plugins import discover_plugin_roots
 from .translations import _load_translation_cache
 from .utils import _parse_frontmatter, _safe_read, _safe_write, _strip_frontmatter
+
+
+def _skill_record(skill_md: Path, sid: str, scope: str, source: str, plugin_key: str = "", read_only: bool = False) -> dict:
+    raw = _safe_read(skill_md)
+    meta = _parse_frontmatter(raw)
+    root = skill_md.parent
+    return {
+        "id": sid,
+        "name": meta.get("name", root.name),
+        "path": str(root),
+        "description": meta.get("description", ""),
+        "source": source,
+        "scope": scope,
+        "pluginKey": plugin_key,
+        "pluginEnabled": None if scope != "plugin" else False,
+        "readOnly": read_only,
+        "files": [f.name for f in root.iterdir() if f.is_file()],
+        "content": _strip_frontmatter(raw)[:8000],
+    }
+
+
+def _scan_system_skills() -> list:
+    out: list = []
+    system_dir = SKILLS_DIR / ".system"
+    if not system_dir.exists():
+        return out
+    for sd in sorted(system_dir.iterdir()):
+        skill_md = sd / "SKILL.md"
+        if sd.is_dir() and skill_md.exists():
+            out.append(_skill_record(skill_md, f".system:{sd.name}", "system", "Codex system", read_only=True))
+    return out
 
 
 def _scan_plugin_skills() -> list:
     """활성·비활성 모든 마켓플레이스 플러그인의 스킬 수집."""
     out: list = []
+    for plugin in discover_plugin_roots():
+        root = Path(plugin.get("installPath", ""))
+        skills_dir = root / "skills"
+        if not skills_dir.exists():
+            continue
+        for sd in sorted(skills_dir.iterdir()):
+            skill_md = sd / "SKILL.md"
+            if not sd.is_dir() or not skill_md.exists():
+                continue
+            sid = f"{plugin['marketplace']}:{plugin['name']}:{sd.name}"
+            rec = _skill_record(skill_md, sid, "plugin", f"{plugin['marketplace']}/{plugin['name']}", plugin["id"], read_only=True)
+            rec["pluginEnabled"] = bool(plugin.get("enabled"))
+            out.append(rec)
+    if out:
+        return out
+
     if not PLUGINS_DIR.exists():
         return out
     markets_dir = PLUGINS_DIR / "marketplaces"
@@ -162,14 +210,17 @@ def _list_skills_uncached() -> list:
                 ok = False
             if not ok:
                 continue
+            if p.name == ".system":
+                continue
+            skill_md = p / "SKILL.md"
+            if not skill_md.exists():
+                continue
             meta: dict = {}
             content = ""
             try:
-                skill_md = p / "SKILL.md"
-                if skill_md.exists():
-                    raw = _safe_read(skill_md)
-                    meta = _parse_frontmatter(raw)
-                    content = _strip_frontmatter(raw)
+                raw = _safe_read(skill_md)
+                meta = _parse_frontmatter(raw)
+                content = _strip_frontmatter(raw)
             except Exception:
                 pass
             try:
@@ -187,12 +238,18 @@ def _list_skills_uncached() -> list:
                 "content": content[:8000],
             })
 
+    out.extend(_scan_system_skills())
+
     # 플러그인 스킬 — 활성 여부 주입
     plugin_skills = _scan_plugin_skills()
     settings = get_settings()
     enabled_map = (settings.get("enabledPlugins") or {}) if isinstance(settings, dict) else {}
     for ps in plugin_skills:
-        ps["pluginEnabled"] = bool(enabled_map.get(ps.get("pluginKey", ""), False))
+        key = ps.get("pluginKey", "")
+        if key in enabled_map:
+            ps["pluginEnabled"] = bool(enabled_map.get(key))
+        else:
+            ps["pluginEnabled"] = bool(ps.get("pluginEnabled"))
     out.extend(plugin_skills)
 
     # 번역 주입 (ko/en/zh)
@@ -207,10 +264,23 @@ def _list_skills_uncached() -> list:
 
 def _resolve_skill_path(skill_id: str) -> tuple[Optional[Path], str]:
     """skill_id → (실제 SKILL.md 경로, scope). scope ∈ {'user','plugin',''}."""
+    if skill_id.startswith(".system:"):
+        sid = skill_id.split(":", 1)[1]
+        if not re.match(r"^[a-zA-Z0-9_.-]+$", sid or ""):
+            return None, ""
+        p = SKILLS_DIR / ".system" / sid / "SKILL.md"
+        return (p if p.exists() else None), "system"
     if ":" in skill_id:
         parts = skill_id.split(":")
         if not all(re.match(r"^[a-zA-Z0-9_.-]+$", x or "") for x in parts):
             return None, ""
+        if len(parts) == 3:
+            market, plugin, sd = parts
+            for root in discover_plugin_roots():
+                if root.get("marketplace") == market and root.get("name") == plugin:
+                    p = Path(root.get("installPath", "")) / "skills" / sd / "SKILL.md"
+                    if p.exists():
+                        return p, "plugin"
         markets_dir = PLUGINS_DIR / "marketplaces"
         if len(parts) == 3:
             market, plugin, sd = parts
@@ -240,7 +310,7 @@ def get_skill(skill_id: str) -> dict:
         "raw": raw,
         "content": _strip_frontmatter(raw),
         "scope": scope,
-        "readOnly": scope == "plugin",
+        "readOnly": scope in ("plugin", "system"),
         "path": str(p),
     }
 

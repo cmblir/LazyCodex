@@ -34,13 +34,13 @@ _BUILTIN_AGENTS = [
      "model": "inherit", "tools": ["*"]},
     {"id": "Explore", "name": "Explore",
      "description": "코드베이스 탐색 전용 고속 에이전트.",
-     "model": "haiku", "tools": ["Read", "Grep", "Glob", "WebFetch"]},
+     "model": "inherit", "tools": ["Read", "Grep", "Glob", "WebFetch"]},
     {"id": "Plan", "name": "Plan",
      "description": "구현 전략 수립 — 단계별 플랜과 핵심 파일 식별.",
-     "model": "sonnet", "tools": ["Read", "Grep", "Glob"]},
+     "model": "inherit", "tools": ["Read", "Grep", "Glob"]},
     {"id": "statusline-setup", "name": "statusline-setup",
      "description": "Codex CLI 상태라인 커스터마이징.",
-     "model": "haiku", "tools": ["Read", "Edit"]},
+     "model": "inherit", "tools": ["Read", "Edit"]},
 ]
 
 

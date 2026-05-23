@@ -17,7 +17,7 @@ TAB_GROUPS = [
     ("learn",      "Learn — 신기능 · 온보딩 · 공식 문서 · 가이드"),
     ("main",       "Main — 대시보드 · 프로젝트 · 플랜 · 세션"),
     ("build",      "Build — 워크플로우 · 에이전트 · 프롬프트"),
-    ("playground", "Playground — Codex API 실험 12종 + 프로바이더"),
+    ("playground", "Playground — OpenAI API / third-party experiments + providers"),
     ("config",     "Config — 훅 · 권한 · MCP · 플러그인 · 설정"),
     ("observe",    "Observe — 비용 · 메트릭 · 시스템 관측"),
     ("reliability","Reliability — Auto-Resume · 자동 복구 · 바인딩 관리"),
@@ -36,8 +36,8 @@ _GROUP_REMAP = {
 # (id, group, desc, keywords)
 TAB_CATALOG: list[tuple[str, str, str, list[str]]] = [
     # ── 신기능 ─────────────────────────────────────
-    ("features",      "new",      "신기능 — Anthropic 최신 발표 카드",
-        ["신기능", "Anthropic 발표", "최신 기능"]),
+    ("features",      "new",      "신기능 — OpenAI Codex 업데이트와 LazyCodex 변경 카드",
+        ["신기능", "OpenAI Codex 발표", "최신 기능"]),
     ("onboarding",    "new",      "시작하기 — ~/.codex 상태 실시간 감지 단계별 체크리스트",
         ["시작하기", "온보딩", "checklist", "체크리스트"]),
     ("guideHub",      "new",      "가이드 & 툴 — 외부 가이드·유용한 툴·베스트 프랙티스·치트시트",
@@ -86,13 +86,13 @@ TAB_CATALOG: list[tuple[str, str, str, list[str]]] = [
     ("commands",      "work",     "슬래시 명령어 목록",
         ["슬래시", "슬래시 명령어", "slash"]),
     ("promptCache",   "work",
-        "프롬프트 캐시 실험실 — Anthropic Messages API 의 cache_control 을 "
+        "프롬프트 캐시 실험실 — OpenAI Codex Messages API 의 cache_control 을 "
         "시스템/도구/메시지 블록에 적용해 cache_creation / cache_read 토큰과 "
         "비용 절감을 실측. 예시 3종(시스템/문서/도구) 원클릭 실행, 히스토리 20건.",
         ["프롬프트 캐시", "prompt cache", "cache_control", "ephemeral",
          "캐시 절감", "cache_read", "cache_creation"]),
     ("thinkingLab",   "work",
-        "Extended Thinking 실험실 — Opus/Sonnet 의 thinking block 을 분리 시각화. "
+        "Extended Thinking 실험실 — GPT-5 Codex/o3 의 thinking block 을 분리 시각화. "
         "budget_tokens 슬라이더, 예시 3종(수학/디버깅/플래닝), 히스토리 20건.",
         ["extended thinking", "thinking", "reasoning", "추론", "budget_tokens",
          "thinking block"]),
@@ -108,13 +108,13 @@ TAB_CATALOG: list[tuple[str, str, str, list[str]]] = [
         ["batch", "메시지 배치", "message batches", "대량 요청", "jsonl",
          "일괄 처리"]),
     ("apiFiles",      "work",
-        "Files API — Anthropic 파일 업로드 · 목록 · 삭제 + 업로드한 파일을 "
+        "Files API — OpenAI Codex 파일 업로드 · 목록 · 삭제 + 업로드한 파일을 "
         "메시지에 document 로 reference 해서 질문 테스트.",
         ["files api", "파일 업로드", "document reference", "files",
          "file_id"]),
     ("visionLab",     "work",
         "Vision / PDF 실험실 — 이미지(PNG/JPG/WebP/GIF) 또는 PDF 를 업로드해 "
-        "Opus / Sonnet / Haiku 3 모델에 병렬 질문 → 응답 나란히 비교.",
+        "o3 / GPT-5 Codex / o4-mini 3 모델에 병렬 질문 → 응답 나란히 비교.",
         ["vision", "이미지 인식", "PDF", "멀티모달", "multimodal",
          "image_url", "비교"]),
     ("modelBench",    "work",
@@ -125,7 +125,7 @@ TAB_CATALOG: list[tuple[str, str, str, list[str]]] = [
          "지연 비교", "cost compare"]),
     ("serverTools",   "work",
         "Codex 공식 hosted tool 플레이그라운드 — 🌐 web_search + "
-        "🧪 code_execution. Anthropic 서버가 직접 실행하는 도구를 체크박스로 "
+        "🧪 code_execution. OpenAI Codex 서버가 직접 실행하는 도구를 체크박스로 "
         "활성화하고 응답 블록(server_tool_use / *_tool_result / text)을 분류 시각화.",
         ["web_search", "웹 검색", "code_execution", "코드 실행",
          "hosted tool", "server tool", "공식 도구"]),
@@ -198,8 +198,7 @@ TAB_CATALOG: list[tuple[str, str, str, list[str]]] = [
         ["ralph", "랄프", "loop", "루프", "iteration", "반복", "PROMPT.md",
          "completion-promise", "max-iter", "budget", "예산", "ralph wiggum"]),
     ("codexDocs",    "new",
-        "Codex Docs Hub — docs.anthropic.com 주요 페이지(Codex CLI / API / "
-        "Agent SDK / Models / Account) 를 카테고리별 카드로 색인 + 검색. "
+        "Codex Docs Hub — developers.openai.com/codex 공식 문서를 카테고리별 카드로 색인 + 검색. "
         "각 카드는 관련 대시보드 탭으로도 연결.",
         ["docs", "공식 문서", "documentation", "codex docs", "reference"]),
 
@@ -289,7 +288,7 @@ TAB_CATALOG: list[tuple[str, str, str, list[str]]] = [
 
 # 탭 설명 다국어 매핑 (챗봇 + 프론트 다국어 전환용)
 TAB_DESC_I18N: dict[str, dict[str, str]] = {
-    "features": {"en": "New Features — Latest Anthropic announcements", "zh": "新功能 — Anthropic 最新发布"},
+    "features": {"en": "New Features — Latest OpenAI Codex announcements", "zh": "新功能 — OpenAI Codex 最新发布"},
     "onboarding": {"en": "Getting Started — Step-by-step checklist", "zh": "快速入门 — 分步清单"},
     "guideHub": {"en": "Guides & Tools — Best practices & cheat sheets", "zh": "指南与工具 — 最佳实践/速查表"},
     "overview": {"en": "Overview / Optimization Score", "zh": "概览 / 优化评分"},
@@ -305,20 +304,20 @@ TAB_DESC_I18N: dict[str, dict[str, str]] = {
     "commands": {"en": "Slash commands", "zh": "斜杠命令"},
     "promptCache": {"en": "Prompt Cache Lab — cache_control + cache_read/creation tokens + cost savings",
                    "zh": "提示缓存实验室 — cache_control + cache_read/creation 令牌 + 成本节约"},
-    "thinkingLab": {"en": "Extended Thinking Lab — visualize Opus/Sonnet thinking blocks with budget slider",
-                   "zh": "扩展思维实验室 — 可视化 Opus/Sonnet 思维块,带 budget 滑块"},
+    "thinkingLab": {"en": "Extended Thinking Lab — visualize GPT-5 Codex/o3 thinking blocks with budget slider",
+                   "zh": "扩展思维实验室 — 可视化 GPT-5 Codex/o3 思维块,带 budget 滑块"},
     "toolUseLab": {"en": "Tool Use Playground — define tools, trigger tool_use, feed tool_result across multi-turn chains",
                   "zh": "工具使用实验室 — 定义工具,触发 tool_use,多轮传递 tool_result"},
     "batchJobs": {"en": "Batch Jobs — submit large Message Batches, poll status, download JSONL results",
                  "zh": "批量任务 — 提交大批量 Message Batches,轮询状态,下载 JSONL 结果"},
     "apiFiles": {"en": "Files API — upload/list/delete files, reference them in messages as documents",
                 "zh": "Files API — 上传/列出/删除文件,并在消息中以 document 形式引用"},
-    "visionLab": {"en": "Vision/PDF Lab — drop an image or PDF, compare Opus/Sonnet/Haiku responses side-by-side",
-                 "zh": "视觉/PDF 实验室 — 拖入图片或 PDF,并排比较 Opus/Sonnet/Haiku 响应"},
+    "visionLab": {"en": "Vision/PDF Lab — drop an image or PDF, compare GPT-5 Codex/o3/o4-mini responses side-by-side",
+                 "zh": "视觉/PDF 实验室 — 拖入图片或 PDF,并排比较 GPT-5 Codex/o3/o4-mini 响应"},
     "modelBench": {"en": "Model Benchmark — cross run prompt sets × models, aggregate latency/tokens/cost",
                   "zh": "模型基准测试 — 提示集 × 模型交叉运行,汇总延迟/令牌/费用"},
-    "serverTools": {"en": "Server-side Tools — web_search + code_execution hosted by Anthropic",
-                   "zh": "服务端工具 — Anthropic 托管的 web_search + code_execution"},
+    "serverTools": {"en": "Server-side Tools — web_search + code_execution hosted by OpenAI Codex",
+                   "zh": "服务端工具 — OpenAI Codex 托管的 web_search + code_execution"},
     "citationsLab": {"en": "Citations Lab — document + citations.enabled → span-highlighted answers",
                     "zh": "引用实验室 — 文档 + citations.enabled → 片段高亮的答案"},
     "agentSdkScaffold": {"en": "Agent SDK Scaffold — generate codex-agent-sdk Python/TS project skeletons",
@@ -339,8 +338,8 @@ TAB_DESC_I18N: dict[str, dict[str, str]] = {
                   "zh": "工件查看器 — 以 sandbox iframe + CSP + postMessage 白名单 + 静态过滤的 4 层安全机制安全预览工作流输出（HTML/SVG/Markdown/JSON）。"},
     "promptLibrary": {"en": "Prompt Library — save/search/duplicate prompts, convert to workflow",
                      "zh": "提示库 — 保存/搜索/复制提示,转换为工作流"},
-    "codexDocs": {"en": "Codex Docs Hub — curated docs.anthropic.com index with cross-links to dashboard tabs",
-                  "zh": "Codex 文档中心 — docs.anthropic.com 分类索引,关联仪表板标签页"},
+    "codexDocs": {"en": "Codex Docs Hub — curated developers.openai.com/codex index with cross-links to dashboard tabs",
+                  "zh": "Codex 文档中心 — developers.openai.com/codex 分类索引,关联仪表板标签页"},
     "hooks": {"en": "Event hooks", "zh": "事件钩子"},
     "permissions": {"en": "Tool permissions", "zh": "工具权限"},
     "mcp": {"en": "MCP Connectors", "zh": "MCP 连接器"},

@@ -320,7 +320,7 @@ def polish(rec: Recommendation, *, assignee: str = "") -> Recommendation:
     success and we never block the start path on a polish error.
     """
     target = (assignee or os.environ.get("RALPH_POLISH_ASSIGNEE",
-                                          "codex:sonnet")).strip()
+                                          "codex:gpt-5-codex")).strip()
     try:
         resp = execute_with_assignee(
             target, rec.promptMd,

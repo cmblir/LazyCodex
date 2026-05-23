@@ -65,6 +65,9 @@ from .server_tools import (
     api_server_tools_catalog, api_server_tools_history, api_server_tools_run,
 )
 from .codex_docs import api_codex_docs_list, api_codex_docs_search
+from .codex_harness import (
+    api_codex_harness_apply, api_codex_harness_config, api_codex_harness_save,
+)
 from .citations_lab import (
     api_citations_examples, api_citations_history, api_citations_test,
 )
@@ -316,6 +319,7 @@ ROUTES_GET: dict[str, Callable[[dict], Any]] = {
     "/api/connectors": lambda q: list_connectors(),
     "/api/projects": lambda q: list_projects(),
     "/api/settings": lambda q: get_settings(),
+    "/api/codex-harness/config": api_codex_harness_config,
     "/api/guide/recommended-settings": lambda q: get_recommended_settings(),
     "/api/briefing/overview": lambda q: briefing_overview(),
     "/api/briefing/devices": lambda q: briefing_devices(),
@@ -506,6 +510,7 @@ ROUTES_POST: dict[str, Callable[[dict], Any]] = {
     "/api/open-session": open_session_action,
     "/api/sessions/reindex": _reindex_handler,
     "/api/settings/preview": api_settings_preview,
+    "/api/codex-harness/apply": api_codex_harness_apply,
     "/api/project/file": api_project_file_put,
     "/api/project/ai-recommend": api_project_ai_recommend,
     # v2.43.0 — project-scope config (POST: delete-style ops)
@@ -679,6 +684,7 @@ ROUTES_POST: dict[str, Callable[[dict], Any]] = {
 ROUTES_PUT: dict[str, Callable[[dict], Any]] = {
     "/api/codex-md": put_codex_md,
     "/api/settings": put_settings,
+    "/api/codex-harness/config": api_codex_harness_save,
     "/api/project-agents/save": api_project_agent_save,
     # v2.43.0 — project-scope config (PUT)
     "/api/project/codex-md": api_project_codex_md_put,

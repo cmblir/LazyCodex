@@ -2,7 +2,7 @@
 
 - MCP_CATALOG: 알려진 MCP 서버 16종
 - api_mcp_catalog: 카탈로그 + 현재 설치 상태
-- api_mcp_install(_prepare)/remove/project_remove: `~/.codex.json` · `.mcp.json` 편집
+- api_mcp_install(_prepare)/remove/project_remove: `~/.codex/config.toml` · `.mcp.json` 편집
 - list_connectors: platform / local / plugin / desktop / project 분류
 - `_codex_mcp_list_cached`: 5분 TTL + stale-while-revalidate 디스크 캐시
 """
@@ -15,11 +15,12 @@ import shutil
 import subprocess
 import threading
 import time
+import tomllib
 from pathlib import Path
 
 from .codex_md import get_settings
 from .config import (
-    CODEX_DESKTOP_CONFIG, CODEX_HOME, CODEX_JSON,
+    CODEX_CONFIG_TOML, CODEX_DESKTOP_CONFIG, CODEX_HOME, CODEX_JSON,
     PLUGINS_DIR, _env_path,
 )
 from .db import _db, _db_init
@@ -176,6 +177,7 @@ MCP_CATALOG = [
 # ───────── placeholder 치환 ─────────
 
 _PLACEHOLDER_RE = re.compile(r"\$\{([A-Z_][A-Z0-9_]*)\}|<([A-Za-z_][A-Za-z0-9_-]*)>|YOUR_([A-Z_]+)")
+_BARE_TOML_KEY = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
 def _extract_placeholders(spec: dict) -> list:
@@ -231,6 +233,153 @@ def _substitute_placeholders(spec: dict, values: dict) -> dict:
             return {k: _sub(v) for k, v in val.items()}
         return val
     return _sub(spec)
+
+
+# ───────── config.toml / legacy .codex.json I/O ─────────
+
+def _toml_key(k: str) -> str:
+    return k if _BARE_TOML_KEY.match(k) else json.dumps(k, ensure_ascii=False)
+
+
+def _toml_value(v):
+    if isinstance(v, bool):
+        return "true" if v else "false"
+    if isinstance(v, (int, float)) and not isinstance(v, bool):
+        return str(v)
+    if isinstance(v, str):
+        return json.dumps(v, ensure_ascii=False)
+    if isinstance(v, list):
+        return "[" + ", ".join(_toml_value(x) for x in v) + "]"
+    if isinstance(v, dict):
+        return "{ " + ", ".join(f"{_toml_key(str(k))} = {_toml_value(val)}" for k, val in sorted(v.items())) + " }"
+    if v is None:
+        return '""'
+    return json.dumps(str(v), ensure_ascii=False)
+
+
+def _flatten_tables(path: list[str], data: dict, out: list[tuple[list[str], dict]]) -> None:
+    scalars: dict = {}
+    for k, v in data.items():
+        if isinstance(v, dict):
+            _flatten_tables([*path, str(k)], v, out)
+        else:
+            scalars[str(k)] = v
+    if path and scalars:
+        out.append((path, scalars))
+
+
+def _to_toml(data: dict) -> str:
+    top = {k: v for k, v in data.items() if not isinstance(v, dict)}
+    tables: list[tuple[list[str], dict]] = []
+    for k, v in data.items():
+        if isinstance(v, dict):
+            _flatten_tables([str(k)], v, tables)
+    lines: list[str] = [
+        "# Managed by LazyCodex. Comments from the previous file may not be preserved.",
+    ]
+    for k in sorted(top):
+        lines.append(f"{_toml_key(str(k))} = {_toml_value(top[k])}")
+    for table, values in tables:
+        lines.append("")
+        lines.append("[" + ".".join(_toml_key(p) for p in table) + "]")
+        for k in sorted(values):
+            lines.append(f"{_toml_key(str(k))} = {_toml_value(values[k])}")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _read_config_toml() -> tuple[dict, str]:
+    if not CODEX_CONFIG_TOML.exists():
+        return {}, ""
+    raw = _safe_read(CODEX_CONFIG_TOML, 2_000_000)
+    if not raw.strip():
+        return {}, ""
+    try:
+        data = tomllib.loads(raw)
+    except Exception as e:
+        return {}, f"config.toml 파싱 실패: {e}"
+    return (data if isinstance(data, dict) else {}), ""
+
+
+def _read_legacy_mcp_servers() -> dict:
+    if not CODEX_JSON.exists():
+        return {}
+    try:
+        data = json.loads(_safe_read(CODEX_JSON, 1_000_000))
+    except Exception:
+        return {}
+    servers = data.get("mcpServers") if isinstance(data, dict) else None
+    return servers if isinstance(servers, dict) else {}
+
+
+def _normalize_mcp_spec(cfg: dict) -> dict:
+    """Normalize user-provided MCP server spec to official config.toml key shape."""
+    if not isinstance(cfg, dict):
+        return {}
+    out: dict = {}
+    # Legacy marker key — not part of official schema.
+    t = str(cfg.get("type") or "").lower()
+    if t in ("http", "sse"):
+        url = cfg.get("url") or ""
+        if isinstance(url, str) and url.strip():
+            out["url"] = url.strip()
+    command = cfg.get("command")
+    if isinstance(command, str) and command.strip():
+        out["command"] = command.strip()
+    args = cfg.get("args")
+    if isinstance(args, list):
+        out["args"] = [str(x) for x in args]
+    env = cfg.get("env")
+    if isinstance(env, dict):
+        out["env"] = {str(k): str(v) for k, v in env.items()}
+    env_vars = cfg.get("env_vars")
+    if isinstance(env_vars, list):
+        out["env_vars"] = env_vars
+    cwd = cfg.get("cwd")
+    if isinstance(cwd, str) and cwd.strip():
+        out["cwd"] = cwd.strip()
+    for k in (
+        "bearer_token_env_var",
+        "http_headers",
+        "env_http_headers",
+        "enabled",
+        "required",
+        "startup_timeout_sec",
+        "startup_timeout_ms",
+        "tool_timeout_sec",
+        "enabled_tools",
+        "disabled_tools",
+        "default_tools_approval_mode",
+        "tools",
+        "scopes",
+        "oauth_resource",
+        "experimental_environment",
+    ):
+        if k in cfg:
+            out[k] = cfg[k]
+    return out
+
+
+def _load_user_mcp_servers() -> tuple[dict, str]:
+    """Load user-scoped MCP servers. config.toml wins; legacy .codex.json is fallback."""
+    data, parse_err = _read_config_toml()
+    if parse_err:
+        return {}, parse_err
+    toml_servers = data.get("mcp_servers") if isinstance(data, dict) else None
+    if isinstance(toml_servers, dict):
+        return toml_servers, ""
+    legacy_servers = _read_legacy_mcp_servers()
+    return legacy_servers, ""
+
+
+def _save_user_mcp_servers(mcp_servers: dict) -> tuple[bool, str]:
+    """Persist user-scoped MCP servers into ~/.codex/config.toml."""
+    data, parse_err = _read_config_toml()
+    if parse_err:
+        return False, parse_err
+    if not isinstance(data, dict):
+        data = {}
+    data["mcp_servers"] = mcp_servers
+    return bool(_safe_write(CODEX_CONFIG_TOML, _to_toml(data))), ""
 
 
 # ───────── `codex mcp list` 캐시 ─────────
@@ -371,7 +520,7 @@ def api_mcp_install_prepare(body: dict) -> dict:
 
 
 def api_mcp_install(body: dict) -> dict:
-    """~/.codex.json 의 mcpServers 에 엔트리 병합 저장.
+    """~/.codex/config.toml 의 mcp_servers 에 엔트리 병합 저장.
 
     body: { "id": "context7", "as": "my-context7" (선택), "values": {PATH:"...", GITHUB_TOKEN:"..."} }
     """
@@ -387,50 +536,55 @@ def api_mcp_install(body: dict) -> dict:
     placeholders = _extract_placeholders(install_spec)
     missing = [p["key"] for p in placeholders if not values.get(p["key"])]
     if missing:
-        from .errors import err
         return {"ok": False, "error": f"필수 값 누락: {', '.join(missing)}", "error_key": "err_mcp_values_missing",
                 "placeholders": placeholders}
-    install_spec = _substitute_placeholders(install_spec, values)
+    install_spec = _normalize_mcp_spec(_substitute_placeholders(install_spec, values))
 
-    if not CODEX_JSON.exists():
-        return {"ok": False, "error": "~/.codex.json 없음. `codex auth login` 먼저 실행.", "error_key": "err_no_codex_json"}
-    try:
-        data = json.loads(_safe_read(CODEX_JSON, 500000))
-    except Exception as e:
-        return {"ok": False, "error": f".codex.json 파싱 실패: {e}"}
-    mcp_servers = data.get("mcpServers") if isinstance(data, dict) else None
-    if not isinstance(mcp_servers, dict):
-        mcp_servers = {}
-        data["mcpServers"] = mcp_servers
+    mcp_servers, load_err = _load_user_mcp_servers()
+    if load_err:
+        return {"ok": False, "error": load_err}
     if as_name in mcp_servers:
         return {"ok": False, "error": f"이미 '{as_name}' 이름으로 등록됨 — 다른 이름으로 시도하세요.", "error_key": "err_mcp_already_registered"}
     mcp_servers[as_name] = install_spec
-    text = json.dumps(data, indent=2, ensure_ascii=False)
-    ok = _safe_write(CODEX_JSON, text)
+    ok, save_err = _save_user_mcp_servers(mcp_servers)
+    if not ok:
+        return {"ok": False, "error": save_err or "config.toml 저장 실패"}
     if ok:
         _MCP_LIST_CACHE["ts"] = 0
     return {"ok": ok, "name": as_name, "installed": install_spec,
-            "note": "Codex CLI 를 새 세션에서 이 MCP 호출 시 활성화. 필요 시 재시작."}
+            "configPath": str(CODEX_CONFIG_TOML),
+            "note": "Codex CLI 를 새 세션에서 이 MCP 호출 시 활성화됩니다. 필요 시 재시작하세요."}
 
 
 def api_mcp_remove(body: dict) -> dict:
     name = (body or {}).get("name") if isinstance(body, dict) else None
     if not name:
         return {"ok": False, "error": "name required"}
-    if not CODEX_JSON.exists():
-        return {"ok": False, "error": "~/.codex.json 없음", "error_key": "err_no_codex_json"}
-    try:
-        data = json.loads(_safe_read(CODEX_JSON, 500000))
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
-    servers = data.get("mcpServers") if isinstance(data, dict) else None
-    if not isinstance(servers, dict) or name not in servers:
-        return {"ok": False, "error": f"등록된 MCP 서버가 아닙니다: {name}", "error_key": "err_mcp_not_registered"}
-    removed = servers.pop(name)
-    ok = _safe_write(CODEX_JSON, json.dumps(data, indent=2, ensure_ascii=False))
-    if ok:
+    servers, load_err = _load_user_mcp_servers()
+    if load_err:
+        return {"ok": False, "error": load_err}
+    if name in servers:
+        removed = servers.pop(name)
+        ok, save_err = _save_user_mcp_servers(servers)
+        if not ok:
+            return {"ok": False, "error": save_err or "config.toml 저장 실패"}
         _MCP_LIST_CACHE["ts"] = 0
-    return {"ok": ok, "removed": removed}
+        return {"ok": True, "removed": removed, "configPath": str(CODEX_CONFIG_TOML)}
+
+    # Legacy-only fallback remove (kept for backward compatibility)
+    if CODEX_JSON.exists():
+        try:
+            data = json.loads(_safe_read(CODEX_JSON, 500000))
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+        legacy = data.get("mcpServers") if isinstance(data, dict) else None
+        if isinstance(legacy, dict) and name in legacy:
+            removed = legacy.pop(name)
+            ok = _safe_write(CODEX_JSON, json.dumps(data, indent=2, ensure_ascii=False))
+            if ok:
+                _MCP_LIST_CACHE["ts"] = 0
+            return {"ok": bool(ok), "removed": removed, "configPath": str(CODEX_JSON)}
+    return {"ok": False, "error": f"등록된 MCP 서버가 아닙니다: {name}", "error_key": "err_mcp_not_registered"}
 
 
 def api_mcp_project_remove(body: dict) -> dict:
@@ -519,7 +673,7 @@ def list_connectors() -> dict:
     """MCP 커넥터 분류.
 
     - platform: codex.ai 플랫폼 연결
-    - local:    ~/.codex.json mcpServers (Codex CLI CLI)
+    - local:    ~/.codex/config.toml mcp_servers (Codex CLI)
     - plugin:   활성 플러그인이 제공하는 MCP ('plugin:' 접두사)
     - desktop:  Codex Desktop 앱의 codex_desktop_config.json
     - project:  프로젝트별 .mcp.json
@@ -530,14 +684,11 @@ def list_connectors() -> dict:
     desktop_list: list = []
 
     local_cfg: dict = {}
-    if CODEX_JSON.exists():
-        try:
-            data = json.loads(_safe_read(CODEX_JSON))
-        except Exception:
-            data = {}
-        mcp = data.get("mcpServers", {}) if isinstance(data, dict) else {}
-        if isinstance(mcp, dict):
-            local_cfg = mcp
+    # Load both, but config.toml takes precedence on key conflicts.
+    local_cfg.update(_read_legacy_mcp_servers())
+    toml_data, toml_err = _read_config_toml()
+    if not toml_err and isinstance(toml_data.get("mcp_servers"), dict):
+        local_cfg.update(toml_data.get("mcp_servers", {}))
 
     if CODEX_DESKTOP_CONFIG.exists():
         try:
@@ -589,7 +740,7 @@ def list_connectors() -> dict:
             "enabled": True,
             "tools": [],
         }
-        if name.startswith("codex.ai ") or name.startswith("codex_ai_") or name.startswith("anthropic_"):
+        if name.startswith("codex.ai ") or name.startswith("codex_ai_"):
             entry["scope"] = "platform"
             platform_list.append(entry)
         elif name.startswith("plugin:"):
