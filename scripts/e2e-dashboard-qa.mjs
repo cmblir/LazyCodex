@@ -17,7 +17,7 @@
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 8080}`;
+const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 19500}`;
 const HEADLESS = process.env.HEADLESS !== '0';
 const ONLY = process.env.TAB_ID || null;
 const REPORT = process.env.REPORT || 'qa-report.json';

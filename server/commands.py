@@ -342,23 +342,16 @@ JSON 만 출력 / Output JSON only:
 {{"translations": {{"<id>": "<translation>", ...}}}}
 """
     try:
-        proc = subprocess.run(
-            [codex_bin, "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=300,
+        from .codex_exec import run_codex_exec
+        proc, parsed_exec = run_codex_exec(
+            codex_bin, prompt, ephemeral=True, timeout=300,
         )
     except Exception as e:
         return {"error": f"Codex CLI 실행 실패: {e}"}
     if proc.returncode != 0:
         return {"error": f"Codex CLI 오류: {(proc.stderr or '')[:400]}"}
 
-    stdout = (proc.stdout or "").strip()
-    response_text = stdout
-    try:
-        meta = json.loads(stdout)
-        if isinstance(meta, dict):
-            response_text = meta.get("result") or stdout
-    except Exception:
-        pass
+    response_text = (parsed_exec.get("output") or proc.stdout or "").strip()
     m = re.search(r'\{[\s\S]*"translations"[\s\S]*\}', response_text)
     if not m:
         return {"error": "번역 JSON 없음", "error_key": "err_translate_no_json", "raw": response_text[:1500]}

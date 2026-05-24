@@ -500,7 +500,7 @@ def api_run_execute(body: dict) -> dict:
     if not item:
         return {"ok": False, "error": f"item not found: {item_id}"}
 
-    assignee = (body.get("assignee") or "codex:gpt-5-codex").strip()
+    assignee = (body.get("assignee") or "codex:gpt-5.5").strip()
     cwd      = (body.get("cwd") or "").strip()
     timeout  = max(15, min(int(body.get("timeoutSeconds") or 180), 1800))
 
@@ -593,7 +593,7 @@ def api_run_to_workflow(body: dict) -> dict:
              "data": {
                  "subject":     item.get("name", "Run Center item"),
                  "description": invocation or item.get("description", ""),
-                 "assignee":    "codex:gpt-5-codex",
+                 "assignee":    "codex:gpt-5.5",
                  "inputsMode":  "concat",
              }},
             {"id": nid_out,     "type": "output",  "x": 560, "y": 200, "title": "Output", "data": {"exportTo": ""}},

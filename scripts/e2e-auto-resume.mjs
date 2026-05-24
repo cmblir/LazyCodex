@@ -4,7 +4,7 @@
  * three mandatory viewports (375x667 / 768x800 / 1280x800) per AGENTS.md §8.
  *
  * Preconditions
- *   - server running at BASE (default http://127.0.0.1:8080)
+ *   - server running at BASE (default http://127.0.0.1:19500)
  *   - at least one indexed session jsonl exists under ~/.codex/projects
  *
  * Verifies
@@ -21,7 +21,7 @@ import { mkdtempSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 8080}`;
+const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 19500}`;
 const HEADLESS = process.env.HEADLESS !== '0';
 
 const VIEWPORTS = [

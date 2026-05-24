@@ -79,7 +79,7 @@ def build_crew_workflow(form: dict) -> dict:
       {
         project: str,                # required (file-safe name)
         goal: str,                   # high-level objective for the planner
-        plannerModel: str,           # e.g. "codex:o3", "gemini:gemini-2.5-pro"
+        plannerModel: str,           # e.g. "codex:gpt-5.5", "gemini:gemini-2.5-pro"
         personas: [                  # 1..8 entries
           { role: str, model: str, focus: str?, agentRole: str? }
         ],
@@ -97,7 +97,7 @@ def build_crew_workflow(form: dict) -> dict:
     """
     project = form["project"].strip()
     goal = (form.get("goal") or "").strip()
-    planner_model = (form.get("plannerModel") or "codex:o3").strip()
+    planner_model = (form.get("plannerModel") or "codex:gpt-5.5").strip()
     personas = form["personas"]
     autonomy = form.get("autonomy") or "admin_gate"
     slack_channel = (form.get("slackChannel") or "").strip()

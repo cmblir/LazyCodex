@@ -1,6 +1,6 @@
 {
   "source": "dist/index.html",
-  "total": 200,
+  "total": 198,
   "items": [
     {
       "text": "'{name}' 가 {mcp_file} 에 없음",
@@ -417,18 +417,6 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "고난도 추론",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
-      "text": "고난도 추론 작업",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
       "text": "구현 전략 수립 — 단계별 플랜과 핵심 파일 식별.",
       "count": 0,
       "sample_lines": [],
@@ -711,12 +699,6 @@
       "in_existing_en_dict": false
     },
     {
-      "text": "빠른 추론/분류/검증",
-      "count": 0,
-      "sample_lines": [],
-      "in_existing_en_dict": false
-    },
-    {
       "text": "사용자 home 안의 .mcp.json 파일들 → 프로젝트 범위 MCP 리스트.",
       "count": 0,
       "sample_lines": [],
@@ -955,6 +937,12 @@
     },
     {
       "text": "저지연/경량",
+      "count": 0,
+      "sample_lines": [],
+      "in_existing_en_dict": false
+    },
+    {
+      "text": "전문 작업/긴 에이전트 작업",
       "count": 0,
       "sample_lines": [],
       "in_existing_en_dict": false

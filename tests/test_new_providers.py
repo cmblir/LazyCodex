@@ -77,12 +77,12 @@ def test_alias_resolution(reg):
 
 
 def test_codex_models_include_gpt5(reg):
-    """Codex now advertises gpt-5-codex / o3-pro plus existing o4-mini etc."""
-    p = reg.get("codex")
+    """Codex CLI advertises current GPT-5 family models."""
+    p = reg.get("codex-cli")
     ids = [m.id for m in p.list_models()]
-    assert "gpt-5-codex" in ids
-    assert "o3-pro" in ids
-    assert "o4-mini" in ids
+    assert "gpt-5.5" in ids
+    assert "gpt-5.4" in ids
+    assert "gpt-5.4-mini" in ids
 
 
 def test_execute_returns_err_without_key(reg):

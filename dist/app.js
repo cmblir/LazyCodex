@@ -1983,7 +1983,7 @@ const WF_NODE_TYPES = [
   { id: 'obsidian_log', icon: '📝', label: 'Obsidian 기록', portIn: true, portOut: true,
     desc: 'Vault 의 Projects/<프로젝트>/logs/YYYY-MM-DD.md 에 입력을 마크다운으로 append. 사이클 보고/감사 로그용.' },
   { id: 'auto_resume', icon: '🔄', label: 'Auto-Resume 바인딩', portIn: true, portOut: true,
-    desc: '대상 Codex 세션 UUID(또는 입력 문자열에서 추출)에 Auto-Resume 워커를 바인딩/해제. 워크플로우는 즉시 다음 노드로 진행되고, 워커는 백그라운드에서 토큰/레이트 한도 발생 시 codex --resume 으로 자동 재시도.' },
+    desc: '대상 Codex 세션 UUID(또는 입력 문자열에서 추출)에 Auto-Resume 워커를 바인딩/해제. 워크플로우는 즉시 다음 노드로 진행되고, 워커는 백그라운드에서 토큰/레이트 한도 발생 시 codex exec resume 으로 자동 재시도.' },
   { id: 'ralph', icon: '🦞', label: 'Ralph Loop', portIn: true, portOut: true,
     desc: 'Same-prompt iteration (Ralph Wiggum) — max-iter / completion-promise / 예산 USD / cancel 4중 안전장치. 노드는 루프 종료까지 블로킹.' },
   { id: 'docker_run', icon: '🐳', label: 'Docker Run', portIn: true, portOut: true,
@@ -2043,19 +2043,29 @@ function _wfAssigneeOptions(selectedValue) {
     if (!prov.available || !prov.models?.length) continue;
     const gLabel = prov.icon + ' ' + prov.name;
     groups[gLabel] = (groups[gLabel]||[]);
+    if (prov.id === 'codex-cli') {
+      groups[gLabel].push({
+        value: '',
+        label: 'Codex default',
+        note: '~/.codex/config.toml model 또는 CLI 기본값',
+      });
+    }
     for (const m of prov.models) {
       const val = prov.id === 'codex-cli'
         ? (m.id.replace('codex-','').replace('--','-'))
         : (prov.id.replace('-cli','').replace('-api','') + ':' + m.id);
-      // Codex CLI alias 정리
-      const displayVal = prov.id === 'codex-cli' ? m.id : val;
       groups[gLabel].push({ value: val, label: m.label || m.id, note: m.note || '' });
     }
   }
-  // Codex 기본 3개는 항상 포함 (프로바이더 로드 전 fallback)
+  // Codex 기본값은 항상 포함 (프로바이더 로드 전 fallback)
   if (!Object.keys(groups).length) {
-    return ['o3','gpt-5-codex','o4-mini'].map(m =>
-      `<option value="${m}" ${selectedValue===m?'selected':''}>${m}</option>`
+    return [
+      { value: '', label: 'Codex default' },
+      { value: 'gpt-5.5', label: 'gpt-5.5' },
+      { value: 'gpt-5.4', label: 'gpt-5.4' },
+      { value: 'gpt-5.4-mini', label: 'gpt-5.4-mini' },
+    ].map(m =>
+      `<option value="${m.value}" ${selectedValue===m.value?'selected':''}>${m.label}</option>`
     ).join('');
   }
   let html = '';
@@ -2276,9 +2286,9 @@ const __cw = {
   form: {
     project:  '',
     goal:     '',
-    plannerModel: 'codex:o3',
+    plannerModel: 'codex:gpt-5.5',
     personas: [
-      { role: 'Researcher', model: 'codex:gpt-5-codex', focus: '' },
+      { role: 'Researcher', model: 'codex:gpt-5.5', focus: '' },
       { role: 'Builder',    model: 'gemini:gemini-2.5-pro', focus: '' },
       { role: 'Reviewer',   model: 'ollama:llama3.1', focus: '' },
     ],
@@ -2326,7 +2336,7 @@ VIEWS.crewWizard = async () => {
       if (realisticAssignees.length >= 6) break;
     }
     if (!realisticAssignees.length) return;
-    const isStaticDefault = (val) => /^codex:(o3|gpt-5-codex|o4-mini)$|^gemini:gemini-2\.5-pro$|^ollama:llama3\.1$/.test(val || '');
+    const isStaticDefault = (val) => /^codex:(gpt-5.5|gpt-5.4|gpt-5.4-mini)$|^gemini:gemini-2\.5-pro$|^ollama:llama3\.1$/.test(val || '');
     if (isStaticDefault(__cw.form.plannerModel)) {
       __cw.form.plannerModel = realisticAssignees[0];
     }
@@ -2440,7 +2450,7 @@ function _cwStep1() {
       <label class="block">
         <div class="text-xs font-semibold mb-1">${t('Planner 모델')}</div>
         <select id="cw_planner" class="input w-full">${_wfAssigneeOptions(f.plannerModel)}</select>
-        <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('전체 사이클을 지휘하는 두뇌 — o3 등 가장 깊이 있는 모델 권장.')}</div>
+        <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('전체 사이클을 지휘하는 두뇌 — GPT-5.5 등 가장 깊이 있는 모델 권장.')}</div>
       </label>
       <label class="block">
         <div class="text-xs font-semibold mb-1">${t('작업 디렉터리 (선택)')}</div>
@@ -2591,7 +2601,7 @@ function _cwBindStepInputs() {
       // pick the first available provider:model so newly-added personas
       // don't pin a model the user can't actually run.
       const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
-      let realModel = 'codex:gpt-5-codex';
+      let realModel = 'codex:gpt-5.5';
       if (provs.length) {
         const p0 = provs[0];
         const m0 = (p0.models || [])[0];
@@ -2730,7 +2740,7 @@ function _cwShowGuide() {
       <pre class="rounded p-3 text-[11px] leading-relaxed overflow-x-auto mb-4" style="background:var(--code-bg);border:1px solid var(--border);color:var(--text);">
 🚀 시작
   ↓
-🧭 기획자 (Planner — o3 권장)
+🧭 기획자 (Planner — GPT-5.5 권장)
   ↓ ↓ ↓     (페르소나마다 병렬 분기)
 👤 Researcher  👤 Builder  👤 Reviewer ...
   ↓ ↓ ↓
@@ -2751,7 +2761,7 @@ function _cwShowGuide() {
           <ul class="mt-1 ml-4 list-disc text-[11.5px]" style="color:var(--text-mute);">
             <li>${t('프로젝트 이름 — Obsidian 폴더명으로 그대로 사용. 영문/숫자/공백/_-./ 만.')}</li>
             <li>${t('목표 — Planner 가 받는 첫 입력. 한 줄로 명확하게.')}</li>
-            <li>${t('Planner 모델 — o3 권장. 사이클을 지휘하는 두뇌입니다.')}</li>
+            <li>${t('Planner 모델 — GPT-5.5 권장. 사이클을 지휘하는 두뇌입니다.')}</li>
           </ul>
         </li>
         <li>
@@ -2759,7 +2769,7 @@ function _cwShowGuide() {
           <ul class="mt-1 ml-4 list-disc text-[11.5px]" style="color:var(--text-mute);">
             <li>${t('1~8명. 역할 + 모델 + 중점 영역 입력.')}</li>
             <li>${t('Codex · Gemini · Ollama 자유 조합 — 서로 다른 모델을 섞을수록 다양한 시각을 얻습니다.')}</li>
-            <li>${t('예: Researcher(Codex GPT-5 Codex) + Builder(Gemini Pro) + Reviewer(Ollama)')}</li>
+            <li>${t('예: Researcher(Codex GPT-5.5) + Builder(Gemini Pro) + Reviewer(Ollama)')}</li>
           </ul>
         </li>
         <li>
@@ -3106,7 +3116,7 @@ function _rcOpenItem(itemId) {
       <div class="grid gap-3 mt-3" style="grid-template-columns:1fr 160px;">
         <label class="block">
           <div class="text-[11px] font-semibold mb-1">${t('모델')}</div>
-          <select id="rcAssignee" class="input w-full">${_wfAssigneeOptions('codex:gpt-5-codex')}</select>
+          <select id="rcAssignee" class="input w-full">${_wfAssigneeOptions('codex:gpt-5.5')}</select>
         </label>
         <label class="block">
           <div class="text-[11px] font-semibold mb-1">${t('타임아웃 (초)')}</div>
@@ -3143,12 +3153,12 @@ function _rcOpenItem(itemId) {
 async function _rcExecute(itemId) {
   const goal     = (document.getElementById('rcGoal')?.value || '').trim();
   // QQ234 — fall back through cached providers if the dropdown has no
-  // value (which happens when 'codex:gpt-5-codex' wasn't in its options
+  // value (which happens when 'codex:gpt-5.5' wasn't in its options
   // because the user lacks codex-cli). Prefer first-available real
   // assignee over a hardcoded one the runtime might reject.
   const _firstRealAssignee = () => {
     const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
-    if (!provs.length) return 'codex:gpt-5-codex';
+    if (!provs.length) return 'codex:gpt-5.5';
     const p0 = provs[0];
     const m0 = (p0.models || [])[0];
     return `${p0.id.replace('-cli', '').replace('-api', '')}:${m0.id || m0.name}`;
@@ -3335,7 +3345,7 @@ const _WF_QUICK_TPL = {
   'ralph':           { id: 'bt-ralph',          title: '🔁 Ralph',
     desc: 'verify 통과까지 fix 루프를 자동 반복 (최대 5회)' },
   'ultrawork':       { id: 'bt-ultrawork',      title: '🤝 Ultrawork',
-    desc: '5명의 병렬 에이전트(GPT-5 Codex×2 + o4-mini×3)가 동시 작업 후 결과 합류' },
+    desc: '5명의 병렬 에이전트(GPT-5.5×2 + GPT-5.4 Mini×3)가 동시 작업 후 결과 합류' },
   'deep-interview':  { id: 'bt-deep-interview', title: '🧐 Deep Interview',
     desc: '요구사항을 소크라테스식 질문으로 명확히한 후 설계 문서 산출' },
 };
@@ -3349,9 +3359,9 @@ const _WF_QUICK_TPL = {
 //
 // Canonical Codex CLI aliases — kept in lockstep with
 // server/ai_providers.py::_CLI_FLAG_ALIASES. Without this map a
-// perfectly-valid `codex:gpt-5-codex` would be considered "unavailable"
-// because the strict id check looks for `codex:codex-gpt-5-codex`.
-const _WF_CODEX_CLI_ALIASES = ['o3', 'gpt-5-codex', 'o4-mini'];
+// perfectly-valid `codex:gpt-5.5` would be considered "unavailable"
+// because the strict id check looks for `codex:codex-gpt-5.5`.
+const _WF_CODEX_CLI_ALIASES = ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.2'];
 
 async function _wfPatchTemplateAssignees(nodes) {
   if (!Array.isArray(nodes) || !nodes.length) return;
@@ -6676,7 +6686,7 @@ function _wfPickNodeType(winId, type) {
   draft.type = type;
   // 타입별 기본 data 세팅
   if (type === 'session' || type === 'subagent') {
-    draft.data = { subject:'', description:'', assignee:'gpt-5-codex', agentRole:'', cwd:'', inputsMode:'concat' };
+    draft.data = { subject:'', description:'', assignee:'gpt-5.5', agentRole:'', cwd:'', inputsMode:'concat' };
   } else if (type === 'branch')    draft.data = { condition:'', conditionType:'contains' };
   else if (type === 'aggregate') draft.data = { mode:'concat' };
   else if (type === 'output')    draft.data = { exportTo:'' };
@@ -6880,8 +6890,8 @@ function _wfRenderEditorBody(winId) {
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('설명 (description)')}</label>
       <textarea class="input w-full mt-1" rows="4" oninput="_wfDraftSetData('${winId}','description',this.value)" placeholder="${t('상세 지시·제약·출력 형식')}">${escapeHtml(d.description||'')}</textarea>
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('AI 프로바이더 : 모델')}</label>
-      <select class="input w-full mt-1" onchange="if(this.value==='__custom__'){const v=prompt('provider:model 입력 (예: openai:gpt-4.1)');if(v){_wfDraftSetData('${winId}','assignee',v);this.value=v;}else{this.value='${escapeHtml(d.assignee||'gpt-5-codex')}';}}else{_wfDraftSetData('${winId}','assignee',this.value);}">
-        ${_wfAssigneeOptions(d.assignee||'gpt-5-codex')}
+      <select class="input w-full mt-1" onchange="if(this.value==='__custom__'){const v=prompt('provider:model 입력 (예: openai:gpt-4.1)');if(v){_wfDraftSetData('${winId}','assignee',v);this.value=v;}else{this.value='${escapeHtml(d.assignee||'gpt-5.5')}';}}else{_wfDraftSetData('${winId}','assignee',this.value);}">
+        ${_wfAssigneeOptions(d.assignee||'gpt-5.5')}
       </select>
       ${draft.type === 'subagent' ? `
         <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('에이전트 역할')}</label>
@@ -7182,7 +7192,7 @@ function _wfRenderEditorBody(winId) {
         oninput="_wfDraftSetData('${winId}','prompt',this.value)">${escapeHtml(d.prompt||'')}</textarea>
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('AI 프로바이더 : 모델')}</label>
       <input class="input w-full mt-1" value="${escapeHtml(d.assignee||'')}"
-        placeholder="codex:gpt-5-codex" oninput="_wfDraftSetData('${winId}','assignee',this.value)">
+        placeholder="codex:gpt-5.5" oninput="_wfDraftSetData('${winId}','assignee',this.value)">
       <label class="text-[10px] text-[var(--text-dim)] uppercase tracking-wider mt-3 block">${t('Completion 표식 (정확 일치)')}</label>
       <input class="input w-full mt-1" value="${escapeHtml(d.completion||'<promise>DONE</promise>')}"
         oninput="_wfDraftSetData('${winId}','completion',this.value)">
@@ -7388,7 +7398,7 @@ function _wfNodeSetData(nid, field, value) {
 }
 
 // v2.44.1 — multi-assignee parallel fan-out helpers.
-// Storage shape: node.data.multiAssignee = ['codex:o3', 'openai:gpt-4.1', …]
+// Storage shape: node.data.multiAssignee = ['codex:gpt-5.5', 'openai:gpt-4.1', …]
 // Back-compat: if the array has 0 or 1 entries, the single `assignee` field is
 // authoritative. When length >= 2, ProviderRegistry.execute_parallel races them
 // and returns the first ok response.
@@ -7397,7 +7407,7 @@ function _wfMultiAssigneeRows(n) {
   const arr = Array.isArray(d.multiAssignee) ? d.multiAssignee.slice() : [];
   // Row 0 is always the canonical single-assignee dropdown so empty/legacy
   // workflows render exactly as before.
-  if (arr.length === 0) return [d.assignee || 'gpt-5-codex'];
+  if (arr.length === 0) return [d.assignee || 'gpt-5.5'];
   return arr;
 }
 function _wfMultiAssigneeSet(nid, idx, val) {
@@ -7433,7 +7443,7 @@ function _wfMultiAssigneeAdd(nid) {
   if (rows.length >= 8) return; // matches execute_parallel pool cap
   // QQ234 — pick the first available provider:model the user actually has,
   // falling through the cached `__wfProviders` snapshot. The hardcoded
-  // `codex:o3` / `openai:gpt-4.1` / `gemini:2.5-pro` candidates were
+  // `codex:gpt-5.5` / `openai:gpt-4.1` / `gemini:2.5-pro` candidates were
   // useless on machines without those exact installs.
   const provs = ((__wfProviders || {}).providers || []).filter(p => p.available && (p.models || []).length);
   const candidates = [];
@@ -7444,7 +7454,7 @@ function _wfMultiAssigneeAdd(nid) {
   }
   // Last-ditch fallback for environments where the wizard fires before
   // /api/ai-providers/list resolved.
-  if (!candidates.length) candidates.push('codex:o3');
+  if (!candidates.length) candidates.push('codex:gpt-5.5');
   const already = new Set(rows);
   const pick = candidates.find(c => !already.has(c)) || candidates[0];
   rows.push(pick);
@@ -7475,14 +7485,14 @@ function _wfMultiAssigneeRemove(nid, idx) {
 function _wfMultiAssigneeRowHtml(nid, idx, val, removable) {
   // The inline `__custom__` handler mirrors the existing single-assignee
   // dropdown — picking "직접 입력..." prompts for a custom provider:model.
-  const safe = escapeHtml(val || 'gpt-5-codex');
+  const safe = escapeHtml(val || 'gpt-5.5');
   const removeBtn = removable
     ? `<button class="btn text-xs px-2" title="${t('행 제거')}" onclick="_wfMultiAssigneeRemove('${nid}', ${idx})">−</button>`
     : '';
   return `
     <div class="flex gap-1 items-center mt-1">
       <select class="input flex-1" onchange="if(this.value==='__custom__'){const v=prompt('provider:model 입력 (예: openai:gpt-4.1)');if(v){_wfMultiAssigneeSet('${nid}', ${idx}, v);}else{this.value='${safe}';}}else{_wfMultiAssigneeSet('${nid}', ${idx}, this.value);}">
-        ${_wfAssigneeOptions(val || 'gpt-5-codex')}
+        ${_wfAssigneeOptions(val || 'gpt-5.5')}
       </select>
       ${removeBtn}
     </div>
@@ -8697,26 +8707,26 @@ const WF_TEMPLATES = [
         { id:'n-l1', type:'session',   x:260, y:180, title:t('리드 스프린트 기획'), data:{
           subject: t('이번 스프린트 목표와 업무 분담'),
           description: t('아래 형식으로 답하라.') + '\n\n# ' + t('프론트') + '\n' + t('(프론트엔드에게 전달할 구체적 업무 지시)') + '\n\n# ' + t('백엔드') + '\n' + t('(백엔드에게 전달할 구체적 업무 지시)'),
-          assignee: 'o3', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
+          assignee: 'gpt-5.5', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
           systemPrompt: t('너는 스프린트를 이끄는 테크 리드다. 요구사항을 명확한 실행 단위로 분해해 프론트·백엔드 팀에게 분배한다. 모호함을 남기지 말고 수용 기준까지 명시하라.'),
         }},
         { id:'n-fe', type:'subagent',  x:520, y:60,  title:t('프론트엔드'), data:{
           subject: t('프론트엔드 구현'),
           description: t('리드 지시 중 프론트 섹션만 구현. React + TypeScript 기준. 완료된 파일 경로·핵심 변경 요약 반환.'),
-          assignee: 'gpt-5-codex', agentRole: 'frontend-dev', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5.5', agentRole: 'frontend-dev', cwd: '~', inputsMode: 'first',
           systemPrompt: t('너는 React + TypeScript + Tailwind 에 능숙한 시니어 프론트엔드 개발자다. 접근성·성능·타입 안전성을 우선시한다. 입력에서 프론트 관련 업무만 실행하고, 백엔드 섹션은 무시한다.'),
         }},
         { id:'n-be', type:'subagent',  x:520, y:300, title:t('백엔드'), data:{
           subject: t('백엔드 구현'),
           description: t('리드 지시 중 백엔드 섹션만 구현. API · DB · 테스트까지. 완료된 파일 경로·핵심 변경 요약 반환.'),
-          assignee: 'gpt-5-codex', agentRole: 'backend-dev', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5.5', agentRole: 'backend-dev', cwd: '~', inputsMode: 'first',
           systemPrompt: t('너는 Node.js · PostgreSQL · REST/GraphQL 에 능숙한 시니어 백엔드 개발자다. 보안·확장성·테스트 커버리지를 우선시한다. 입력에서 백엔드 관련 업무만 실행하고, 프론트 섹션은 무시한다.'),
         }},
         { id:'n-agg', type:'aggregate', x:780, y:180, title:t('결과 취합'), data:{ mode: 'concat' }},
         { id:'n-l2',  type:'session',   x:1040, y:180, title:t('리드 리뷰 + 다음 기획'), data:{
           subject: t('스프린트 리뷰 및 다음 스프린트 계획'),
           description: t('두 결과를 보고 1) 문제/개선, 2) 다음 스프린트 업무 분담(다시 프론트·백엔드 섹션) 을 생성. 같은 포맷 유지.'),
-          assignee: 'o3', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
+          assignee: 'gpt-5.5', agentRole: 'team-lead', cwd: '~', inputsMode: 'concat',
           systemPrompt: t('너는 스프린트를 이끄는 테크 리드다. 이전 스프린트 결과를 비판적으로 평가하고, 리스크를 식별하며, 다음 스프린트의 업무 분담을 명확히 작성한다.'),
         }},
         { id:'n-o',   type:'output',    x:1300, y:180, title:t('최종 결과'), data:{} },
@@ -8747,17 +8757,17 @@ const WF_TEMPLATES = [
         { id:'n-r', type:'subagent', x:260, y:180, title:t('리서치'), data:{
           subject: t('주제 심층 리서치'),
           description: t('웹·문서·기존 자료를 종합해 핵심 근거와 인용 정리.'),
-          assignee: 'gpt-5-codex', agentRole: 'researcher', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5.5', agentRole: 'researcher', cwd: '~', inputsMode: 'first',
         }},
         { id:'n-w', type:'subagent', x:520, y:180, title:t('작가 초안'), data:{
           subject: t('초안 작성'),
           description: t('리서치 결과를 바탕으로 독자 친화적인 초안 작성. 톤·구조 명확히.'),
-          assignee: 'gpt-5-codex', agentRole: 'writer', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5.5', agentRole: 'writer', cwd: '~', inputsMode: 'first',
         }},
         { id:'n-v', type:'subagent', x:780, y:180, title:t('리뷰'), data:{
           subject: t('편집 리뷰'),
           description: t('정확성·톤·가독성·중복을 체크하고 다듬은 최종본 반환.'),
-          assignee: 'o3', agentRole: 'reviewer', cwd: '~', inputsMode: 'first',
+          assignee: 'gpt-5.5', agentRole: 'reviewer', cwd: '~', inputsMode: 'first',
         }},
         { id:'n-o', type:'output',   x:1040, y:180, title:t('최종 문서') },
       ],
@@ -8781,9 +8791,9 @@ const WF_TEMPLATES = [
       description: t('시작 → 3 개 병렬 세션 → 취합 → 결과.'),
       nodes: [
         { id:'n-s',  type:'start',     x:40,  y:220, title:t('시작') },
-        { id:'n-a',  type:'session',   x:260, y:60,  title:t('작업 A'), data:{ subject:t('작업 A'), description:'...', assignee:'gpt-5-codex', inputsMode:'first' }},
-        { id:'n-b',  type:'session',   x:260, y:220, title:t('작업 B'), data:{ subject:t('작업 B'), description:'...', assignee:'gpt-5-codex', inputsMode:'first' }},
-        { id:'n-c',  type:'session',   x:260, y:380, title:t('작업 C'), data:{ subject:t('작업 C'), description:'...', assignee:'gpt-5-codex', inputsMode:'first' }},
+        { id:'n-a',  type:'session',   x:260, y:60,  title:t('작업 A'), data:{ subject:t('작업 A'), description:'...', assignee:'gpt-5.5', inputsMode:'first' }},
+        { id:'n-b',  type:'session',   x:260, y:220, title:t('작업 B'), data:{ subject:t('작업 B'), description:'...', assignee:'gpt-5.5', inputsMode:'first' }},
+        { id:'n-c',  type:'session',   x:260, y:380, title:t('작업 C'), data:{ subject:t('작업 C'), description:'...', assignee:'gpt-5.5', inputsMode:'first' }},
         { id:'n-ag', type:'aggregate', x:520, y:220, title:t('취합'),   data:{ mode:'concat' }},
         { id:'n-o',  type:'output',    x:780, y:220, title:t('결과') },
       ],
@@ -8918,7 +8928,7 @@ async function _wfUseTemplate(tplId) {
   closeModal();
   const body = tpl.build();
   // QQ238 — same substitution Quick Actions get; builtin client-side
-  // templates also assume codex:gpt-5-codex by default.
+  // templates also assume codex:gpt-5.5 by default.
   await _wfPatchTemplateAssignees(body.nodes);
   const r = await api('/api/workflows/save', {
     method: 'POST', headers: { 'Content-Type':'application/json' },
@@ -9112,7 +9122,7 @@ const WF_TUT_STEPS = [
     caption: '＋ 노드 추가 → 카테고리 선택 창에서 🗂️ 세션과 🤝 서브에이전트를 추가. subject(업무) · 모델 · 역할을 입력.',
     nodes: [
       { id:'s', type:'start',    x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',  x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
+      { id:'a', type:'session',  x:260, y:40,  title:'리서치', sub:'@gpt-5.5' },
       { id:'b', type:'subagent', x:480, y:40,  title:'작성',  sub:'@writer' },
     ],
     edges: [],
@@ -9123,7 +9133,7 @@ const WF_TUT_STEPS = [
     caption: '🧩 취합 노드는 여러 입력을 concat/JSON 으로 합침. 🔀 분기 노드는 조건 문자열 일치 여부로 Y/N 포트를 활성화.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5.5' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9136,7 +9146,7 @@ const WF_TUT_STEPS = [
     caption: '녹청 out-port 에서 보라 in-port 로 드래그하면 베지어 곡선 + 방향 화살표가 자동 생성. DAG 사이클은 즉시 거부.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5.5' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9152,7 +9162,7 @@ const WF_TUT_STEPS = [
     caption: '📤 결과 노드를 추가하고 분기 → 결과로 마무리. 이 노드가 워크플로우 종착지. exportTo 경로를 지정하면 파일로 저장.',
     nodes: [
       { id:'s', type:'start',     x:20,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@gpt-5-codex' },
+      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@gpt-5.5' },
       { id:'b', type:'subagent',  x:440, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:230, y:220, title:'취합' },
       { id:'d', type:'branch',    x:440, y:220, title:'분기' },
@@ -9170,7 +9180,7 @@ const WF_TUT_STEPS = [
     caption: '캔버스 우하단 🎯 맞춤 버튼 → 모든 노드 bounding box 가 보이도록 pan/zoom 자동 조정. 복잡한 워크플로우도 한 번에 정렬.',
     nodes: [
       { id:'s', type:'start',     x:20,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@gpt-5-codex' },
+      { id:'a', type:'session',   x:230, y:40,  title:'리서치', sub:'@gpt-5.5' },
       { id:'b', type:'subagent',  x:440, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:230, y:220, title:'취합' },
       { id:'d', type:'branch',    x:440, y:220, title:'분기' },
@@ -9189,7 +9199,7 @@ const WF_TUT_STEPS = [
     caption: '상단 ▶ 실행 → DAG 토폴로지 순서로 각 노드가 보라색 펄스(실행 중) → 녹색(완료)로 전환. 세션 노드는 codex -p 로 subprocess 실행.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작',   status:'ok' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex', status:'ok' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5.5', status:'ok' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer', status:'running' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9207,7 +9217,7 @@ const WF_TUT_STEPS = [
     caption: '완료된 노드는 녹색 테두리. 결과 모달에 노드별 출력 미리보기. 세션 노드 🖥️ 아이콘으로 Terminal 새 창에서 대화형 세션도 시작 가능. 📜 이력 으로 과거 실행 재조회.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작',   status:'ok' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex', status:'ok' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5.5', status:'ok' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer', status:'ok' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합',   status:'ok' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기',   status:'ok' },
@@ -9225,7 +9235,7 @@ const WF_TUT_STEPS = [
     caption: '노드를 선택해 우측 패널을 열면 🎭 세션 하네스 섹션에서 시스템 프롬프트(페르소나) · 추가 지시 · 허용/차단 도구를 직접 설정. 각 세션이 고유 역할로 codex CLI 호출.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5.5' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9243,7 +9253,7 @@ const WF_TUT_STEPS = [
     caption: '세션 노드 우상단 🖥️ 아이콘 → Terminal 새 창에서 codex 실행. 노드에 설정된 페르소나·허용 도구·resume 모두 CLI 플래그로 전달되어 바로 대화형 세션 시작.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5.5' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9258,10 +9268,10 @@ const WF_TUT_STEPS = [
   },
   {
     title: '12. 🔄 session_id 이어쓰기로 재개',
-    caption: '실행 결과 모달의 session_id 를 📋 복사하거나 ↪ 이어쓰기 로 다른 노드 resume 필드에 적용. 다음 실행 시 codex --resume 으로 같은 컨텍스트에서 이어서 대화.',
+    caption: '실행 결과 모달의 session_id 를 📋 복사하거나 ↪ 이어쓰기 로 다른 노드 resume 필드에 적용. 다음 실행 시 codex exec resume 으로 같은 컨텍스트에서 이어서 대화.',
     nodes: [
       { id:'s', type:'start',     x:40,  y:40,  title:'시작',   status:'ok' },
-      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5-codex', status:'ok' },
+      { id:'a', type:'session',   x:260, y:40,  title:'리서치', sub:'@gpt-5.5', status:'ok' },
       { id:'b', type:'subagent',  x:480, y:40,  title:'작성',  sub:'@writer', status:'running' },
       { id:'c', type:'aggregate', x:260, y:200, title:'취합' },
       { id:'d', type:'branch',    x:480, y:200, title:'분기' },
@@ -9313,10 +9323,10 @@ const WF_TUT_STEPS = [
   // ── 신기능 장면 ──
   {
     title: '15. 🧠 멀티 AI 프로바이더 — Codex · GPT · Ollama 동시 활용',
-    caption: '노드의 Assignee 를 codex:o3, openai:gpt-4.1, ollama:qwen2.5 등으로 지정하면 각 노드가 다른 AI 로 실행됩니다. 같은 프롬프트를 병렬로 3개 AI 에 보내고 결과를 합치는 멀티 AI 비교 워크플로우.',
+    caption: '노드의 Assignee 를 codex:gpt-5.5, openai:gpt-4.1, ollama:qwen2.5 등으로 지정하면 각 노드가 다른 AI 로 실행됩니다. 같은 프롬프트를 병렬로 3개 AI 에 보내고 결과를 합치는 멀티 AI 비교 워크플로우.',
     nodes: [
       { id:'s',  type:'start',     x:40,  y:200, title:'시작',     status:'ok' },
-      { id:'c1', type:'session',   x:280, y:60,  title:'Codex',   sub:'codex:o3', status:'ok' },
+      { id:'c1', type:'session',   x:280, y:60,  title:'Codex',   sub:'codex:gpt-5.5', status:'ok' },
       { id:'g1', type:'session',   x:280, y:200, title:'GPT',      sub:'openai:gpt-4.1', status:'running' },
       { id:'o1', type:'session',   x:280, y:340, title:'Ollama',   sub:'ollama:qwen2.5', status:'ok' },
       { id:'mg', type:'merge',     x:520, y:200, title:'합류',     status:'idle' },
@@ -9336,7 +9346,7 @@ const WF_TUT_STEPS = [
       { id:'s',  type:'start',     x:40,  y:180, title:'질문 입력', status:'ok' },
       { id:'em', type:'embedding', x:240, y:180, title:'임베딩',    sub:'bge-m3', status:'ok' },
       { id:'ht', type:'http',      x:440, y:180, title:'벡터 검색', sub:'POST /search', status:'ok' },
-      { id:'ai', type:'session',   x:640, y:180, title:'답변 생성', sub:'codex:gpt-5-codex', status:'running' },
+      { id:'ai', type:'session',   x:640, y:180, title:'답변 생성', sub:'codex:gpt-5.5', status:'running' },
       { id:'o',  type:'output',    x:840, y:180, title:'최종 답변', status:'idle' },
     ],
     edges: [
@@ -9351,7 +9361,7 @@ const WF_TUT_STEPS = [
       { id:'s',  type:'start',       x:40,  y:180, title:'데이터',   status:'ok' },
       { id:'lp', type:'loop',        x:220, y:180, title:'분할 반복', sub:'for_each', status:'ok' },
       { id:'rt', type:'retry',       x:400, y:180, title:'재시도 ×3', sub:'backoff 2s', status:'ok' },
-      { id:'ai', type:'session',     x:580, y:120, title:'AI 처리',  sub:'codex:gpt-5-codex', status:'running' },
+      { id:'ai', type:'session',     x:580, y:120, title:'AI 처리',  sub:'codex:gpt-5.5', status:'running' },
       { id:'eh', type:'error_handler',x:580, y:280, title:'에러 처리',sub:'기본값 반환', status:'idle' },
       { id:'o',  type:'output',      x:780, y:180, title:'결과',     status:'idle' },
     ],
@@ -9653,7 +9663,7 @@ function _wfTutRender() {
     const titleRaw = n.title || meta.label;
     const subRaw   = n.sub  || meta.label;
     const title = t(titleRaw);
-    const sub   = subRaw.startsWith('@') ? subRaw : t(subRaw);  // @gpt-5-codex 같은 값은 원문 유지
+    const sub   = subRaw.startsWith('@') ? subRaw : t(subRaw);  // @gpt-5.5 같은 값은 원문 유지
     const portIn  = meta.portIn  ? `<circle class="wf-tut-port-in"  cx="0" cy="${WF_NODE_H/2}" r="5"></circle>` : '';
     const portOut = meta.portOut ? `<circle class="wf-tut-port-out" cx="${WF_NODE_W}" cy="${WF_NODE_H/2}" r="5"></circle>` : '';
     return `
@@ -11039,14 +11049,14 @@ function renderSessionDetail(d, tok, tl) {
 
 // ────────────────────────────────────────────────────────────────
 // AUTO-RESUME — inject a retry loop into a live Codex CLI session.
-// Mirrors the user's reference shell: codex --resume <id> -p "..." in a
+// Mirrors the user's reference shell: codex exec resume <id> -p "..." in a
 // loop with sleep(pollInterval) between non-zero exits. Backend worker at
 // server/auto_resume.py owns the actual loop; this UI just toggles +
 // shows live status.
 // ────────────────────────────────────────────────────────────────
 const _AR_STATE_LABEL = {
   watching:  { ko: '대기 중 (idle 미충족)', cls: '' },
-  retrying:  { ko: '실행 중 (codex --resume)', cls: 'chip-accent' },
+  retrying:  { ko: '실행 중 (codex exec resume)', cls: 'chip-accent' },
   sleeping:  { ko: '쿨다운 중 (다음 시도 예약)', cls: 'chip-warn' },
   succeeded: { ko: '재개 성공', cls: 'chip-ok' },
   stopped:   { ko: '중단됨', cls: '' },
@@ -11099,7 +11109,7 @@ function _arRender(panel, entry) {
       : '';
     card.innerHTML = `
       <div class="text-xs text-[var(--text-mute)] mb-2">
-        ${t('이 세션이 토큰/레이트 한도로 멈추면 백그라운드 워커가 codex --resume 으로 자동 재시도합니다 (셸 while-loop 동등).')}
+        ${t('이 세션이 토큰/레이트 한도로 멈추면 백그라운드 워커가 codex exec resume 으로 자동 재시도합니다 (셸 while-loop 동등).')}
       </div>
       ${stoppedNote}
       <details class="mb-2">
@@ -11130,7 +11140,7 @@ function _arRender(panel, entry) {
         <div class="flex gap-3 items-center text-xs flex-wrap mb-2">
           <label class="cursor-pointer flex items-center gap-1">
             <input type="checkbox" id="arUseContinue" ${prevContinue} />
-            <span title="${t('--resume <id> 대신 --continue 사용')}">${t('--continue 모드')}</span>
+            <span title="${t('fixed session id 대신 resume --last 사용')}">${t('resume --last 모드')}</span>
           </label>
           <label class="cursor-pointer flex items-center gap-1">
             <input type="checkbox" id="arInstallHooks" ${prevHooks} />
@@ -11467,9 +11477,9 @@ VIEWS.agents = async () => {
 
   const modelBg = (m) => ({
     inherit: 'rgba(255,255,255,0.06)',
-    'o4-mini': 'rgba(125,211,252,0.18)',
-    'gpt-5-codex': 'rgba(16,163,127,0.18)',
-    o3: 'rgba(244,114,182,0.18)',
+    'gpt-5.4-mini': 'rgba(125,211,252,0.18)',
+    'gpt-5.5': 'rgba(16,163,127,0.18)',
+    'gpt-5.4': 'rgba(244,114,182,0.18)',
   })[m] || 'rgba(16,163,127,0.14)';
   const renderAgentCard = a => {
     const readOnly = a.scope === 'builtin';
@@ -11986,7 +11996,7 @@ function openCreateAgent() {
           <div class="text-[11px] uppercase text-[var(--text-dim)] mb-1">model</div>
           <select id="nagModel" class="input">
             ${(window.__subModelChoices || [
-              {id:'inherit', label:'inherit'}, {id:'gpt-5-codex', label:'gpt-5-codex'}, {id:'o3', label:'o3'}, {id:'o4-mini', label:'o4-mini'}
+              {id:'inherit', label:'inherit'}, {id:'gpt-5.5', label:'gpt-5.5'}, {id:'gpt-5.4', label:'gpt-5.4'}, {id:'gpt-5.4-mini', label:'gpt-5.4-mini'}
             ]).map(m => `<option value="${escapeHtml(m.id)}" ${m.id==='inherit'?'selected':''}>${escapeHtml(m.label)}</option>`).join('')}
           </select>
         </div>
@@ -12140,8 +12150,8 @@ function _hyperModalHTML(name, ag, history, cwd) {
         </label>
         <label class="block">
           <div class="text-xs font-semibold mb-1">${t('Refine 프로바이더')}</div>
-          <select id="hyperProvider" class="input w-full">${providerOpts}<option value="codex:o3" ${ag.refineProvider==='codex:o3'?'selected':''}>codex:o3</option></select>
-          <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('메타 LLM (o3 권장)')}</div>
+          <select id="hyperProvider" class="input w-full">${providerOpts}<option value="codex:gpt-5.5" ${ag.refineProvider==='codex:gpt-5.5'?'selected':''}>codex:gpt-5.5</option></select>
+          <div class="text-[10px] mt-1" style="color:var(--text-dim);">${t('메타 LLM (GPT-5.5 권장)')}</div>
         </label>
       </div>
 
@@ -12784,7 +12794,7 @@ VIEWS.promptCache = async () => {
     api('/api/prompt-cache/history'),
   ]);
   state.data.pc = state.data.pc || {
-    model: 'gpt-5-codex',
+    model: 'gpt-5.5',
     maxTokens: 1024,
     system: '[]',
     tools: '[]',
@@ -12852,9 +12862,9 @@ VIEWS.promptCache = async () => {
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="pcSet('model', this.value)">
-            <option value="o3" ${pc.model==='o3'?'selected':''}>o3</option>
-            <option value="gpt-5-codex" ${pc.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
-            <option value="o4-mini" ${pc.model==='o4-mini'?'selected':''}>o4-mini</option>
+            <option value="gpt-5.4" ${pc.model==='gpt-5.4'?'selected':''}>GPT-5.4</option>
+            <option value="gpt-5.5" ${pc.model==='gpt-5.5'?'selected':''}>GPT-5.5</option>
+            <option value="gpt-5.4-mini" ${pc.model==='gpt-5.4-mini'?'selected':''}>GPT-5.4 Mini</option>
           </select>
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">${t('max_tokens')}</label>
           <input type="text" inputmode="numeric" class="input w-24" value="${pc.maxTokens}"
@@ -12944,7 +12954,7 @@ async function pcRun() {
     }).then(x => x.json());
 
     if (r.needKey) {
-      toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err');
+      toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err');
       if (st) st.textContent = '';
       return;
     }
@@ -12968,7 +12978,7 @@ VIEWS.thinkingLab = async () => {
     api('/api/thinking-lab/models'),
   ]);
   state.data.tl = state.data.tl || {
-    model: 'gpt-5-codex',
+    model: 'gpt-5.5',
     budgetTokens: 4096,
     maxTokens: 2048,
     prompt: '',
@@ -13011,7 +13021,7 @@ VIEWS.thinkingLab = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">🧠 ${t('Extended Thinking 실험실')}</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('o3 / GPT-5 Codex 의 thinking block 과 최종 응답을 분리 시각화. budget_tokens 로 추론 길이 조절.')}
+        ${t('GPT-5.4 / GPT-5.5 의 thinking block 과 최종 응답을 분리 시각화. budget_tokens 로 추론 길이 조절.')}
       </p>
     </div>
 
@@ -13113,12 +13123,12 @@ async function tlRun() {
       body: JSON.stringify(tl),
     }).then(x => x.json());
     if (r.needKey) {
-      toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err');
+      toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err');
       if (st) st.textContent = '';
       return;
     }
     if (r.unsupported) {
-      toast(t('Extended Thinking 은 o4-mini 에서 지원되지 않습니다'), 'err');
+      toast(t('Extended Thinking 은 GPT-5.4 Mini 에서 지원되지 않습니다'), 'err');
       if (st) st.textContent = '';
       return;
     }
@@ -13143,7 +13153,7 @@ VIEWS.toolUseLab = async () => {
     api('/api/tool-use-lab/history'),
   ]);
   state.data.tu = state.data.tu || {
-    model: 'gpt-5-codex',
+    model: 'gpt-5.5',
     maxTokens: 2048,
     tools: JSON.stringify((tpl.templates || []).slice(0, 1).map(x => x.tool), null, 2),
     messages: [],
@@ -13216,9 +13226,9 @@ VIEWS.toolUseLab = async () => {
         <div class="flex items-center gap-2 flex-wrap">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">${t('모델')}</label>
           <select class="input flex-1" onchange="tuSet('model', this.value)">
-            <option value="o3" ${tu.model==='o3'?'selected':''}>o3</option>
-            <option value="gpt-5-codex" ${tu.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
-            <option value="o4-mini" ${tu.model==='o4-mini'?'selected':''}>o4-mini</option>
+            <option value="gpt-5.4" ${tu.model==='gpt-5.4'?'selected':''}>GPT-5.4</option>
+            <option value="gpt-5.5" ${tu.model==='gpt-5.5'?'selected':''}>GPT-5.5</option>
+            <option value="gpt-5.4-mini" ${tu.model==='gpt-5.4-mini'?'selected':''}>GPT-5.4 Mini</option>
           </select>
         </div>
 
@@ -13293,7 +13303,7 @@ async function tuCallTurn(tools) {
       body: JSON.stringify({ model: tu.model, maxTokens: tu.maxTokens, tools, messages: tu.messages }),
     }).then(x => x.json());
     if (r.needKey) {
-      toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err');
+      toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err');
       if (st) st.textContent = '';
       return;
     }
@@ -13337,7 +13347,7 @@ VIEWS.batchJobs = async () => {
     api('/api/batch/budget'),
   ]);
   state.data.bj = state.data.bj || {
-    model: 'o4-mini',
+    model: 'gpt-5.4-mini',
     maxTokens: 256,
     promptsText: '',
     selectedBatchId: '',
@@ -13383,7 +13393,7 @@ VIEWS.batchJobs = async () => {
       <p class="text-sm text-[var(--text-mute)] mt-1">
         ${t('Message Batches API 로 여러 프롬프트를 병렬 제출하고 상태 · JSONL 결과를 확인.')}
       </p>
-      ${needKey ? `<div class="mt-2 text-[11px] text-[var(--warn)]">⚠️ ${t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요')}</div>` : ''}
+      ${needKey ? `<div class="mt-2 text-[11px] text-[var(--warn)]">⚠️ ${t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요')}</div>` : ''}
     </div>
 
     <div class="card p-3 mb-4 flex items-center gap-3 flex-wrap" style="border-left:3px solid ${budget.enabled?'var(--accent)':'var(--border)'};">
@@ -13405,9 +13415,9 @@ VIEWS.batchJobs = async () => {
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="bjSet('model', this.value)">
-            <option value="o3" ${bj.model==='o3'?'selected':''}>o3</option>
-            <option value="gpt-5-codex" ${bj.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
-            <option value="o4-mini" ${bj.model==='o4-mini'?'selected':''}>o4-mini</option>
+            <option value="gpt-5.4" ${bj.model==='gpt-5.4'?'selected':''}>GPT-5.4</option>
+            <option value="gpt-5.5" ${bj.model==='gpt-5.5'?'selected':''}>GPT-5.5</option>
+            <option value="gpt-5.4-mini" ${bj.model==='gpt-5.4-mini'?'selected':''}>GPT-5.4 Mini</option>
           </select>
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">max_tokens</label>
           <input type="text" inputmode="numeric" class="input w-24" value="${bj.maxTokens}"
@@ -13476,7 +13486,7 @@ async function bjSubmit() {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ model: bj.model, maxTokens: bj.maxTokens, prompts }),
     }).then(x => x.json());
-    if (r.needKey) { toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; return; }
+    if (r.needKey) { toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; return; }
     if (r.budgetExceeded) {
       const est = r.estimate || {};
       await confirmModal({
@@ -13569,7 +13579,7 @@ async function bjCancel(id) {
 VIEWS.apiFiles = async () => {
   const lst = await api('/api/api-files/list');
   state.data.af = state.data.af || {
-    model: 'gpt-5-codex',
+    model: 'gpt-5.5',
     prompt: '',
     selectedFileId: '',
     lastOutput: null,
@@ -13601,7 +13611,7 @@ VIEWS.apiFiles = async () => {
       <p class="text-sm text-[var(--text-mute)] mt-1">
         ${t('OpenAI Codex 에 파일을 업로드하고, file_id 를 메시지에 document 로 reference 해서 질문을 던질 수 있습니다.')}
       </p>
-      ${needKey ? `<div class="mt-2 text-[11px] text-[var(--warn)]">⚠️ ${t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요')}</div>` : ''}
+      ${needKey ? `<div class="mt-2 text-[11px] text-[var(--warn)]">⚠️ ${t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요')}</div>` : ''}
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -13617,9 +13627,9 @@ VIEWS.apiFiles = async () => {
           <div class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider mb-2">${t('파일로 질문 테스트')}</div>
           <div class="text-[10px] text-[var(--text-dim)] mb-2">${t('선택된 파일')}: <span class="font-mono">${af.selectedFileId || '-'}</span></div>
           <select class="input mb-2" onchange="afSet('model', this.value)">
-            <option value="o3" ${af.model==='o3'?'selected':''}>o3</option>
-            <option value="gpt-5-codex" ${af.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
-            <option value="o4-mini" ${af.model==='o4-mini'?'selected':''}>o4-mini</option>
+            <option value="gpt-5.4" ${af.model==='gpt-5.4'?'selected':''}>GPT-5.4</option>
+            <option value="gpt-5.5" ${af.model==='gpt-5.5'?'selected':''}>GPT-5.5</option>
+            <option value="gpt-5.4-mini" ${af.model==='gpt-5.4-mini'?'selected':''}>GPT-5.4 Mini</option>
           </select>
           <textarea class="input text-[12px]" rows="3" oninput="afSet('prompt', this.value)" placeholder="${t('이 문서의 핵심을 3줄로 요약해줘')}">${escapeHtml(af.prompt || '')}</textarea>
           <div class="mt-2 flex items-center gap-2">
@@ -13680,7 +13690,7 @@ async function afUpload() {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ filename: f.name, mime: f.type || 'application/octet-stream', base64: b64 }),
     }).then(x => x.json());
-    if (r.needKey) { toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; return; }
+    if (r.needKey) { toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; return; }
     if (!r.ok) { toast(r.error || t('업로드 실패'), 'err'); if (st) st.textContent = '❌ ' + (r.error||''); return; }
     toast(t('업로드 완료') + ': ' + (r.fileId||''), 'ok');
     state.data.af = state.data.af || {};
@@ -13703,7 +13713,7 @@ async function afAsk() {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ model: af.model, prompt: af.prompt, fileId: af.selectedFileId }),
     }).then(x => x.json());
-    if (r.needKey) { toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; return; }
+    if (r.needKey) { toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; return; }
     state.data.af.lastOutput = r.ok ? { output: r.output, durationMs: r.durationMs } : { error: r.error || t('실행 실패') };
     if (st) st.textContent = r.ok ? `${r.durationMs||0}ms` : '❌';
     renderView();
@@ -13715,7 +13725,7 @@ async function afAsk() {
 
 // ────────────────────────────────────────────────────────────────
 // VISION / PDF LAB (v2.7.0)
-// 이미지/PDF 업로드 → o3 / GPT-5 Codex / o4-mini 3 모델 병렬 비교
+// 이미지/PDF 업로드 → GPT-5.4 / GPT-5.5 / GPT-5.4 Mini 3 모델 병렬 비교
 // ────────────────────────────────────────────────────────────────
 VIEWS.visionLab = async () => {
   state.data.vl = state.data.vl || {
@@ -13752,7 +13762,7 @@ VIEWS.visionLab = async () => {
     <div class="mb-4">
       <h1 class="text-2xl font-bold">👁️ ${t('Vision / PDF 실험실')}</h1>
       <p class="text-sm text-[var(--text-mute)] mt-1">
-        ${t('이미지(PNG/JPG/WebP/GIF) 또는 PDF 를 올리고 같은 질문을 o3 / GPT-5 Codex / o4-mini 3 모델에 병렬 전송 → 응답을 나란히 비교합니다.')}
+        ${t('이미지(PNG/JPG/WebP/GIF) 또는 PDF 를 올리고 같은 질문을 GPT-5.4 / GPT-5.5 / GPT-5.4 Mini 3 모델에 병렬 전송 → 응답을 나란히 비교합니다.')}
       </p>
     </div>
 
@@ -13834,7 +13844,7 @@ async function vlRun() {
       body: JSON.stringify({ mediaType: vl.mediaType, base64: vl.base64, question: vl.question }),
     }).then(x => x.json());
     vlSet('running', false);
-    if (r.needKey) { toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; renderView(); return; }
+    if (r.needKey) { toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; renderView(); return; }
     if (!r.ok) { toast(r.error || t('실행 실패'), 'err'); if (st) st.textContent=''; renderView(); return; }
     vlSet('results', r);
     if (st) st.textContent = `${r.totalDurationMs}ms`;
@@ -13855,7 +13865,7 @@ VIEWS.modelBench = async () => {
   const data = await api('/api/model-bench/sets');
   state.data.mb = state.data.mb || {
     setId: 'basic-qa',
-    modelIds: ['o4-mini', 'gpt-5-codex'],
+    modelIds: ['gpt-5.4-mini', 'gpt-5.5'],
     maxTokens: 512,
     results: null,
     running: false,
@@ -14018,7 +14028,7 @@ async function mbRun() {
       body: JSON.stringify({ prompts: s.prompts, models: mb.modelIds, maxTokens: mb.maxTokens }),
     }).then(x => x.json());
     mbSet('running', false);
-    if (r.needKey) { toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; renderView(); return; }
+    if (r.needKey) { toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (st) st.textContent=''; renderView(); return; }
     if (!r.ok) { toast(r.error || t('실행 실패'), 'err'); if (st) st.textContent=''; renderView(); return; }
     mbSet('results', r);
     if (st) st.textContent = `${r.totalDurationMs}ms`;
@@ -14076,9 +14086,9 @@ VIEWS.promptLibrary = async () => {
       <div class="flex gap-2 items-center">
         <select class="input" onchange="plSetEdit('model', this.value)">
           <option value="">${t('모델 미지정')}</option>
-          <option value="o3" ${editing.model==='o3'?'selected':''}>o3</option>
-          <option value="gpt-5-codex" ${editing.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
-          <option value="o4-mini" ${editing.model==='o4-mini'?'selected':''}>o4-mini</option>
+          <option value="gpt-5.4" ${editing.model==='gpt-5.4'?'selected':''}>GPT-5.4</option>
+          <option value="gpt-5.5" ${editing.model==='gpt-5.5'?'selected':''}>GPT-5.5</option>
+          <option value="gpt-5.4-mini" ${editing.model==='gpt-5.4-mini'?'selected':''}>GPT-5.4 Mini</option>
         </select>
         <button class="btn btn-primary" onclick="plSave()">💾 ${t('저장')}</button>
         <button class="btn" onclick="plSet('editing', null); renderView()">${t('취소')}</button>
@@ -14597,7 +14607,7 @@ VIEWS.citationsLab = async () => {
     api('/api/citations-lab/history'),
   ]);
   state.data.ci = state.data.ci || {
-    model: 'gpt-5-codex',
+    model: 'gpt-5.5',
     maxTokens: 1024,
     title: '',
     document: '',
@@ -14677,8 +14687,8 @@ VIEWS.citationsLab = async () => {
         <div class="flex items-center gap-2">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="ciSet('model', this.value)">
-            <option value="o3" ${ci.model==='o3'?'selected':''}>o3</option>
-            <option value="gpt-5-codex" ${ci.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
+            <option value="gpt-5.4" ${ci.model==='gpt-5.4'?'selected':''}>GPT-5.4</option>
+            <option value="gpt-5.5" ${ci.model==='gpt-5.5'?'selected':''}>GPT-5.5</option>
           </select>
         </div>
         <div>
@@ -14747,7 +14757,7 @@ async function ciRun() {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(ci),
     }).then(x => x.json());
-    if (r.needKey) { toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (sEl) sEl.textContent=''; return; }
+    if (r.needKey) { toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (sEl) sEl.textContent=''; return; }
     if (!r.ok) { toast(r.error || t('실행 실패'), 'err'); if (sEl) sEl.textContent=''; return; }
     state.data.ci.lastResult = r;
     state.data.ci.hoveredCitIndex = -1;
@@ -14859,7 +14869,7 @@ VIEWS.serverTools = async () => {
     api('/api/server-tools/history'),
   ]);
   state.data.st = state.data.st || {
-    model: 'gpt-5-codex',
+    model: 'gpt-5.5',
     maxTokens: 2048,
     prompt: '',
     enabled: ['web_search'],
@@ -14916,8 +14926,8 @@ VIEWS.serverTools = async () => {
         <div class="flex items-center gap-2 flex-wrap">
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider w-20">${t('모델')}</label>
           <select class="input flex-1" onchange="stSet('model', this.value); renderView()">
-            <option value="o3" ${st.model==='o3'?'selected':''}>o3</option>
-            <option value="gpt-5-codex" ${st.model==='gpt-5-codex'?'selected':''}>GPT-5 Codex</option>
+            <option value="gpt-5.4" ${st.model==='gpt-5.4'?'selected':''}>GPT-5.4</option>
+            <option value="gpt-5.5" ${st.model==='gpt-5.5'?'selected':''}>GPT-5.5</option>
           </select>
           <label class="text-[11px] text-[var(--text-dim)] uppercase tracking-wider">max_tokens</label>
           <input type="text" inputmode="numeric" class="input w-24" value="${st.maxTokens}"
@@ -15005,7 +15015,7 @@ async function stRun() {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify(st),
     }).then(x => x.json());
-    if (r.needKey) { toast(t('ANTHROPIC_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (sEl) sEl.textContent=''; return; }
+    if (r.needKey) { toast(t('OPENAI_API_KEY 미설정 — AI 프로바이더 탭에서 저장하세요'), 'err'); if (sEl) sEl.textContent=''; return; }
     if (r.unsupported) { toast(r.error, 'err'); if (sEl) sEl.textContent=''; return; }
     if (!r.ok) { toast(r.error || t('실행 실패'), 'err'); if (sEl) sEl.textContent=''; return; }
     state.data.st.lastResult = r;
@@ -17501,7 +17511,7 @@ function renderProjectDetail(d) {
 // project detail modal. Each row groups by source session id so the user
 // sees "session A delegated to {Explore, code-reviewer, ...}" at a glance.
 // Clicking a row spawns a Terminal.app on the source session in this cwd
-// (codex --resume <sessionId>). Clicking a session header expands all of
+// (codex exec resume <sessionId>). Clicking a session header expands all of
 // that session's delegations.
 function _renderSubagentActivity(activity, cwd) {
   if (!activity || !activity.length) {
@@ -17892,7 +17902,7 @@ async function openSessionTerminal(sessionId) {
 
   // Build conversation lines mac-terminal style.
   const lines = [];
-  lines.push(`<div class="mac-term-line meta">$ codex --resume ${sessionId.slice(0,8)}</div>`);
+  lines.push(`<div class="mac-term-line meta">$ codex exec resume ${sessionId.slice(0,8)}</div>`);
   if (cwd) lines.push(`<div class="mac-term-line meta">cwd: ${escapeHtml(cwd)}</div>`);
   if (startedAt) lines.push(`<div class="mac-term-line meta">started: ${escapeHtml(startedAt)}</div>`);
   lines.push(`<div class="mac-term-line meta">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>`);
@@ -17980,9 +17990,9 @@ VIEWS.projectAgents = async () => {
 
   const modelBadgeColor = (m) => ({
     inherit: 'rgba(255,255,255,0.08)',
-    'o4-mini': 'rgba(125,211,252,0.18)',
-    'gpt-5-codex': 'rgba(16,163,127,0.18)',
-    o3: 'rgba(244,114,182,0.18)',
+    'gpt-5.4-mini': 'rgba(125,211,252,0.18)',
+    'gpt-5.5': 'rgba(16,163,127,0.18)',
+    'gpt-5.4': 'rgba(244,114,182,0.18)',
   })[m] || 'rgba(16,163,127,0.14)';
   const existingGrid = existingAgents.length ? existingAgents.map(a => {
     const hyperOn = (window.__paHyperMap || {})[a.id];
@@ -19220,7 +19230,7 @@ window._wizardSelectProvider = (provider) => {
           ${t('확인 명령')}: <code style="background:var(--code-bg);padding:2px 6px;border-radius:4px;">codex --version</code>
         </div>
         <div class="text-[10px] mt-1" style="color:var(--text-dim)">
-          ${t('지원 모델')}: gpt-5-codex · o3-pro · o4-mini · o3 · gpt-4.1
+          ${t('지원 모델')}: gpt-5.5 · gpt-5.4 · gpt-5.4-mini · gpt-5.2 · gpt-4.1
         </div>
       </div>
     `,
@@ -21058,7 +21068,7 @@ VIEWS.orchestrator = async () => {
             </div>
             <div>
               <label class="text-[10px] block">${t('Assignees (csv)')}</label>
-              <input id="orchOvrAssignees" class="input text-xs w-full" placeholder="codex:gpt-5-codex, openai:gpt-4.1">
+              <input id="orchOvrAssignees" class="input text-xs w-full" placeholder="codex:gpt-5.5, openai:gpt-4.1">
             </div>
           </div>
         </details>
@@ -21382,7 +21392,7 @@ VIEWS.ralph = async () => {
           <textarea id="ralphPrompt" rows="6" class="input text-xs" placeholder="Fix every failing test. Output <promise>DONE</promise> when green."></textarea>
         </label>
         <label class="text-[11px] block mb-1">${t('Assignee')}
-          <input id="ralphAssignee" class="input text-xs" placeholder="codex:gpt-5-codex">
+          <input id="ralphAssignee" class="input text-xs" placeholder="codex:gpt-5.5">
         </label>
         <label class="text-[11px] block mb-1">${t('Completion 표식')}
           <input id="ralphCompletion" class="input text-xs" value="<promise>DONE</promise>">
@@ -21914,7 +21924,7 @@ VIEWS.advisorLab = async () => {
       <textarea id="alPrompt" class="input w-full" rows="3" placeholder="${t('동일 프롬프트가 두 모델에 보내지고 결과가 비교됩니다.')}"></textarea>
       <div class="flex items-center gap-2 mt-2 flex-wrap">
         <label class="text-xs">${t('Executor')}: <select id="alExec" class="input">${(ex.executors||[]).map(m => `<option>${m}</option>`).join('')}</select></label>
-        <label class="text-xs">${t('Advisor')}: <select id="alAdv" class="input">${(ex.advisors||[]).map(m => `<option ${m==='o3'?'selected':''}>${m}</option>`).join('')}</select></label>
+        <label class="text-xs">${t('Advisor')}: <select id="alAdv" class="input">${(ex.advisors||[]).map(m => `<option ${m==='gpt-5.5'?'selected':''}>${m}</option>`).join('')}</select></label>
         <button class="btn-primary btn" onclick="_alRun()">▶ ${t('실행')}</button>
       </div>
     </div>
@@ -22483,14 +22493,14 @@ function _costsBucket(days, mode) {
 // Render the cost-savings recommendations card.
 // Hidden when there are 0 recommendations. All strings via t('...').
 // i18n strings added: '비용 절감 추천', '최근 N일 총', '예상 절감', '추천 새로고침',
-//   '데이터 부족', 'o4-mini 전환', '캐싱', '로컬 모델', '모델 업그레이드'.
+//   '데이터 부족', 'GPT-5.4 Mini 전환', '캐싱', '로컬 모델', '모델 업그레이드'.
 function _renderCostRecommendations(rec) {
   if (!rec || !rec.ok) return '';
   const recs = rec.recommendations || [];
   if (!recs.length) return '';
   const fmtUsd = (v) => '$' + (Number(v)||0).toFixed(2);
   const ruleLabel = (id) => ({
-    mini_for_short_prompts: t('o4-mini 전환'),
+    mini_for_short_prompts: t('GPT-5.4 Mini 전환'),
     enable_prompt_caching: t('프롬프트 캐싱'),
     local_model_for_batch: t('로컬 모델'),
     stale_model_upgrade: t('모델 업그레이드'),
@@ -24248,7 +24258,7 @@ window._armOpenAddDialog = async () => {
   showModal(`
     <div class="text-sm font-semibold mb-2">+ ${t('새 Auto-Resume 바인딩')}</div>
     <div class="text-[11px] mb-3" style="color:var(--text-dim)">
-      ${t('대상 Codex 세션을 골라서 Auto-Resume 워커를 붙입니다. 토큰/레이트 한도 발생 시 자동으로 codex --resume 으로 재시도합니다.')}
+      ${t('대상 Codex 세션을 골라서 Auto-Resume 워커를 붙입니다. 토큰/레이트 한도 발생 시 자동으로 codex exec resume 으로 재시도합니다.')}
     </div>
     ${live.length ? `
       <label class="text-[11px] block mb-1">${t('실행 중인 세션 선택')}</label>
@@ -24282,7 +24292,7 @@ window._armOpenAddDialog = async () => {
     </div>
     <label class="text-[11px] flex items-center gap-2 mb-2">
       <input type="checkbox" id="armUseContinue" checked>
-      ${t('--continue 사용 (--resume 대신)')}
+      ${t('resume --last 사용 (고정 session id 대신)')}
     </label>
     <label class="text-[11px] flex items-center gap-2 mb-3">
       <input type="checkbox" id="armAllowUnbound">
@@ -25721,7 +25731,7 @@ const _QS_LABELS = {
   'ui.mascotEnabled':    ['마스코트 표시', '우하단 점프 캐릭터'],
   'ui.compactSidebar':   ['컴팩트 사이드바', '카테고리 라벨 숨김'],
 
-  'ai.defaultProvider':  ['기본 프로바이더', '예: codex:gpt-5-codex, openai:gpt-4.1, ollama:llama3.1'],
+  'ai.defaultProvider':  ['기본 프로바이더', '예: codex:gpt-5.5, openai:gpt-4.1, ollama:llama3.1'],
   'ai.effort':           ['Effort', 'low / medium / high — 추론 깊이'],
   'ai.temperature':      ['Temperature', '0.0 결정적 ↔ 2.0 다양'],
   'ai.topP':             ['Top-p', '핵 샘플링 누적 확률'],
@@ -25890,7 +25900,7 @@ function _qsRenderRow(section, key, def, value) {
       <span class="qs-num-readout" id="qs-readout-${section}-${key}">${value}</span>
     `;
   } else if (def.kind === 'str') {
-    control = `<input type="text" maxlength="${def.maxLen || 120}" value="${_qsEscape(value || '')}" data-section="${section}" data-key="${key}" placeholder="codex:gpt-5-codex" />`;
+    control = `<input type="text" maxlength="${def.maxLen || 120}" value="${_qsEscape(value || '')}" data-section="${section}" data-key="${key}" placeholder="codex:gpt-5.5" />`;
   }
   return `
     <div class="qs-row">
@@ -27011,7 +27021,7 @@ function closeSpotlight() {
 
 // 탭 연관 키워드 — 검색어와 탭을 연결
 const _NAV_KEYWORDS = {
-  features: ['신기능','design','디자인','artifact','아티팩트','mcp','tool use','vision','비전','web search','웹검색','extended thinking','코드 실행','batch','배치','citation','인용','prompt caching','캐싱','streaming','스트리밍','pdf','파일','업로드','image','이미지','model context protocol','agent','에이전트','sub-agent','서브에이전트','hooks','훅','skills','스킬','gpt-5-codex','o3','o4-mini','routines'],
+  features: ['신기능','design','디자인','artifact','아티팩트','mcp','tool use','vision','비전','web search','웹검색','extended thinking','코드 실행','batch','배치','citation','인용','prompt caching','캐싱','streaming','스트리밍','pdf','파일','업로드','image','이미지','model context protocol','agent','에이전트','sub-agent','서브에이전트','hooks','훅','skills','스킬','gpt-5.5','gpt-5.4','gpt-5.4-mini','routines'],
   overview: ['개요','대시보드','점수','스코어','최적화','score','optimization','홈','home'],
   projects: ['프로젝트','project','AGENTS.md','설정','세팅','폴더'],
   analytics: ['통계','analytics','그래프','chart','타임라인','timeline','도구 분포'],

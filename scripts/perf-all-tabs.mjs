@@ -7,7 +7,7 @@
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
 
-const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 8080}`;
+const BASE = process.env.BASE || `http://127.0.0.1:${process.env.PORT || 19500}`;
 
 function readTabIds() {
   const src = readFileSync(new URL('../server/nav_catalog.py', import.meta.url), 'utf8');

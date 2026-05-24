@@ -557,9 +557,8 @@ def api_metrics_summary() -> dict:
     PRICING = {
         "gpt-5.5": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
         "gpt-5.4": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
+        "gpt-5.4-mini": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
         "gpt-5.2": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
-        "o3": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
-        "o4-mini": {"in": 0.0, "out": 0.0, "cacheRead": 0.0, "cacheCreate": 0.0},
     }
     def _estimate_cost(model: str, ti: int, to: int, cr: int, cc: int) -> float:
         m = (model or "").lower()
@@ -747,8 +746,6 @@ def api_model_config() -> dict:
         {"id": "gpt-5.4", "label": "GPT-5.4", "note": "강한 범용/코딩 모델"},
         {"id": "gpt-5.4-mini", "label": "GPT-5.4 Mini", "note": "빠르고 비용 효율적인 작업용"},
         {"id": "gpt-5.2", "label": "GPT-5.2", "note": "전문 작업/긴 에이전트 작업용"},
-        {"id": "o3", "label": "o3", "note": "고난도 추론 작업"},
-        {"id": "o4-mini", "label": "o4-mini", "note": "빠른 추론/분류/검증"},
         {"id": "default", "label": "기본 (Codex CLI 선택)", "note": "settings.model 비워두기"},
     ]
     return {"settings": entries, "models": known_models}

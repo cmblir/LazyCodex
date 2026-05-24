@@ -6,7 +6,7 @@
  */
 import { chromium } from 'playwright';
 
-const BASE = 'http://127.0.0.1:8080';
+const BASE = 'http://127.0.0.1:19500';
 const LANGS = ['ko', 'en', 'zh'];
 
 // 영어 페이지에서 한글이 보이면 미번역
@@ -15,7 +15,7 @@ const KO_RE = /[\uAC00-\uD7A3]/;
 const ZH_RE = /[\uAC00-\uD7A3]/;
 
 // 한국어 UI에서 영어 단어가 섞이는 건 정상 (기술 용어)
-const TECH_TERMS = /^(Codex|CLI|API|JSON|MCP|DAG|SSE|Webhook|Cron|Ollama|Gemini|GPT|OpenAI|Codex|Anthropic|OAuth|UUID|JSONL|SQLite|HTTP|POST|GET|PUT|DELETE|URL|USD|ARIA|DOM|CSS|HTML|SVG|Ctrl|Shift|Tab|Esc|Delete|Enter|Space|README|CLAUDE|Modelfile|GGUF|FROM|SYSTEM|PARAMETER|LLM|RAG|BAAI|Nomic|BGE|token|model|provider|embed|chat|code|vision|reasoning|node|edge|workflow|template|export|import|clone|diff|merge|delay|retry|loop|start|output|subagent|session|aggregate|branch|transform|variable|subworkflow|embedding|error_handler)$/i;
+const TECH_TERMS = /^(Codex|CLI|API|JSON|MCP|DAG|SSE|Webhook|Cron|Ollama|Gemini|GPT|OpenAI|OAuth|UUID|JSONL|SQLite|HTTP|POST|GET|PUT|DELETE|URL|USD|ARIA|DOM|CSS|HTML|SVG|Ctrl|Shift|Tab|Esc|Delete|Enter|Space|README|Modelfile|GGUF|FROM|SYSTEM|PARAMETER|LLM|RAG|BAAI|Nomic|BGE|token|model|provider|embed|chat|code|vision|reasoning|node|edge|workflow|template|export|import|clone|diff|merge|delay|retry|loop|start|output|subagent|session|aggregate|branch|transform|variable|subworkflow|embedding|error_handler)$/i;
 
 async function auditTab(page, tabId, lang) {
   const issues = [];

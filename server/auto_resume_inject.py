@@ -1,7 +1,7 @@
 """Live TTY injection for Auto-Resume (macOS).
 
 The default Auto-Resume mechanism (auto_resume.py) spawns
-`codex --resume <id> -p <prompt>` as a separate subprocess. That
+`codex exec resume <id> <prompt>` as a separate subprocess. That
 subprocess writes new turns to the SAME session JSONL — the data
 gets injected at the file level — but the user's *live* terminal
 window keeps showing whatever it was showing (e.g. a frozen

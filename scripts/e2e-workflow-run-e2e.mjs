@@ -10,7 +10,7 @@
  *   3. The transform node's output matches the expected template.
  *   4. The total wall-clock time is < 5 s (real-world sanity check).
  */
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 19500;
 const BASE = process.env.BASE || `http://127.0.0.1:${PORT}`;
 
 let exitCode = 0;

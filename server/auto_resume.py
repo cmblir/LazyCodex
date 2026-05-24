@@ -21,7 +21,7 @@ User flow
    stalled (no new entries for `idle_seconds`) AND the last activity
    smells like a usage cap, the worker classifies the exit, parses any
    reset time, schedules the next attempt, and spawns
-   `codex --resume <id> -p "<prompt>"` from the session's cwd.
+   `codex exec resume <id> "<prompt>"` from the session's cwd.
 4. On non-zero exit it retries per the exit-reason policy, on success it
    reverts to monitor mode, on `context_full` / `auth_expired` / hash
    stall / max-attempts it short-circuits to a permanent stop with a
@@ -40,7 +40,7 @@ Storage
         "pollInterval":     int,        # fallback retry interval (sec)
         "idleSeconds":      int,        # how long jsonl must be quiet
         "maxAttempts":      int,        # hard cap on retries (default 12)
-        "useContinue":      bool,       # `--continue` instead of `--resume <id>`
+        "useContinue":      bool,       # resume --last instead of a fixed session id
         "extraArgs":        [str, ...],
         "installHooks":     bool,       # snapshot hook installed for cwd?
         "createdAt":        int,        # epoch ms
@@ -694,7 +694,7 @@ def api_auto_resume_set(body: dict) -> dict:
 def api_auto_resume_inject_live(body: dict) -> dict:
     """Live keystroke injection into the user's terminal (macOS).
 
-    Distinct from the supervised "spawn `codex --resume` as a
+    Distinct from the supervised "spawn `codex exec resume` as a
     separate subprocess" path — this writes keystrokes to the live
     iTerm2 / Terminal.app session that owns the target PID, so a
     user stuck at a "1) Continue 2) Quit" rate-limit prompt actually
@@ -981,10 +981,11 @@ def _spawn_resume(entry: dict) -> tuple[int, str, str]:
     prompt = entry.get("prompt") or DEFAULT_PROMPT
     extra = list(entry.get("extraArgs") or [])
 
+    cmd = [bin_path, "exec", "resume", "--skip-git-repo-check", *extra]
     if entry.get("useContinue"):
-        cmd = [bin_path, "--continue", "-p", prompt, *extra]
+        cmd += ["--last", prompt]
     else:
-        cmd = [bin_path, "--resume", session_id, "-p", prompt, *extra]
+        cmd += [session_id, prompt]
     log.info("auto_resume: spawn for %s in %s (extra=%s)", session_id, cwd, extra)
 
     env = os.environ.copy()

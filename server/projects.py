@@ -744,9 +744,10 @@ def api_project_agent_save(body: dict) -> dict:
 
 SUBAGENT_MODEL_CHOICES = [
     {"id": "inherit",              "label": "inherit (메인 Codex 따라감)", "note": "세션의 메인 모델과 동일 — 기본값"},
-    {"id": "gpt-5-codex",          "label": "gpt-5-codex",                 "note": "Codex 기본 모델"},
-    {"id": "o3",                   "label": "o3",                          "note": "고난도 추론"},
-    {"id": "o4-mini",              "label": "o4-mini",                     "note": "저지연/경량"},
+    {"id": "gpt-5.5",              "label": "gpt-5.5",                     "note": "Codex 기본 모델"},
+    {"id": "gpt-5.4",              "label": "gpt-5.4",                     "note": "강한 범용/코딩 모델"},
+    {"id": "gpt-5.4-mini",         "label": "gpt-5.4-mini",                "note": "저지연/경량"},
+    {"id": "gpt-5.2",              "label": "gpt-5.2",                     "note": "전문 작업/긴 에이전트 작업"},
     {"id": "gpt-4.1",              "label": "gpt-4.1",                     "note": "범용 안정형"},
     {"id": "gpt-4.1-mini",         "label": "gpt-4.1-mini",                "note": "비용 최적화"},
 ]

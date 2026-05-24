@@ -14,14 +14,14 @@ itself contains *no* model names, channel ids, or routing rules in code.
 ::
 
     {
-      "plannerAssignee":  "codex:o3",
-      "aggregatorAssignee": "codex:gpt-5-codex",
-      "defaultAssignees": ["codex:gpt-5-codex", "openai:gpt-4.1", "ollama:llama3.1"],
+      "plannerAssignee":  "codex:gpt-5.5",
+      "aggregatorAssignee": "codex:gpt-5.5",
+      "defaultAssignees": ["codex:gpt-5.5", "openai:gpt-4.1", "ollama:llama3.1"],
       "maxParallel":      4,
       "channelDebounceMs": 2000,
       "bindings": [
         { "kind": "slack",    "channel": "C0XXXXX", "workflowId": "wf_..." },
-        { "kind": "telegram", "chat":    "-100123",  "assignees": ["codex:gpt-5-codex"] }
+        { "kind": "telegram", "chat":    "-100123",  "assignees": ["codex:gpt-5.5"] }
       ]
     }
 
@@ -57,8 +57,8 @@ ORCH_CONFIG_PATH = _env_path(
 
 # ───────── Defaults (env-overridable) ─────────
 
-_DEFAULT_PLANNER     = os.environ.get("ORCH_PLANNER",     "codex:gpt-5-codex")
-_DEFAULT_AGGREGATOR  = os.environ.get("ORCH_AGGREGATOR",  "codex:gpt-5-codex")
+_DEFAULT_PLANNER     = os.environ.get("ORCH_PLANNER",     "codex:gpt-5.5")
+_DEFAULT_AGGREGATOR  = os.environ.get("ORCH_AGGREGATOR",  "codex:gpt-5.5")
 _DEFAULT_MAX_PARA    = int(os.environ.get("ORCH_MAX_PARALLEL", "4"))
 _CHANNEL_DEBOUNCE_MS = int(os.environ.get("ORCH_DEBOUNCE_MS", "2000"))
 _PER_AGENT_TIMEOUT_S = int(os.environ.get("ORCH_AGENT_TIMEOUT_S", "180"))
@@ -371,7 +371,7 @@ Do not include any explanation. Choose assignees from the provided list."""
 
 
 def _build_planner_prompt(user_text: str, available: list[str]) -> str:
-    avail = ", ".join(available) or "codex:gpt-5-codex"
+    avail = ", ".join(available) or "codex:gpt-5.5"
     return (f"Available assignees: {avail}\n"
             f"User request:\n{user_text.strip()}\n\n"
             f"Return JSON only.")
@@ -989,7 +989,7 @@ def dispatch(text: str, *, kind: str = "http", channel: str = "",
     # into itself forever. Strip out any "orchestrator" reference up front.
     def _is_orch(a: str) -> bool:
         head = (a or "").split(":", 1)[0].strip().lower()
-        return head in ("orchestrator", "orch", "openclaw")
+        return head in ("orchestrator", "orch")
     if _is_orch(override_planner):
         override_planner = ""
     if _is_orch(override_aggregator):

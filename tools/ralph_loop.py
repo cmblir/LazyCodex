@@ -22,7 +22,7 @@ Output <promise>DONE</promise> when green."
 
     # Talk to a running dashboard instead of importing the engine
     python3 tools/ralph_loop.py --prompt-file PROMPT.md \
-        --server http://127.0.0.1:8080
+        --server http://127.0.0.1:19500
 
 Ctrl+C requests a graceful cancel — the engine stops at the next iteration
 boundary rather than mid-call, preserving on-disk consistency.
@@ -183,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--budget-usd", type=float, default=5.0,
                    help="Cumulative cost ceiling in USD.")
     p.add_argument("--assignee", default="",
-                   help='Provider:model, e.g. "codex:sonnet" or "openai:gpt-4.1".')
+                   help='Provider:model, e.g. "codex:gpt-5.5" or "openai:gpt-4.1".')
     p.add_argument("--system-prompt", default="")
     p.add_argument("--cwd", default="",
                    help="Working directory (passed to provider where supported).")

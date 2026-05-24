@@ -52,7 +52,7 @@ _NODE_TYPES = {"start", "session", "subagent", "aggregate", "branch", "output",
                # (n8n parity). Pass-through executor; no ports.
                "sticky"}
 _INPUT_MODES = {"concat", "first", "json"}
-_ASSIGNEES = {"o3", "gpt-5-codex", "o4-mini"}  # UI 선택지용; 검증 여기서는 free-form
+_ASSIGNEES = {"gpt-5.5", "gpt-5.4", "gpt-5.4-mini"}  # UI 선택지용; 검증 여기서는 free-form
 
 _WF_ID_RE = re.compile(r"^wf-[0-9]{10,14}-[a-z0-9]{3,6}$")
 _NODE_ID_RE = re.compile(r"^n-[A-Za-z0-9_-]{1,40}$")
@@ -1597,8 +1597,8 @@ def _execute_node(node: dict, inputs: list[str], prev_session_ids: list[str] | N
     continueFromPrev 가 켜지면 그 중 첫 번째(있으면)를 --resume 에 넘긴다.
 
     멀티 프로바이더: assignee 필드가 "provider:model" 형태면 해당 프로바이더로 실행.
-    예: "codex:o3", "openai:gpt-4.1", "ollama:llama3.1", "gemini:2.5-pro", "codex:o4-mini"
-    빈 값이면 `codex:gpt-5-codex` 로 실행한다.
+    예: "codex:gpt-5.5", "openai:gpt-4.1", "ollama:llama3.1", "gemini:2.5-pro", "codex:gpt-5.4-mini"
+    빈 값이면 `codex:gpt-5.5` 로 실행한다.
 
     반환: {status:"ok|err", output:str, sessionId:str, durationMs:int, error?:str, provider?:str}
     """
@@ -1778,9 +1778,9 @@ def _execute_node(node: dict, inputs: list[str], prev_session_ids: list[str] | N
     chosen_model = ""
     if not assignee and model_hint:
         if model_hint == "fast":
-            chosen_model = "codex:o4-mini"
+            chosen_model = "codex:gpt-5.4-mini"
         elif model_hint == "deep":
-            chosen_model = "codex:o3"
+            chosen_model = "codex:gpt-5.5"
         elif model_hint == "auto":
             # 휴리스틱: 길이 + 키워드
             plen = len(prompt)
@@ -1791,11 +1791,11 @@ def _execute_node(node: dict, inputs: list[str], prev_session_ids: list[str] | N
             has_deep = any(k in text_lower for k in deep_keywords)
             has_fast = any(k in text_lower for k in fast_keywords)
             if plen > 3000 or has_deep:
-                chosen_model = "codex:o3"
+                chosen_model = "codex:gpt-5.5"
             elif plen < 500 and has_fast:
-                chosen_model = "codex:o4-mini"
+                chosen_model = "codex:gpt-5.4-mini"
             else:
-                chosen_model = "codex:gpt-5-codex"
+                chosen_model = "codex:gpt-5.5"
         if chosen_model:
             assignee = chosen_model
 
@@ -1871,7 +1871,7 @@ def _execute_node(node: dict, inputs: list[str], prev_session_ids: list[str] | N
             )
         else:
             resp = execute_with_assignee(
-                assignee or "codex:gpt-5-codex",
+                assignee or "codex:gpt-5.5",
                 prompt,
                 system_prompt=sys_prompt,
                 cwd=cwd_safe,
@@ -1880,7 +1880,7 @@ def _execute_node(node: dict, inputs: list[str], prev_session_ids: list[str] | N
                 fallback=True,
             )
         # 실패 + policy.fallbackProvider 설정 → 해당 provider 로 1회 재시도
-        if resp.status == "err" and fallback_provider and fallback_provider != (assignee or "codex:gpt-5-codex"):
+        if resp.status == "err" and fallback_provider and fallback_provider != (assignee or "codex:gpt-5.5"):
             try:
                 resp2 = execute_with_assignee(
                     fallback_provider,
@@ -3817,7 +3817,7 @@ BUILTIN_TEMPLATES: list[dict] = [
         "category": "analysis",
         "nodes": [
             {"id": "n-start", "type": "start", "x": 80, "y": 200, "title": "시작", "data": {}},
-            {"id": "n-codex", "type": "session", "x": 320, "y": 80, "title": "Codex", "data": {"subject": "분석 요청", "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+            {"id": "n-codex", "type": "session", "x": 320, "y": 80, "title": "Codex", "data": {"subject": "분석 요청", "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-gpt", "type": "session", "x": 320, "y": 200, "title": "GPT", "data": {"subject": "분석 요청", "assignee": "openai:gpt-4.1-mini", "inputsMode": "concat"}},
             {"id": "n-gemini", "type": "session", "x": 320, "y": 320, "title": "Gemini", "data": {"subject": "분석 요청", "assignee": "gemini:gemini-2.5-flash", "inputsMode": "concat"}},
             {"id": "n-merge", "type": "merge", "x": 560, "y": 200, "title": "결과 합류", "data": {"mergeMode": "all"}},
@@ -3841,7 +3841,7 @@ BUILTIN_TEMPLATES: list[dict] = [
             {"id": "n-start", "type": "start", "x": 80, "y": 160, "title": "시작", "data": {}},
             {"id": "n-embed", "type": "embedding", "x": 300, "y": 160, "title": "문서 임베딩", "data": {"provider": "ollama-api", "model": "bge-m3", "outputFormat": "json"}},
             {"id": "n-search", "type": "http", "x": 520, "y": 160, "title": "벡터 검색", "data": {"url": "http://localhost:8000/search", "method": "POST", "body": '{"query": "{{input}}"}', "extractPath": "results"}},
-            {"id": "n-gen", "type": "session", "x": 740, "y": 160, "title": "답변 생성", "data": {"subject": "검색 결과 기반 답변", "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+            {"id": "n-gen", "type": "session", "x": 740, "y": 160, "title": "답변 생성", "data": {"subject": "검색 결과 기반 답변", "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-out", "type": "output", "x": 960, "y": 160, "title": "최종 답변", "data": {}},
         ],
         "edges": [
@@ -3857,8 +3857,8 @@ BUILTIN_TEMPLATES: list[dict] = [
         "category": "dev",
         "nodes": [
             {"id": "n-start", "type": "start", "x": 80, "y": 180, "title": "코드 입력", "data": {}},
-            {"id": "n-sec", "type": "subagent", "x": 320, "y": 80, "title": "보안 리뷰", "data": {"subject": "보안 취약점 검사", "agentRole": "security-reviewer", "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
-            {"id": "n-review", "type": "subagent", "x": 320, "y": 280, "title": "코드 리뷰", "data": {"subject": "코드 품질 리뷰", "agentRole": "code-reviewer", "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+            {"id": "n-sec", "type": "subagent", "x": 320, "y": 80, "title": "보안 리뷰", "data": {"subject": "보안 취약점 검사", "agentRole": "security-reviewer", "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
+            {"id": "n-review", "type": "subagent", "x": 320, "y": 280, "title": "코드 리뷰", "data": {"subject": "코드 품질 리뷰", "agentRole": "code-reviewer", "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-agg", "type": "aggregate", "x": 560, "y": 180, "title": "결과 취합", "data": {"mode": "concat"}},
             {"id": "n-out", "type": "output", "x": 760, "y": 180, "title": "리뷰 보고서", "data": {}},
         ],
@@ -3878,7 +3878,7 @@ BUILTIN_TEMPLATES: list[dict] = [
             {"id": "n-start", "type": "start", "x": 80, "y": 160, "title": "시작", "data": {}},
             {"id": "n-fetch", "type": "http", "x": 280, "y": 160, "title": "데이터 수집", "data": {"url": "", "method": "GET"}},
             {"id": "n-transform", "type": "transform", "x": 480, "y": 160, "title": "데이터 변환", "data": {"transformType": "json_extract", "jsonPath": "data"}},
-            {"id": "n-analyze", "type": "session", "x": 680, "y": 160, "title": "AI 분석", "data": {"subject": "수집 데이터 분석", "assignee": "codex:gpt-5-codex"}},
+            {"id": "n-analyze", "type": "session", "x": 680, "y": 160, "title": "AI 분석", "data": {"subject": "수집 데이터 분석", "assignee": "codex:gpt-5.5"}},
             {"id": "n-out", "type": "output", "x": 880, "y": 160, "title": "리포트", "data": {}},
         ],
         "edges": [
@@ -3895,7 +3895,7 @@ BUILTIN_TEMPLATES: list[dict] = [
         "nodes": [
             {"id": "n-start", "type": "start", "x": 80, "y": 160, "title": "시작", "data": {}},
             {"id": "n-retry", "type": "retry", "x": 280, "y": 160, "title": "재시도 설정", "data": {"maxRetries": 3, "backoffMs": 2000, "backoffMultiplier": 2.0}},
-            {"id": "n-work", "type": "session", "x": 480, "y": 160, "title": "작업 실행", "data": {"subject": "API 호출", "assignee": "codex:gpt-5-codex"}},
+            {"id": "n-work", "type": "session", "x": 480, "y": 160, "title": "작업 실행", "data": {"subject": "API 호출", "assignee": "codex:gpt-5.5"}},
             {"id": "n-err", "type": "error_handler", "x": 480, "y": 320, "title": "에러 핸들러", "data": {"onError": "default", "defaultOutput": "작업 실패 — 관리자에게 알림"}},
             {"id": "n-out", "type": "output", "x": 680, "y": 160, "title": "결과", "data": {}},
         ],
@@ -3916,13 +3916,13 @@ BUILTIN_TEMPLATES: list[dict] = [
             {"id": "n-start", "type": "start", "x": 80, "y": 200, "title": "요구사항", "data": {}},
             {"id": "n-plan", "type": "session", "x": 300, "y": 200, "title": "계획 수립",
              "data": {"subject": "요구사항을 받아 실행 계획 수립 — 단계별 체크리스트 생성",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-exec", "type": "session", "x": 520, "y": 200, "title": "실행",
              "data": {"subject": "계획에 따라 작업 수행 — 코드/문서 결과물 출력",
-                      "assignee": "codex:o3", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-verify", "type": "session", "x": 740, "y": 200, "title": "검증",
              "data": {"subject": "결과물이 요구사항을 만족하는지 검증 — PASS/FAIL 과 근거 리포트",
-                      "assignee": "codex:o4-mini", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.4-mini", "inputsMode": "concat"}},
             {"id": "n-out", "type": "output", "x": 960, "y": 200, "title": "최종 결과", "data": {}},
         ],
         "edges": [
@@ -3940,10 +3940,10 @@ BUILTIN_TEMPLATES: list[dict] = [
             {"id": "n-start", "type": "start", "x": 80, "y": 200, "title": "작업 지시", "data": {}},
             {"id": "n-do", "type": "session", "x": 300, "y": 200, "title": "작업/수정",
              "data": {"subject": "피드백이 있으면 반영해 수정, 없으면 초기 작업 수행",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-verify", "type": "session", "x": 520, "y": 200, "title": "검증",
              "data": {"subject": "결과물이 요구사항을 만족하면 'PASS' 로 시작, 아니면 'FAIL — <이유>' 로 시작",
-                      "assignee": "codex:o4-mini", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.4-mini", "inputsMode": "concat"}},
             {"id": "n-branch", "type": "branch", "x": 740, "y": 200, "title": "PASS?",
              "data": {"conditionType": "contains", "conditionValue": "PASS"}},
             {"id": "n-out", "type": "output", "x": 960, "y": 120, "title": "완료", "data": {}},
@@ -3968,16 +3968,16 @@ BUILTIN_TEMPLATES: list[dict] = [
         "category": "pattern",
         "nodes": [
             {"id": "n-start", "type": "start", "x": 80, "y": 280, "title": "작업 입력", "data": {}},
-            {"id": "n-a", "type": "session", "x": 300, "y":  80, "title": "Agent A (GPT-5 Codex)",
-             "data": {"subject": "작업의 1/5 담당 — 섹션 A 처리", "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
-            {"id": "n-b", "type": "session", "x": 300, "y": 180, "title": "Agent B (GPT-5 Codex)",
-             "data": {"subject": "작업의 2/5 담당 — 섹션 B 처리", "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
-            {"id": "n-c", "type": "session", "x": 300, "y": 280, "title": "Agent C (o4-mini)",
-             "data": {"subject": "작업의 3/5 담당 — 섹션 C 처리", "assignee": "codex:o4-mini", "inputsMode": "concat"}},
-            {"id": "n-d", "type": "session", "x": 300, "y": 380, "title": "Agent D (o4-mini)",
-             "data": {"subject": "작업의 4/5 담당 — 섹션 D 처리", "assignee": "codex:o4-mini", "inputsMode": "concat"}},
-            {"id": "n-e", "type": "session", "x": 300, "y": 480, "title": "Agent E (o4-mini)",
-             "data": {"subject": "작업의 5/5 담당 — 섹션 E 처리", "assignee": "codex:o4-mini", "inputsMode": "concat"}},
+            {"id": "n-a", "type": "session", "x": 300, "y":  80, "title": "Agent A (GPT-5.5)",
+             "data": {"subject": "작업의 1/5 담당 — 섹션 A 처리", "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
+            {"id": "n-b", "type": "session", "x": 300, "y": 180, "title": "Agent B (GPT-5.5)",
+             "data": {"subject": "작업의 2/5 담당 — 섹션 B 처리", "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
+            {"id": "n-c", "type": "session", "x": 300, "y": 280, "title": "Agent C (GPT-5.4-mini)",
+             "data": {"subject": "작업의 3/5 담당 — 섹션 C 처리", "assignee": "codex:gpt-5.4-mini", "inputsMode": "concat"}},
+            {"id": "n-d", "type": "session", "x": 300, "y": 380, "title": "Agent D (GPT-5.4-mini)",
+             "data": {"subject": "작업의 4/5 담당 — 섹션 D 처리", "assignee": "codex:gpt-5.4-mini", "inputsMode": "concat"}},
+            {"id": "n-e", "type": "session", "x": 300, "y": 480, "title": "Agent E (GPT-5.4-mini)",
+             "data": {"subject": "작업의 5/5 담당 — 섹션 E 처리", "assignee": "codex:gpt-5.4-mini", "inputsMode": "concat"}},
             {"id": "n-merge", "type": "merge", "x": 540, "y": 280, "title": "취합", "data": {"mergeMode": "all"}},
             {"id": "n-out", "type": "output", "x": 760, "y": 280, "title": "통합 결과", "data": {}},
         ],
@@ -4003,13 +4003,13 @@ BUILTIN_TEMPLATES: list[dict] = [
             {"id": "n-start", "type": "start", "x": 80, "y": 200, "title": "초기 요청", "data": {}},
             {"id": "n-clarify", "type": "session", "x": 300, "y": 200, "title": "1차 질문",
              "data": {"subject": "요구사항에서 모호한 부분을 찾아 3~5개의 구체적 질문 생성",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-answer", "type": "session", "x": 520, "y": 200, "title": "예상 답변",
              "data": {"subject": "질문에 대해 합리적인 기본값/권장 답변을 제시하고 각각 근거 표기",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-spec", "type": "session", "x": 740, "y": 200, "title": "설계 문서",
              "data": {"subject": "명확화된 요구사항을 기반으로 기술 설계 문서 작성 (섹션: 목표/제약/아키/리스크)",
-                      "assignee": "codex:o3", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-out", "type": "output", "x": 960, "y": 200, "title": "설계 보고서", "data": {}},
         ],
         "edges": [
@@ -4024,35 +4024,35 @@ BUILTIN_TEMPLATES: list[dict] = [
     {
         "id": "bt-team-sprint", "name": "Team Sprint (Plan→PRD→Exec×3→Verify→Fix)",
         "icon": "🏗️", "builtin": True,
-        "description": "팀 스프린트 스타일 5단계: 계획(o3)→요구사항명세(GPT-5 Codex)→3-병렬 실행(GPT-5 Codex)→취합→검증(o4-mini)→실패 시 수정. Repeat 3회까지 자동 verify-fix 루프.",
+        "description": "팀 스프린트 스타일 5단계: 계획(GPT-5.5)→요구사항명세(GPT-5.5)→3-병렬 실행(GPT-5.5)→취합→검증(GPT-5.4-mini)→실패 시 수정. Repeat 3회까지 자동 verify-fix 루프.",
         "category": "pattern",
         "nodes": [
             {"id": "n-start", "type": "start", "x":  80, "y": 300, "title": "스프린트 요청", "data": {}},
             {"id": "n-plan",  "type": "session", "x": 260, "y": 300, "title": "🧭 Plan",
              "data": {"subject": "전체 아키텍처 · 범위 · 리스크를 5섹션으로 설계 (목표/제약/접근/모듈/순서)",
-                      "assignee": "codex:o3", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-prd",   "type": "session", "x": 460, "y": 300, "title": "📋 PRD",
              "data": {"subject": "계획을 받아 각 모듈별 세부 요구사항·수용 조건(Acceptance Criteria)·테스트 포인트 작성",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-exec-a", "type": "session", "x": 680, "y": 180, "title": "👷 Exec A",
              "data": {"subject": "PRD 의 모듈 1/3 담당 — 코드/문서 결과물과 실행 결과 보고",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-exec-b", "type": "session", "x": 680, "y": 300, "title": "👷 Exec B",
              "data": {"subject": "PRD 의 모듈 2/3 담당 — 코드/문서 결과물과 실행 결과 보고",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-exec-c", "type": "session", "x": 680, "y": 420, "title": "👷 Exec C",
              "data": {"subject": "PRD 의 모듈 3/3 담당 — 코드/문서 결과물과 실행 결과 보고",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-merge", "type": "merge", "x": 880, "y": 300, "title": "🔀 취합",
              "data": {"mergeMode": "all"}},
             {"id": "n-verify", "type": "session", "x": 1080, "y": 300, "title": "🔎 Verify",
              "data": {"subject": "취합된 결과물을 PRD 수용 조건과 대조. 통과면 'PASS', 아니면 'FAIL — <실패 항목 목록>' 으로 시작",
-                      "assignee": "codex:o4-mini", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.4-mini", "inputsMode": "concat"}},
             {"id": "n-branch", "type": "branch", "x": 1280, "y": 300, "title": "PASS?",
              "data": {"conditionType": "contains", "conditionValue": "PASS"}},
             {"id": "n-fix",   "type": "session", "x": 1280, "y": 460, "title": "🛠️ Fix",
              "data": {"subject": "실패한 항목만 선택적으로 수정. 변경점과 근거 명시.",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-out",   "type": "output", "x": 1480, "y": 220, "title": "✅ 완료", "data": {}},
         ],
         "edges": [
@@ -4090,11 +4090,11 @@ BUILTIN_TEMPLATES: list[dict] = [
             {"id": "n-plan",  "type": "session", "x": 280, "y": 240, "title": "🧭 기획자",
              "data": {"subject": "프로젝트 목표를 단계별 작업으로 쪼개고 페르소나에 분배",
                       "description": "각 페르소나별 지시 블록을 '### <role>' 헤딩으로 구분하세요.",
-                      "assignee": "codex:o3", "agentRole": "planner",
+                      "assignee": "codex:gpt-5.5", "agentRole": "planner",
                       "inputsMode": "concat", "continueFromPrev": True}},
             {"id": "n-p1",    "type": "subagent", "x": 520, "y": 100, "title": "👤 Researcher",
              "data": {"subject": "Researcher 작업", "agentRole": "researcher",
-                      "assignee": "codex:gpt-5-codex", "inputsMode": "concat"}},
+                      "assignee": "codex:gpt-5.5", "inputsMode": "concat"}},
             {"id": "n-p2",    "type": "subagent", "x": 520, "y": 240, "title": "👤 Builder",
              "data": {"subject": "Builder 작업", "agentRole": "builder",
                       "assignee": "gemini:gemini-2.5-pro", "inputsMode": "concat"}},

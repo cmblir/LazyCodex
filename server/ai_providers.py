@@ -358,7 +358,7 @@ class BaseProvider(ABC):
 # ═══════════════════════════════════════════
 
 class CodexCliProvider(BaseProvider):
-    """OpenAI Codex CLI (`codex -p`) provider."""
+    """OpenAI Codex CLI (`codex exec --json`) provider."""
 
     provider_id = "codex-cli"
     provider_name = "Codex (CLI)"
@@ -375,16 +375,17 @@ class CodexCliProvider(BaseProvider):
                   0.0, 0.0, note="빠르고 비용 효율적인 작업"),
         ModelInfo("gpt-5.2", "GPT-5.2", 400_000,
                   0.0, 0.0, note="전문 작업/긴 에이전트 작업"),
-        ModelInfo("o3", "o3", 200_000,
-                  0.0, 0.0, note="고난도 추론"),
-        ModelInfo("o4-mini", "o4-mini", 200_000,
-                  0.0, 0.0, note="빠른 추론/분류/검증"),
     ]
 
     # 별칭 매핑 — 워크플로우에서 짧은 이름 사용 가능
     _ALIASES = {
         "latest": "gpt-5.5",
         "deep": "gpt-5.5",
+        "codex": "gpt-5.5",
+        # Legacy dashboard/workflow values. Current ChatGPT-auth Codex CLI
+        # accounts can reject `gpt-5-codex`, so map it to the official current
+        # GPT-5.5 family instead of forwarding the stale slug.
+        "gpt-5-codex": "gpt-5.5",
         "gpt55": "gpt-5.5",
         "gpt-5.5": "gpt-5.5",
         "gpt54": "gpt-5.4",
@@ -392,8 +393,8 @@ class CodexCliProvider(BaseProvider):
         "fast": "gpt-5.4-mini",
         "mini": "gpt-5.4-mini",
         "gpt-5.4-mini": "gpt-5.4-mini",
-        "o3": "o3",
-        "o4-mini": "o4-mini",
+        "gpt52": "gpt-5.2",
+        "gpt-5.2": "gpt-5.2",
     }
 
     def _bin(self) -> str:
@@ -440,7 +441,7 @@ class CodexCliProvider(BaseProvider):
         resolved_model = self._resolve_model(model)
         cwd_safe = cwd or str(Path.home())
 
-        # QQ49 (v2.66.124) — codex-cli `-p` is text-only. Strip embedded
+        # QQ49 (v2.66.124) — codex-cli text prompts are text-only. Strip embedded
         # base64 image data URLs from the prompt so we don't pipe a
         # multi-MB chunk over argv (and so the model doesn't hallucinate
         # about "the image" when the bytes never reached it).
@@ -449,22 +450,16 @@ class CodexCliProvider(BaseProvider):
             note = "[이미지 첨부됨 — codex-cli 는 vision 미지원, codex-api 또는 vision 모델 사용]"
             prompt = (cleaned + "\n\n" + note).strip()
 
-        cmd = [codex_bin, "-p", prompt, "--output-format", "json"]
-        if resolved_model:
-            cmd += ["--model", resolved_model]
-        if system_prompt:
-            cmd += ["--system-prompt", system_prompt]
-        # 추가 CLI 옵션 (워크플로우 하네스에서 전달)
-        for opt_key in ("appendSystemPrompt", "allowedTools", "disallowedTools", "resumeSessionId"):
-            val = (extra.get(opt_key) or "").strip()
-            if val:
-                flag = {
-                    "appendSystemPrompt": "--append-system-prompt",
-                    "allowedTools": "--allowed-tools",
-                    "disallowedTools": "--disallowed-tools",
-                    "resumeSessionId": "--resume",
-                }[opt_key]
-                cmd += [flag, val]
+        from .codex_exec import build_codex_exec_cmd, parse_codex_exec_jsonl
+        cmd = build_codex_exec_cmd(
+            codex_bin,
+            prompt,
+            model=resolved_model,
+            cwd=cwd_safe,
+            system_prompt=system_prompt,
+            append_system_prompt=(extra.get("appendSystemPrompt") or ""),
+            resume_session_id=(extra.get("resumeSessionId") or ""),
+        )
 
         # FF1 (v2.66.17) — codex-cli can sporadically
         # hangs on otherwise-valid requests. Short per-attempt timeout
@@ -542,30 +537,27 @@ class CodexCliProvider(BaseProvider):
             )
 
         duration = int(time.time() * 1000) - t0
+        parsed = parse_codex_exec_jsonl(r.stdout or "")
         if r.returncode != 0:
+            parsed_err = (parsed.get("error") or "").strip()
             return AIResponse(
                 status="err",
-                error=(r.stderr or "").strip()[:1000] or f"exit {r.returncode}",
+                error=parsed_err[:1000] or (r.stderr or "").strip()[:1000] or f"exit {r.returncode}",
                 provider=self.provider_id, duration_ms=duration,
             )
 
-        stdout = r.stdout or ""
-        output = stdout
-        session_id = ""
-        raw_parsed = {}
-        try:
-            parsed = json.loads(stdout)
-            if isinstance(parsed, dict):
-                raw_parsed = parsed
-                output = parsed.get("result") or parsed.get("content") or stdout
-                session_id = parsed.get("session_id") or parsed.get("sessionId") or ""
-        except Exception:
-            pass
+        output = parsed.get("output") or ""
+        session_id = parsed.get("threadId") or ""
+        usage = parsed.get("usage") or {}
+        tokens_in = int(usage.get("input_tokens") or 0)
+        tokens_out = int(usage.get("output_tokens") or 0)
 
         return AIResponse(
             status="ok", output=output, provider=self.provider_id,
             model=resolved_model or "default", session_id=session_id,
-            duration_ms=duration, raw=raw_parsed,
+            tokens_in=tokens_in, tokens_out=tokens_out,
+            tokens_total=tokens_in + tokens_out,
+            duration_ms=duration, raw=parsed,
         )
 
 
@@ -793,20 +785,17 @@ class CodexProvider(BaseProvider):
         return bool(self._bin())
 
     def list_models(self) -> list[ModelInfo]:
-        # v2.66.9 — refreshed for late-2025 Codex CLI (gpt-5-codex, o3-pro,
-        # o4 family). Pricing tracks OpenAI list as of release; verify on
-        # https://openai.com/api/pricing if upstream rotates.
+        # Legacy provider retained only for backwards compatibility. The
+        # active registry uses CodexCliProvider above.
         return [
-            ModelInfo("gpt-5-codex", "GPT-5 Codex", 400_000,
-                      1.25, 10.0, note="Codex flagship"),
-            ModelInfo("o3-pro", "o3-pro", 200_000,
-                      20.0, 80.0, note="최고 추론 (deep reasoning)"),
-            ModelInfo("o4-mini", "o4-mini", 200_000,
-                      1.10, 4.40, note="기본 빠른 모델"),
-            ModelInfo("o3", "o3", 200_000,
-                      2.0, 8.0, note="고성능 추론"),
-            ModelInfo("gpt-4.1", "GPT-4.1", 1_000_000,
-                      2.0, 8.0, note="긴 컨텍스트"),
+            ModelInfo("gpt-5.5", "GPT-5.5", 400_000,
+                      0.0, 0.0, note="최신 OpenAI coding-agent 권장 기본값"),
+            ModelInfo("gpt-5.4", "GPT-5.4", 400_000,
+                      0.0, 0.0, note="강한 범용/코딩 모델"),
+            ModelInfo("gpt-5.4-mini", "GPT-5.4 Mini", 400_000,
+                      0.0, 0.0, note="빠르고 비용 효율적인 작업"),
+            ModelInfo("gpt-5.2", "GPT-5.2", 400_000,
+                      0.0, 0.0, note="전문 작업/긴 에이전트 작업"),
         ]
 
     def execute(
@@ -861,7 +850,7 @@ class CodexProvider(BaseProvider):
             )
         return AIResponse(
             status="ok", output=(stdout or "").strip(),
-            provider=self.provider_id, model=model or "o4-mini",
+            provider=self.provider_id, model=model or "gpt-5.5",
             duration_ms=duration,
         )
 
@@ -2302,7 +2291,7 @@ class ProviderRegistry:
           "openai:gpt-5.5"   → ("openai-api", "gpt-5.5")
           "gemini:2.5-pro"   → ("gemini-cli" or "gemini-api", "gemini-2.5-pro")
           "ollama:llama3.1"  → ("ollama" or "ollama-api", "llama3.1")
-          "codex:o4-mini"    → ("codex", "o4-mini")
+          "codex:gpt-5.4-mini" → ("codex-cli", "gpt-5.4-mini")
           "custom-id:model"  → ("custom-id", "model")
         """
         if not assignee or assignee.strip() == "":
@@ -2334,11 +2323,9 @@ class ProviderRegistry:
                 "codestral": "mistral-api",
                 "xai": "xai-api",
                 "grok": "xai-api",
-                # v3.99.25 — composite orchestrator provider. "orch" and
-                # "openclaw" are user-friendly aliases for the same thing.
+                # Composite orchestrator provider.
                 "orchestrator": "orchestrator",
                 "orch": "orchestrator",
-                "openclaw": "orchestrator",
             }
             pid = PROVIDER_ALIASES.get(provider_hint, provider_hint)
 
@@ -2364,12 +2351,9 @@ class ProviderRegistry:
         if assignee in self._providers:
             return (assignee, "")
 
-        # v3.99.25 — composite-provider shortcuts ("orch", "openclaw")
-        # without a colon. Same alias table as the colon path; lets the
-        # picker accept the short form without forcing the user to type
-        # "orchestrator:default" every time.
+        # Composite-provider shortcuts without a colon.
         _short = assignee.strip().lower()
-        if _short in ("orchestrator", "orch", "openclaw"):
+        if _short in ("orchestrator", "orch"):
             return ("orchestrator", "")
 
         # 기본: Codex CLI 에 모델명으로 전달
@@ -2426,7 +2410,7 @@ class ProviderRegistry:
                 elif "o3" in cur:
                     model_chain = ["gpt-5.5", "gpt-5.4-mini"]
                 else:
-                    model_chain = ["gpt-5.4-mini", "o4-mini"]
+                    model_chain = ["gpt-5.4-mini", "gpt-5.4"]
                 for alt_model in model_chain:
                     log.info("codex-cli model fallback: %s → %s", model, alt_model)
                     alt_resp = p.execute(
@@ -2590,7 +2574,6 @@ def get_registry() -> ProviderRegistry:
     reg.register(CodexCliProvider())
     reg.register(OllamaProvider())
     reg.register(GeminiCliProvider())
-    reg.register(CodexProvider())
 
     # 빌트인 API 프로바이더
     reg.register(OpenAIApiProvider())
@@ -2720,7 +2703,7 @@ def execute_with_assignee(
 ) -> AIResponse:
     """워크플로우 노드에서 직접 호출하는 편의 함수.
 
-    assignee 예시: "codex:gpt-5.5", "openai:gpt-5.5", "ollama:llama3.1", "codex:o4-mini"
+    assignee 예시: "codex:gpt-5.5", "openai:gpt-5.5", "ollama:llama3.1", "codex:gpt-5.4-mini"
     """
     reg = get_registry()
     pid, model = reg.resolve_assignee(assignee)

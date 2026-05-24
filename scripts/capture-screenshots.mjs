@@ -21,7 +21,7 @@
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
 
-const BASE = process.env.BASE || 'http://127.0.0.1:8080';
+const BASE = process.env.BASE || 'http://127.0.0.1:19500';
 const HEADLESS = process.env.HEADLESS !== '0';
 const LANGS = (process.env.LANGS || 'ko,en,zh').split(',').map(s => s.trim()).filter(Boolean);
 const OUT_BASE = new URL('../docs/screenshots/', import.meta.url).pathname;

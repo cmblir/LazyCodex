@@ -6,7 +6,7 @@
  */
 import { chromium } from 'playwright';
 
-const URL = process.env.URL || `http://127.0.0.1:${process.env.PORT || 8080}/`;
+const URL = process.env.URL || `http://127.0.0.1:${process.env.PORT || 19500}/`;
 
 async function buildWorkflow() {
   const nodes = [];

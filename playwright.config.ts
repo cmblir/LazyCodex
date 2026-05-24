@@ -15,7 +15,7 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 5_000 },
   use: {
-    baseURL: process.env.BASE_URL || 'http://127.0.0.1:8080',
+    baseURL: process.env.BASE_URL || 'http://127.0.0.1:19500',
     headless: true,
   },
 });

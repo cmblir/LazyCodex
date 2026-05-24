@@ -158,27 +158,23 @@ def api_chat(body: dict) -> dict:
     # CHAT_MODEL 환경변수로 오버라이드 가능.
     chat_model = os.environ.get("CHAT_MODEL", "gpt-5.4-mini")
     try:
-        proc = subprocess.run(
-            [codex_bin, "-p", full_prompt, "--model", chat_model, "--output-format", "json"],
-            capture_output=True, text=True, timeout=30,
+        from .codex_exec import run_codex_exec
+        proc, parsed_exec = run_codex_exec(
+            codex_bin,
+            full_prompt,
+            model=chat_model,
+            ephemeral=True,
+            timeout=60,
         )
     except subprocess.TimeoutExpired:
-        return {"error": "응답 시간 초과 (30초)", "error_key": "err_timeout"}
+        return {"error": "응답 시간 초과 (60초)", "error_key": "err_timeout"}
     except Exception as e:
         return {"error": f"CLI 실행 실패: {e}"}
 
     if proc.returncode != 0:
         return {"error": f"CLI 오류: {(proc.stderr or '')[:200]}"}
 
-    stdout = (proc.stdout or "").strip()
-    # --output-format json 은 {"result": "..."} 래핑
-    response_text = stdout
-    try:
-        meta = json.loads(stdout)
-        if isinstance(meta, dict) and "result" in meta:
-            response_text = meta["result"]
-    except Exception:
-        pass
+    response_text = (parsed_exec.get("output") or proc.stdout or "").strip()
 
     # JSON 파싱 시도
     parsed = {}
@@ -201,7 +197,7 @@ def api_chat(body: dict) -> dict:
 
 
 def handle_chat_stream(handler: "Handler", body: dict) -> None:
-    """SSE 스트리밍 챗 — codex CLI stream-json 을 SSE 로 중계."""
+    """SSE 스트리밍 챗 — codex exec JSONL 을 SSE 로 중계."""
     user_msg = (body.get("message") or "").strip() if isinstance(body, dict) else ""
     if not user_msg:
         handler.send_response(400)
@@ -267,11 +263,17 @@ def handle_chat_stream(handler: "Handler", body: dict) -> None:
     # 스트리밍 챗도 동일한 기본 모델 사용 (CHAT_MODEL env 로 오버라이드)
     chat_model = os.environ.get("CHAT_MODEL", "gpt-5.4-mini")
     try:
+        from .codex_exec import build_codex_exec_cmd
+        cmd = build_codex_exec_cmd(
+            codex_bin,
+            full_prompt,
+            model=chat_model,
+            ephemeral=True,
+        )
         proc = subprocess.Popen(
-            [codex_bin, "-p", full_prompt, "--model", chat_model,
-             "--output-format", "stream-json",
-             "--verbose", "--include-partial-messages"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            cmd,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL, text=True,
         )
         full_text = ""
         for line in proc.stdout:
@@ -283,21 +285,14 @@ def handle_chat_stream(handler: "Handler", body: dict) -> None:
             except Exception:
                 continue
             msg_type = obj.get("type")
-            if msg_type == "assistant":
-                content = (obj.get("message") or {}).get("content") or []
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        new_text = block.get("text", "")
-                        if len(new_text) > len(full_text):
-                            delta = new_text[len(full_text):]
-                            full_text = new_text
-                            _sse("delta", json.dumps({"text": delta}, ensure_ascii=False))
-            elif msg_type == "result":
-                result_text = obj.get("result", "")
-                if result_text and not full_text:
-                    full_text = result_text
-                    _sse("delta", json.dumps({"text": result_text}, ensure_ascii=False))
-                # navigate 추출
+            if msg_type == "item.completed":
+                item = obj.get("item") or {}
+                if isinstance(item, dict) and item.get("type") == "agent_message":
+                    new_text = item.get("text") or ""
+                    if new_text:
+                        full_text = new_text
+                        _sse("replace", json.dumps({"text": full_text}, ensure_ascii=False))
+            elif msg_type == "turn.completed":
                 navigate = None
                 m = re.search(r"\{[\s\S]*\}", full_text)
                 if m:
@@ -315,6 +310,13 @@ def handle_chat_stream(handler: "Handler", body: dict) -> None:
                         pass
                 _sse("done", json.dumps({"navigate": navigate, "text": full_text}, ensure_ascii=False))
         proc.wait(timeout=5)
+        if proc.returncode and proc.returncode != 0:
+            err = ""
+            try:
+                err = (proc.stderr.read() or "").strip()
+            except Exception:
+                pass
+            _sse("error", json.dumps({"error": err or f"codex exited {proc.returncode}"}, ensure_ascii=False))
     except Exception as e:
         _sse("error", json.dumps({"error": str(e)}, ensure_ascii=False))
 
@@ -414,7 +416,7 @@ def _resolve_provider_cli(assignee: str) -> dict:
 def api_session_spawn(body: dict) -> dict:
     """Open a new Terminal window and run the AI CLI matching the node's
     ``assignee`` (e.g. ``codex:gpt-5.5``, ``gemini:gemini-2.5-pro``,
-    ``ollama:llama3.1``, ``codex:o4-mini``). macOS only.
+    ``ollama:llama3.1``, ``codex:gpt-5.4-mini``). macOS only.
 
     body:
       cwd:                 "~/path"   (under $HOME)
@@ -445,21 +447,34 @@ def api_session_spawn(body: dict) -> dict:
     provider = resolved["provider"]
     bin_path = resolved["bin"]
 
-    parts = [bin_path] + list(resolved["args"])
-
     if provider == "codex-cli":
         sys_prompt = (body.get("systemPrompt") or "").strip()
         app_prompt = (body.get("appendSystemPrompt") or "").strip()
         allowed = (body.get("allowedTools") or "").strip()
         disallowed = (body.get("disallowedTools") or "").strip()
         resume_id = (body.get("resumeSessionId") or "").strip()
+        parts = [bin_path]
+        if resume_id:
+            parts.append("resume")
         if resolved.get("model"):
             parts += ["--model", _sh_quote(resolved["model"])]
-        if sys_prompt: parts += ["--system-prompt", _sh_quote(sys_prompt)]
-        if app_prompt: parts += ["--append-system-prompt", _sh_quote(app_prompt)]
-        if allowed:    parts += ["--allowed-tools", _sh_quote(allowed)]
-        if disallowed: parts += ["--disallowed-tools", _sh_quote(disallowed)]
-        if resume_id:  parts += ["--resume", _sh_quote(resume_id)]
+        developer_bits = []
+        if sys_prompt:
+            developer_bits.append(sys_prompt)
+        if app_prompt:
+            developer_bits.append(app_prompt)
+        if allowed:
+            developer_bits.append("Tool policy hint: prefer this allowed tool set when possible: " + allowed)
+        if disallowed:
+            developer_bits.append("Tool policy hint: avoid this disallowed tool set: " + disallowed)
+        if developer_bits:
+            parts += [
+                "-c",
+                _sh_quote("developer_instructions=" + json.dumps("\n\n".join(developer_bits), ensure_ascii=False)),
+            ]
+        if resume_id:  parts += [_sh_quote(resume_id)]
+    else:
+        parts = [bin_path] + list(resolved["args"])
 
     # codex takes a positional prompt and stays interactive (TUI); the
     # other CLIs (gemini, ollama run <model>, codex) treat a positional as

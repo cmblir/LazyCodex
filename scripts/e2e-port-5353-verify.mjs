@@ -12,7 +12,7 @@
  */
 import { chromium } from 'playwright';
 
-const URL = process.env.URL || `http://127.0.0.1:${process.env.PORT || 8080}/`;
+const URL = process.env.URL || `http://127.0.0.1:${process.env.PORT || 19500}/`;
 let exitCode = 0;
 function check(label, ok, detail) {
   const tag = ok ? '\x1b[32m✅\x1b[0m' : '\x1b[31m❌\x1b[0m';

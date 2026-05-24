@@ -843,12 +843,9 @@ def api_project_ai_recommend(body: dict) -> dict:
         prompt += _lang_map[lang]
 
     try:
-        proc = subprocess.run(
-            [codex_bin, "-p", prompt, "--output-format", "json"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=240,
+        from .codex_exec import run_codex_exec
+        proc, parsed_exec = run_codex_exec(
+            codex_bin, prompt, cwd=cwd, ephemeral=True, timeout=240,
         )
     except subprocess.TimeoutExpired:
         return {"error": "Codex CLI 시간 초과 (240초) — 다시 시도해 주세요."}
@@ -859,22 +856,13 @@ def api_project_ai_recommend(body: dict) -> dict:
         stderr = (proc.stderr or "").strip()[:600]
         return {"error": f"Codex CLI 비정상 종료 (exit {proc.returncode}): {stderr}"}
 
-    stdout = (proc.stdout or "").strip()
-    response_text = stdout
-    cost_info = {}
-    try:
-        meta = json.loads(stdout)
-        if isinstance(meta, dict):
-            response_text = meta.get("result") or meta.get("content") or stdout
-            cost_info = {
-                "costUsd": meta.get("total_cost_usd"),
-                "durationMs": meta.get("duration_ms"),
-                "sessionId": meta.get("session_id"),
-                "model": meta.get("model"),
-                "numTurns": meta.get("num_turns"),
-            }
-    except Exception:
-        response_text = stdout
+    response_text = (parsed_exec.get("output") or proc.stdout or "").strip()
+    usage = parsed_exec.get("usage") or {}
+    cost_info = {
+        "sessionId": parsed_exec.get("threadId"),
+        "inputTokens": usage.get("input_tokens"),
+        "outputTokens": usage.get("output_tokens"),
+    }
 
     # JSON 블록 추출 (fence 감싸져 있거나 앞뒤 설명 섞여 있어도 처리)
     m = re.search(r"\{[\s\S]*\"recommendations\"[\s\S]*\}", response_text)
@@ -1218,29 +1206,22 @@ def api_ai_evaluation(body: dict) -> dict:
     if lang in lang_map:
         prompt += lang_map[lang]
     try:
-        proc = subprocess.run(
-            [codex_bin, "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=180,
+        from .codex_exec import run_codex_exec
+        proc, parsed_exec = run_codex_exec(
+            codex_bin, prompt, ephemeral=True, timeout=180,
         )
     except Exception as e:
         return {"error": f"Codex CLI 실행 실패: {e}"}
     if proc.returncode != 0:
         return {"error": f"Codex CLI 오류: {(proc.stderr or '')[:400]}"}
 
-    stdout = (proc.stdout or "").strip()
-    response_text = stdout
-    cost_info = {}
-    try:
-        meta = json.loads(stdout)
-        if isinstance(meta, dict):
-            response_text = meta.get("result") or stdout
-            cost_info = {
-                "costUsd": meta.get("total_cost_usd"),
-                "durationMs": meta.get("duration_ms"),
-                "model": meta.get("model"),
-            }
-    except Exception:
-        pass
+    response_text = (parsed_exec.get("output") or proc.stdout or "").strip()
+    usage = parsed_exec.get("usage") or {}
+    cost_info = {
+        "sessionId": parsed_exec.get("threadId"),
+        "inputTokens": usage.get("input_tokens"),
+        "outputTokens": usage.get("output_tokens"),
+    }
 
     # JSON 추출
     parsed: dict = {}
@@ -1403,29 +1384,22 @@ JSON 만: {output_shape}
     if lang in lang_map:
         prompt += lang_map[lang]
     try:
-        proc = subprocess.run(
-            [codex_bin, "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=180,
+        from .codex_exec import run_codex_exec
+        proc, parsed_exec = run_codex_exec(
+            codex_bin, prompt, ephemeral=True, timeout=180,
         )
     except Exception as e:
         return {"error": f"Codex CLI 실행 실패: {e}"}
     if proc.returncode != 0:
         return {"error": f"Codex CLI 오류: {(proc.stderr or '')[:400]}"}
 
-    stdout = (proc.stdout or "").strip()
-    response_text = stdout
-    cost_info = {}
-    try:
-        meta = json.loads(stdout)
-        if isinstance(meta, dict):
-            response_text = meta.get("result") or stdout
-            cost_info = {
-                "costUsd": meta.get("total_cost_usd"),
-                "durationMs": meta.get("duration_ms"),
-                "model": meta.get("model"),
-            }
-    except Exception:
-        pass
+    response_text = (parsed_exec.get("output") or proc.stdout or "").strip()
+    usage = parsed_exec.get("usage") or {}
+    cost_info = {
+        "sessionId": parsed_exec.get("threadId"),
+        "inputTokens": usage.get("input_tokens"),
+        "outputTokens": usage.get("output_tokens"),
+    }
 
     # JSON 블록 추출
     m = re.search(r"\{[\s\S]*\}", response_text)
@@ -1508,9 +1482,9 @@ JSON 만 반환: {{"content": "<AGENTS.md 전체 내용>"}}
     if lang in _lang_map:
         prompt += _lang_map[lang]
     try:
-        proc = subprocess.run(
-            [codex_bin, "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=240,
+        from .codex_exec import run_codex_exec
+        proc, parsed_exec = run_codex_exec(
+            codex_bin, prompt, ephemeral=True, timeout=240,
         )
     except subprocess.TimeoutExpired:
         return {"error": "Codex CLI 시간 초과 (240초)"}
@@ -1520,20 +1494,13 @@ JSON 만 반환: {{"content": "<AGENTS.md 전체 내용>"}}
     if proc.returncode != 0:
         return {"error": f"Codex CLI 비정상 종료: {(proc.stderr or '')[:500]}"}
 
-    stdout = (proc.stdout or "").strip()
-    response_text = stdout
-    cost_info = {}
-    try:
-        meta = json.loads(stdout)
-        if isinstance(meta, dict):
-            response_text = meta.get("result") or stdout
-            cost_info = {
-                "costUsd": meta.get("total_cost_usd"),
-                "durationMs": meta.get("duration_ms"),
-                "model": meta.get("model"),
-            }
-    except Exception:
-        pass
+    response_text = (parsed_exec.get("output") or proc.stdout or "").strip()
+    usage = parsed_exec.get("usage") or {}
+    cost_info = {
+        "sessionId": parsed_exec.get("threadId"),
+        "inputTokens": usage.get("input_tokens"),
+        "outputTokens": usage.get("output_tokens"),
+    }
 
     # content 추출
     m = re.search(r'\{[\s\S]*?"content"[\s\S]*?\}', response_text)

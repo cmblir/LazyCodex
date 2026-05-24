@@ -9,7 +9,7 @@
  */
 import { chromium } from 'playwright';
 
-const URL = process.env.URL || `http://127.0.0.1:${process.env.PORT || 8080}/`;
+const URL = process.env.URL || `http://127.0.0.1:${process.env.PORT || 19500}/`;
 const N = parseInt(process.env.N || '30', 10);
 
 // Build the workflow over the API first.

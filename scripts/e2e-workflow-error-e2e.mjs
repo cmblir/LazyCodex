@@ -12,7 +12,7 @@
  *   - /api/workflows/runs cross-listing surfaces the failed run with
  *     `status === 'err'`.
  */
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 19500;
 const BASE = process.env.BASE || `http://127.0.0.1:${PORT}`;
 
 let exitCode = 0;

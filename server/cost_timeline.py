@@ -29,8 +29,8 @@ _PRICING = {
     "gpt-5.4":     {"in": 0.0, "out": 0.0},
     "gpt-5.4-mini": {"in": 0.0, "out": 0.0},
     "gpt-5.2":     {"in": 0.0, "out": 0.0},
-    "o3":          {"in": 0.0, "out": 0.0},
-    "o4-mini":     {"in": 0.0, "out": 0.0},
+    "GPT-5.5":          {"in": 0.0, "out": 0.0},
+    "GPT-5.4-mini":     {"in": 0.0, "out": 0.0},
 }
 
 
@@ -237,7 +237,7 @@ def _recommendations(window_days: int = 30) -> dict:
     """Analyze last `window_days` of usage and return concrete swap recommendations.
 
     Rules:
-      1. GPT-5.x/o3 + avg_tokens_in < 500 + call_count >= 10 → try o4-mini/gpt-5.4-mini
+      1. GPT-5.x + avg_tokens_in < 500 + call_count >= 10 → try gpt-5.4-mini
       2. avg_tokens_in > 5000 + call_count >= 5 → enable prompt caching (~50% saving)
       3. call_count >= 100 + total_cost > $1 → try ollama local (~100% saving)
       4. Stale model in _MODEL_SUCCESSORS → upgrade for quality (no $ saving)
@@ -256,8 +256,8 @@ def _recommendations(window_days: int = 30) -> dict:
         ati = b["avg_tokens_in"]
 
         # Rule 1 — smaller OpenAI model for short prompts
-        is_premium = ("gpt-5.5" in mlow) or ("gpt-5.4" in mlow) or ("o3" in mlow)
-        is_mini_already = ("mini" in mlow) or ("o4-mini" in mlow)
+        is_premium = ("gpt-5.5" in mlow) or ("gpt-5.4" in mlow) or ("gpt-5.2" in mlow)
+        is_mini_already = "mini" in mlow
         if is_premium and not is_mini_already and ati < 500 and cc >= 10:
             saving = round(tcost * 0.60, 6)
             recs.append({
@@ -266,12 +266,12 @@ def _recommendations(window_days: int = 30) -> dict:
                 "currentModel": model,
                 "currentProvider": provider,
                 "currentCost": tcost,
-                "suggestedModel": "o4-mini",
+                "suggestedModel": "gpt-5.4-mini",
                 "estimatedSavings": saving,
                 "callCount": cc,
                 "rationale": (
                     f"평균 입력 토큰 {ati} (<500). 짧은 분류/요약/검증은 "
-                    f"o4-mini 또는 gpt-5.4-mini 후보를 평가해볼 만합니다."
+                    f"gpt-5.4-mini 후보를 평가해볼 만합니다."
                 ),
             })
 
